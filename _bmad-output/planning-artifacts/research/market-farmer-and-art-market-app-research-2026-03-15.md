@@ -467,3 +467,7 @@ _Limitations: Some public endpoints were inaccessible or inconsistent from this 
 - https://www.iso.org/iso-31000-risk-management.html
 - https://www.nist.gov/cyberframework
 - https://www.sba.gov/business-guide/plan-your-business/market-research-competitive-analysis
+
+### Appendix D: Feature Priority Matrix
+
+- ./feature-priority-matrix-market-app-2026-03-15.md

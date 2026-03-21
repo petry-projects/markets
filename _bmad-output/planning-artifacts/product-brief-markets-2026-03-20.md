@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2]
+stepsCompleted: [1, 2, 3]
 inputDocuments:
   - "_bmad-output/brainstorming/brainstorming-session-2026-03-15-16-19-33.md"
   - "_bmad-output/planning-artifacts/research/market-farmer-and-art-market-app-research-2026-03-15.md"
@@ -70,3 +70,116 @@ Core platform capabilities:
 3. **Exception-first, low-friction vendor model** — defaults to baseline availability and asks vendors only for meaningful exceptions, designed for the chaos of real market-day setup
 4. **Canonical event stream** — one event model powers customer feed, manager operations, vendor notifications, and post-event reliability analytics — eliminating conflicting truths
 5. **Sequential activation gates** — product success is measured at operational readiness (market with live calendar + vendor scheduled + manager can publish + customer can browse) not at account creation
+
+---
+
+## Target Users
+
+### Primary Users
+
+**markets** serves three distinct primary user groups, each with different goals and market-day realities.
+
+---
+
+#### User 1: The Market Shopper (Customer)
+
+**Three customer segments with distinct needs:**
+
+**Segment A — Maya, Mission-Driven Local Supporter**
+Maya shops farmers markets every weekend. She cooks from scratch, values knowing her producer, and is willing to pay a premium for local quality. She builds a mental list before leaving home and takes real wasted trips personally — not just as inconvenience, but as a trust failure with the market. She wants to know which vendors are actually there, what's fresh, and whether her regulars showed up. Her "aha" moment: seeing a live arrival card for her favorite honey vendor before she's even left the house.
+
+**Segment B — Daniel, Value-Conscious Planner**
+Daniel comes to the market with a specific list and a budget. He doesn't browse — he hunts. Payment method clarity matters to him (SNAP eligibility, card vs cash). He's the most sensitive to wasted trips: time and transit cost are real constraints. He needs intent-to-stall matching ("where can I find X today") and clear fallback suggestions when items are sold out. His "aha" moment: building a confirmed shopping plan in 2 minutes that maps his list to specific vendors at one or two markets.
+
+**Segment C — Sarah, Safety and Quality Assurer**
+Sarah is motivated by food safety, quality confidence, and freshness. She's less price-sensitive and more status-sensitive — she reads source signals and freshness timestamps before she decides. She wants to know if a vendor's attendance is verified, not just claimed. Her "aha" moment: seeing a vendor's confidence score break down by signal source before she commits to going.
+
+**Common journey across all customer segments:**
+
+| Stage | Experience |
+|---|---|
+| Discovery | Local reputation, community channels, market repeat habit |
+| Pre-visit | Opens app to check today's vendor roster and confidence signals |
+| Decision | Go/no-go based on confirmed attendance and likely product availability |
+| On-site | Navigates via vendor feed; receives exception updates in real time |
+| Post-visit | Repeat intent tied to whether actual outcomes matched pre-visit confidence |
+
+---
+
+#### User 2: The Vendor
+
+**Profile — Carmen, Small-Scale Food Producer**
+Carmen runs a farm stand at 2–3 markets per weekend. On market morning she's loading vehicles, setting up, managing helpers, and handling cash — her phone is a multitasking device, not a dedicated ops screen. She needs check-in to take under 10 seconds. She does not want to maintain a live inventory feed; she wants to declare exceptions when things change (sold out, running late, not coming) and have the system handle the rest. She's at risk of churning from any app that creates more overhead than value.
+
+**Carmen's core motivations:**
+- One-tap check-in that boosts her visibility and notifies her followers automatically
+- Quick exception posting (sold out, running late, not attending) without full catalog edits
+- Confidence that her product status shown to customers is accurate — false claims cost her reputation
+
+**Carmen's deal-breakers:**
+- Too many mandatory daily updates
+- Slow or unreliable app on market day
+- Long onboarding before she can go live
+- Customers seeing wrong status for her products
+
+**Carmen's journey:**
+
+| Stage | Experience |
+|---|---|
+| Onboarding | Short guided flow: identity, product categories, target markets, schedule, notification prefs |
+| Pre-market | Reviews upcoming schedule; receives manager invitations |
+| Market morning | One-tap check-in triggers customer notifications and visibility boost |
+| During market | Posts exceptions (sold out, low stock) with one action; pauses products without full catalog edits |
+| Post-market | Sees reliability score; reviews follower engagement |
+
+---
+
+#### User 3: The Market Manager
+
+**Profile — Jordan, Community Market Director**
+Jordan runs a weekly farmers and arts market with 40–80 vendors per event. Their biggest operational challenge is not the market itself — it's the uncertainty: vendors who don't confirm, late arrivals that don't notify, weather cancellations that need coordinated communication, and no-shows who leave gaps in the layout. They need one screen that tells them the real state of today's market, not three group chats and two spreadsheets.
+
+**Jordan's core priorities:**
+- Live roster of checked-in vendors with attendance confidence, updated in real time
+- Instant market-wide broadcast capability across customer and vendor channels simultaneously
+- Unified disruption dashboard: late arrivals, sold-outs, no-shows, and weather events in one view
+- Post-event reliability reports: which vendors were accurate, late, or absent
+
+**Jordan's escalation workflow:**
+1. Unverified vendor at market start → immediate verification request sent automatically
+2. 30 minutes late with no confirmation → vendor flagged at-risk in operations view
+3. 30 minutes late → manager escalation workflow triggered
+4. 1 hour unresolved → vendor hidden from customer-facing listings until verified
+
+**Jordan's journey:**
+
+| Stage | Experience |
+|---|---|
+| Setup | Creates market profile, calendar, operating rules, and communication defaults |
+| Pre-market | Reviews vendor scheduling confirmations; sends invitations for upcoming dates |
+| Market day | Monitors live roster; handles disruptions from unified dashboard; sends broadcasts |
+| Escalation | Follows time-boxed verification ladder for unverified vendors |
+| Post-market | Reviews reliability report; routes suspicious behavior to governance queue |
+
+---
+
+### Secondary Users
+
+**Market Visitors (occasional / event-driven)**
+Non-regular attendees who discover the market through community channels or special events. They don't have established vendor relationships but benefit from the customer confidence feed for first-visit planning. Lower engagement depth but high acquisition potential.
+
+**Market Association Administrators**
+Regional or network-level coordinators who oversee multiple markets. They care about cross-market benchmarking, aggregate reliability data, and policy governance across their network. Not a day-1 target but a natural expansion segment.
+
+---
+
+### User Journey Summary
+
+The activation ladder that connects all three primary users:
+
+1. **Market Manager** creates a market with a live calendar → supply-side foundation established
+2. **Vendor** onboards and schedules their first market → vendor readiness confirmed
+3. **Manager** publishes the market and invites vendors → coordination loop opened
+4. **Customer** browses upcoming calendar and available products → demand-side ready
+
+All subsequent market-day interactions flow through the canonical event stream: vendor arrivals populate the customer feed, exceptions trigger manager alerts, manager broadcasts reach both vendors and customers. One operational truth, three role-specific views.

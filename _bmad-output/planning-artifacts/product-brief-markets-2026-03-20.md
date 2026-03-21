@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3]
+stepsCompleted: [1, 2, 3, 4]
 inputDocuments:
   - "_bmad-output/brainstorming/brainstorming-session-2026-03-15-16-19-33.md"
   - "_bmad-output/planning-artifacts/research/market-farmer-and-art-market-app-research-2026-03-15.md"
@@ -183,3 +183,87 @@ The activation ladder that connects all three primary users:
 4. **Customer** browses upcoming calendar and available products → demand-side ready
 
 All subsequent market-day interactions flow through the canonical event stream: vendor arrivals populate the customer feed, exceptions trigger manager alerts, manager broadcasts reach both vendors and customers. One operational truth, three role-specific views.
+
+---
+
+## Success Metrics
+
+Success for **markets** is measured at three levels: user outcomes (did we reduce friction and build trust?), operational health (is the coordination loop working?), and business growth (are markets and vendors adopting and staying?).
+
+**Customer success — reducing failed trips and building confidence:**
+
+| Metric | Target Signal |
+|---|---|
+| Failed-trip rate reduction | Customers arrive and find vendor present and product available as expected |
+| Pre-visit confidence action rate | % of customers who check vendor status before traveling |
+| Repeat visit rate | 30/60-day repeat attendance among app users vs non-users |
+| Planned-list completion rate | % of shopping missions where all target items were found |
+| Session-to-purchase continuity after stockout | Customer stays and finds substitute rather than abandoning trip |
+
+**Vendor success — low overhead, high visibility payoff:**
+
+| Metric | Target Signal |
+|---|---|
+| Check-in completion rate on market day | % of scheduled vendors who check in within first 30 min of market open |
+| Check-in time | Median check-in action completed in under 10 seconds |
+| Exception update rate | Vendors posting at least one exception update per market day |
+| Vendor retention at 60 days | % of onboarded vendors still active after 2 months |
+| Onboarding to first live market | Median time from account creation to first market-day check-in |
+
+**Market manager success — operational clarity and fast disruption resolution:**
+
+| Metric | Target Signal |
+|---|---|
+| Disruption resolution time | Median time from disruption event to customer-visible correction |
+| Vendor attendance confidence rate | % of vendors with a verified signal (not just scheduled) at market open |
+| Escalation ladder adherence | % of unverified vendor cases that progress through defined time gates |
+| Post-event report usage | % of markets generating and reviewing post-event reliability reports |
+
+### Business Objectives
+
+**3-month pilot objectives:**
+
+1. Activate 3–5 pilot markets with measurable same-day operational KPIs
+2. Demonstrate reduction in customer uncertainty events (failed trips, incorrect status) vs pre-launch baseline
+3. Achieve vendor check-in adoption rate above 70% in active pilot markets
+4. Establish onboarding playbook replicable for next wave of markets
+
+**12-month growth objectives:**
+
+1. Expand to 20+ markets with consistent activation ladder completion (all 4 gates)
+2. Achieve repeat-visit rate uplift in pilot vs control markets
+3. Establish manager-led adoption model where market managers drive vendor and customer participation
+4. Begin integration partnerships with one existing market-admin or local-commerce tool
+
+**Strategic objectives:**
+
+- Own the confidence layer — become the default trust signal for market-day attendance and availability in served markets
+- Build reliability data moat — post-event reliability scoring creates vendor accountability history that is hard to replicate
+- Establish manager as growth vector — satisfied market managers become the primary distribution channel
+
+### Key Performance Indicators
+
+**Leading indicators** (predict platform health before scale):
+
+| KPI | Definition | Early Target |
+|---|---|---|
+| Vendor status freshness rate | % of active vendor listings with a same-day signal | >80% on market days |
+| Attendance/availability accuracy rate | % of vendor status claims verified as accurate post-market | >90% |
+| Check-in time (P50) | Median vendor check-in completion time | <10 seconds |
+| Activation gate completion | % of markets completing all 4 activation gates | 100% before go-live |
+
+**Lagging indicators** (measure real-world outcomes):
+
+| KPI | Definition | Pilot Target |
+|---|---|---|
+| Failed-trip rate reduction | Customer-reported or proxy-measured wasted trips | Measurable reduction vs baseline |
+| Customer repeat-visit rate | % of app users returning within 30 days | Upward trend vs non-app cohort |
+| Vendor 60-day retention | % of vendors active 60 days after first check-in | >65% |
+| Disruption resolution time | Time from disruption post to customer-visible resolution | <15 minutes median |
+| Manager NPS / satisfaction | Manager satisfaction with operations dashboard | Positive trend |
+
+**Anti-metrics** (signals that indicate trust erosion — monitor as critical):
+
+- False check-in incidents (vendor checked in but not on site)
+- Customer complaints about status mismatch
+- Vendor ghost check-ins flagged by geolocation validation

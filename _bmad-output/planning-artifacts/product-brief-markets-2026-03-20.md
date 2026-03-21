@@ -1,5 +1,5 @@
 ---
-stepsCompleted: [1, 2, 3, 4]
+stepsCompleted: [1, 2, 3, 4, 5]
 inputDocuments:
   - "_bmad-output/brainstorming/brainstorming-session-2026-03-15-16-19-33.md"
   - "_bmad-output/planning-artifacts/research/market-farmer-and-art-market-app-research-2026-03-15.md"
@@ -267,3 +267,92 @@ Success for **markets** is measured at three levels: user outcomes (did we reduc
 - False check-in incidents (vendor checked in but not on site)
 - Customer complaints about status mismatch
 - Vendor ghost check-ins flagged by geolocation validation
+
+---
+
+## MVP Scope
+
+### Core Features
+
+The MVP delivers one complete coordination loop: a vendor checks in → the event flows to the customer feed → the manager sees a live roster. Everything else is built around making that loop reliable, low-friction, and trustworthy.
+
+**Market Manager — Activation & Operations:**
+- Market profile creation (name, location, operating hours, description)
+- Market calendar (recurring and one-off event dates)
+- Vendor roster management (invite vendors, confirm scheduling)
+- Live operations dashboard: real-time vendor attendance roster with confidence indicators
+- Market-wide broadcast: instant message to all vendors and customers for a given market day
+- Disruption dashboard: unified view of active exceptions (late, absent, sold out) with time-elapsed indicators
+- Post-event reliability report: per-vendor attendance accuracy summary
+
+**Vendor — Check-in & Exception Controls:**
+- Vendor onboarding: identity, product categories, target markets, notification preferences
+- Market scheduling: accept/decline invitations, set recurring schedule
+- One-tap market-day check-in (geofenced passive detection + manual confirmation fallback)
+- Exception actions: running late, sold out (per product or whole stand), not attending today
+- Follower notification: automatic push to followers on check-in
+- Reliability score: visible post-event metric showing attendance accuracy
+
+**Customer — Confidence Feed & Discovery:**
+- Market browser: list of markets with upcoming dates and vendor counts
+- Vendor discovery: browse vendors by market, filter by product category
+- Live arrival feed: same-day vendor check-ins and exceptions in chronological order with confidence and freshness metadata
+- Vendor follow: subscribe to specific vendors for arrival notifications
+- Product search: find which vendor carries a specific item at today's markets
+- Confidence explainer: tap any vendor status to see the source signals behind it
+
+**Platform Foundation:**
+- Canonical event stream: single event model powering all three actor views simultaneously
+- Activation gate validation: system enforces the four-gate readiness sequence before a market goes live
+- Role-based authentication: market manager, vendor, and customer account types with appropriate permissions
+- Push notification delivery: arrival alerts, exception updates, manager broadcasts
+
+### Out of Scope for MVP
+
+| Feature | Rationale for Deferral |
+|---|---|
+| In-app ordering / pre-purchase | Adds commerce complexity; MVP validates presence and trust, not transactions |
+| Payment method integration (SNAP, card readers) | Downstream of vendor presence; v2 once attendance loop is stable |
+| Full inventory catalog management | Exception-first model replaces catalog in MVP; deep catalog is v2 |
+| Stall map / wayfinding | Customer feed sufficient for MVP navigation |
+| Multi-market manager dashboard (network view) | Single-market operations must prove out first |
+| Vendor rating and review system | Trust built through reliability score in MVP; social ratings are v2 |
+| AI-powered availability prediction | Requires accumulated event stream data; v2 feature |
+| Integration with external market admin tools | Marketspread, ManageMyMarket integrations are v2 partnerships |
+| Web app (PWA) | Native mobile app first; web follows after core loop is validated |
+
+### MVP Success Criteria
+
+**Quantitative gates:**
+- Vendor check-in rate ≥ 70% on market day (within first 30 minutes of open)
+- Check-in action completed in ≤ 10 seconds (P50)
+- Vendor attendance accuracy rate ≥ 90%
+- At least one customer-visible exception update per market per event
+- Manager disruption resolution time ≤ 15 minutes median
+
+**Qualitative signal:**
+- Market managers can describe the real state of their market from one screen
+- Vendors report check-in as effortless
+- Customers confirm they checked vendor status before traveling at least once
+
+**Go/no-go decision:**
+After 3 pilot markets with 2+ events each: if quantitative gates are met, expand. If not, diagnose which actor in the loop is breaking down and fix before expanding.
+
+### Future Vision
+
+**Phase 2 — Deeper Vendor Tools:**
+- Full product catalog with inventory tracking and pre-market publishing
+- SNAP/EBT eligibility flagging and payment method display
+- Vendor analytics: follower growth, product engagement, attendance reliability history
+
+**Phase 3 — Customer Commerce:**
+- Pre-market shopping list with vendor matching and hold/reservation signals
+- In-app ordering and payment for participating vendors
+- Personalized recommendations based on follow history and shopping patterns
+
+**Phase 4 — Network & Platform:**
+- Multi-market manager dashboard with cross-market benchmarking
+- Market association administration: governance tools for regional networks
+- Integration APIs for Marketspread, ManageMyMarket, Barn2Door, and Local Line
+- Vendor reliability data as a portable trust credential across market networks
+- Expand beyond farmers and art markets to any recurring local vendor event (flea markets, food truck pods, pop-up retail)

@@ -1,4 +1,4 @@
-# Commercial Licensing
+# Commercial License
 
 Markets is dual-licensed under the GNU Affero General Public License v3.0 (AGPL-3.0) and a commercial license.
 

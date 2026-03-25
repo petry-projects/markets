@@ -1,7 +1,7 @@
 # Memory Index
 
 ## User
-- [user_role.md](user_role.md) — Don runs Honey Beeeham (daughter's business), 15+ markets/year, direct vendor/manager connections, Instagram customer following
+- [user_role.md](user_role.md) — Don advises Honey Beeeham (daughter's business), 15+ markets/year, direct vendor/manager connections, Instagram customer following
 
 ## Project
 - [project_monetization.md](project_monetization.md) — Revenue model: charge Market Managers for advanced features

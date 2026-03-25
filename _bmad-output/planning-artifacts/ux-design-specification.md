@@ -1,12 +1,12 @@
 ---
 stepsCompleted: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]
 inputDocuments:
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/prd.md"
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/product-brief-markets-2026-03-16.md"
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/architecture.md"
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/research/feature-priority-matrix-market-app-2026-03-15.md"
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/research/market-farmer-and-art-market-app-research-2026-03-15.md"
-  - "/home/donpetry/markets/_bmad-output/planning-artifacts/research/technical-react-graphql-supabase-research-2026-03-15.md"
+  - "_bmad-output/planning-artifacts/prd.md"
+  - "_bmad-output/planning-artifacts/product-brief-markets-2026-03-16.md"
+  - "_bmad-output/planning-artifacts/architecture.md"
+  - "_bmad-output/planning-artifacts/research/feature-priority-matrix-market-app-2026-03-15.md"
+  - "_bmad-output/planning-artifacts/research/market-farmer-and-art-market-app-research-2026-03-15.md"
+  - "_bmad-output/planning-artifacts/research/technical-react-graphql-supabase-research-2026-03-15.md"
 ---
 
 # UX Design Specification markets

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375">
+<title>Markets - Vendor Home</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 375px; min-height: 812px; margin: 0 auto; }
+  .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .header-subtitle { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .content { padding: 16px; padding-bottom: 100px; }
+
+  .checkin-card { background: #fff; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .checkin-card .market-label { font-size: 12px; font-weight: 500; color: #2D7D46; text-transform: uppercase; letter-spacing: 0.5px; }
+  .checkin-card .market-name { font-size: 20px; font-weight: 600; margin-top: 4px; }
+  .checkin-card .market-time { font-size: 14px; color: #6B7280; margin-top: 4px; }
+  .checkin-card .market-time strong { color: #1A1A1A; }
+  .checkin-btn { width: 100%; height: 56px; background: #2D7D46; color: #fff; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .checkin-btn:active { background: #1E6B35; }
+  .followers-info { text-align: center; font-size: 13px; color: #6B7280; margin-top: 10px; }
+  .followers-info strong { color: #2D7D46; }
+
+  .upcoming-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 14px; }
+  .upcoming-day { width: 48px; height: 48px; background: #F3F4F6; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .upcoming-day .day-name { font-size: 10px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
+  .upcoming-day .day-num { font-size: 18px; font-weight: 700; color: #1A1A1A; }
+  .upcoming-info { flex: 1; }
+  .upcoming-market { font-size: 15px; font-weight: 600; }
+  .upcoming-time { font-size: 13px; color: #6B7280; margin-top: 1px; }
+
+  .stats-row { display: flex; gap: 12px; margin-bottom: 16px; }
+  .stat-card { flex: 1; background: #fff; border-radius: 16px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-number { font-size: 24px; font-weight: 700; color: #2D7D46; }
+  .stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+
+  .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; margin-top: 8px; }
+
+  .tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 375px; height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+</style>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+  <div class="status-bar">6:45</div>
+  <div class="header">
+    <h1>My Markets</h1>
+    <div class="header-subtitle">Honey Beeeham</div>
+  </div>
+
+  <div class="content">
+    <div class="checkin-card">
+      <div class="market-label">Today - Saturday</div>
+      <div class="market-name">Riverside Farmers Market</div>
+      <div class="market-time">Opens <strong>8:00 AM</strong> &middot; Closes 1:00 PM</div>
+      <button class="checkin-btn">📍 Check In</button>
+      <div class="followers-info"><strong>34</strong> followers will be notified</div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-number">34</div>
+        <div class="stat-label">Followers</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">12</div>
+        <div class="stat-label">This Week</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-number">5</div>
+        <div class="stat-label">Markets</div>
+      </div>
+    </div>
+
+    <div class="section-title">Upcoming Markets</div>
+
+    <div class="upcoming-card">
+      <div class="upcoming-day">
+        <div class="day-name">Sun</div>
+        <div class="day-num">23</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-market">Downtown Sunday Market</div>
+        <div class="upcoming-time">9:00 AM - 2:00 PM</div>
+      </div>
+    </div>
+
+    <div class="upcoming-card">
+      <div class="upcoming-day">
+        <div class="day-name">Wed</div>
+        <div class="day-num">26</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-market">Midweek Market at City Hall</div>
+        <div class="upcoming-time">3:00 PM - 7:00 PM</div>
+      </div>
+    </div>
+
+    <div class="upcoming-card">
+      <div class="upcoming-day">
+        <div class="day-name">Sat</div>
+        <div class="day-num">29</div>
+      </div>
+      <div class="upcoming-info">
+        <div class="upcoming-market">Riverside Farmers Market</div>
+        <div class="upcoming-time">8:00 AM - 1:00 PM</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active"><div class="tab-icon">🏪</div>Markets</div>
+    <div class="tab-item"><div class="tab-icon">📊</div>Status</div>
+    <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+</body>
+</html>

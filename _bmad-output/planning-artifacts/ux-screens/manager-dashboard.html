@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375">
+<title>Markets - Manager Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 375px; min-height: 812px; margin: 0 auto; }
+  .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .header-subtitle { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .content { padding: 16px; padding-bottom: 100px; }
+
+  /* Attendance Summary Bar */
+  .attendance-bar { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .attendance-bar .bar-label { font-size: 13px; color: #6B7280; margin-bottom: 8px; }
+  .bar-visual { height: 12px; border-radius: 6px; background: #F3F4F6; display: flex; overflow: hidden; margin-bottom: 12px; }
+  .bar-segment { height: 100%; transition: width 0.3s; }
+  .bar-segment.present { background: #22C55E; }
+  .bar-segment.exception { background: #F59E0B; }
+  .bar-segment.pending { background: #D1D5DB; }
+  .bar-stats { display: flex; justify-content: space-between; }
+  .bar-stat { display: flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 600; }
+  .bar-stat .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .bar-stat .dot.green { background: #22C55E; }
+  .bar-stat .dot.yellow { background: #F59E0B; }
+  .bar-stat .dot.gray { background: #D1D5DB; }
+  .bar-stat .label { font-weight: 400; color: #6B7280; font-size: 12px; }
+
+  /* Filter Tabs */
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filter-tab { flex: 1; text-align: center; padding: 8px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6B7280; background: #fff; border: 1px solid #E5E7EB; cursor: pointer; }
+  .filter-tab.active { background: #2D7D46; color: #fff; border-color: #2D7D46; }
+  .filter-tab .count { font-weight: 700; }
+
+  /* Vendor List */
+  .vendor-row { background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+  .vendor-avatar { width: 40px; height: 40px; border-radius: 10px; background: #E8F5EC; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .vendor-info { flex: 1; }
+  .vendor-name { font-size: 15px; font-weight: 600; }
+  .vendor-detail { font-size: 12px; color: #6B7280; margin-top: 1px; }
+  .status-pill { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+  .status-pill.present { background: #DCFCE7; color: #166534; }
+  .status-pill.late { background: #FEF3C7; color: #92400E; }
+  .status-pill.pending { background: #F3F4F6; color: #6B7280; }
+  .status-pill.absent { background: #FEE2E2; color: #991B1B; }
+
+  .action-btn { background: #2D7D46; color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 600; width: 100%; margin-top: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+  /* Exception Alert */
+  .exception-alert { background: #FEF3C7; border-radius: 12px; padding: 12px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px; }
+  .exception-alert .alert-icon { font-size: 20px; flex-shrink: 0; }
+  .exception-alert .alert-text { font-size: 13px; color: #92400E; }
+  .exception-alert .alert-text strong { color: #78350F; }
+  .exception-alert .alert-time { font-size: 11px; color: #B45309; margin-top: 2px; }
+
+  .tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 375px; height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+</style>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+  <div class="status-bar">7:15</div>
+  <div class="header">
+    <h1>Dashboard</h1>
+    <div class="header-subtitle">Riverside Farmers Market &middot; Saturday</div>
+  </div>
+
+  <div class="content">
+    <div class="attendance-bar">
+      <div class="bar-label">Vendor Attendance</div>
+      <div class="bar-visual">
+        <div class="bar-segment present" style="width: 68%"></div>
+        <div class="bar-segment exception" style="width: 8%"></div>
+        <div class="bar-segment pending" style="width: 24%"></div>
+      </div>
+      <div class="bar-stats">
+        <div class="bar-stat"><span class="dot green"></span> 26 <span class="label">Present</span></div>
+        <div class="bar-stat"><span class="dot yellow"></span> 3 <span class="label">Exception</span></div>
+        <div class="bar-stat"><span class="dot gray"></span> 9 <span class="label">Pending</span></div>
+      </div>
+    </div>
+
+    <div class="exception-alert">
+      <div class="alert-icon">⚠️</div>
+      <div>
+        <div class="alert-text"><strong>Alpine Creamery</strong> is running late</div>
+        <div class="alert-time">3 min ago</div>
+      </div>
+    </div>
+
+    <div class="filter-tabs">
+      <div class="filter-tab active">All <span class="count">38</span></div>
+      <div class="filter-tab">Pending <span class="count">9</span></div>
+      <div class="filter-tab">Exceptions <span class="count">3</span></div>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🥬</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Green Valley Farm</div>
+        <div class="vendor-detail">Checked in 14 min ago</div>
+      </div>
+      <span class="status-pill present">Present</span>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🍯</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Honey Beeeham</div>
+        <div class="vendor-detail">Checked in 8 min ago</div>
+      </div>
+      <span class="status-pill present">Present</span>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🧀</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Alpine Creamery</div>
+        <div class="vendor-detail">Running late &middot; 3 min ago</div>
+      </div>
+      <span class="status-pill late">Late</span>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🥖</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Artisan Bakehouse</div>
+        <div class="vendor-detail">Not confirmed</div>
+      </div>
+      <span class="status-pill pending">Pending</span>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🫒</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Mediterranean Olives</div>
+        <div class="vendor-detail">Not confirmed</div>
+      </div>
+      <span class="status-pill pending">Pending</span>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar">🥚</div>
+      <div class="vendor-info">
+        <div class="vendor-name">Sunny Side Eggs</div>
+        <div class="vendor-detail">Not attending &middot; 1 hr ago</div>
+      </div>
+      <span class="status-pill absent">Absent</span>
+    </div>
+
+    <button class="action-btn">📨 Request Confirmation (9 pending)</button>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active"><div class="tab-icon">📋</div>Dashboard</div>
+    <div class="tab-item"><div class="tab-icon">👥</div>Vendors</div>
+    <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+</body>
+</html>

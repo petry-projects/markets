@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375">
+<title>Markets - Customer Discover</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 375px; min-height: 812px; margin: 0 auto; }
+  .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .search-bar { margin-top: 12px; background: #F3F4F6; border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 8px; font-size: 15px; color: #9CA3AF; }
+  .filter-row { display: flex; gap: 8px; padding: 12px 16px 0; overflow-x: auto; }
+  .filter-chip { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 500; color: #4B5563; white-space: nowrap; }
+  .filter-chip.active { background: #2D7D46; border-color: #2D7D46; color: #fff; }
+  .content { padding: 16px; padding-bottom: 100px; }
+  .section-title { font-size: 18px; font-weight: 600; margin-bottom: 12px; margin-top: 8px; }
+
+  .market-card { background: #fff; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .market-card-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .market-name { font-size: 16px; font-weight: 600; }
+  .market-address { font-size: 13px; color: #6B7280; margin-top: 2px; }
+  .distance-badge { background: #EFF6FF; color: #2563EB; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 12px; flex-shrink: 0; }
+  .market-meta { display: flex; gap: 16px; margin-top: 10px; font-size: 13px; color: #6B7280; }
+  .market-meta-item { display: flex; align-items: center; gap: 4px; }
+  .vendor-count { color: #2D7D46; font-weight: 600; }
+  .follow-btn-sm { background: none; border: 1.5px solid #2D7D46; color: #2D7D46; font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 16px; cursor: pointer; margin-top: 10px; }
+
+  .vendor-row { background: #fff; border-radius: 16px; padding: 14px 16px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 12px; }
+  .vendor-avatar-sm { width: 40px; height: 40px; border-radius: 10px; background: #E8F5EC; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .vendor-row-info { flex: 1; }
+  .vendor-row-name { font-size: 15px; font-weight: 600; }
+  .vendor-row-products { font-size: 12px; color: #6B7280; margin-top: 1px; }
+  .status-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .status-dot.green { background: #22C55E; }
+  .status-dot.yellow { background: #F59E0B; }
+  .status-dot.gray { background: #D1D5DB; }
+
+  .tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 375px; height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+</style>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+</head>
+<body>
+  <div class="status-bar">9:41</div>
+  <div class="header">
+    <h1>Discover</h1>
+    <div class="search-bar">🔍 Search markets, vendors, or products...</div>
+  </div>
+  <div class="filter-row">
+    <span class="filter-chip active">Nearby</span>
+    <span class="filter-chip">Open Today</span>
+    <span class="filter-chip">Organic</span>
+    <span class="filter-chip">Produce</span>
+    <span class="filter-chip">Dairy</span>
+  </div>
+
+  <div class="content">
+    <div class="section-title">Markets Near You</div>
+
+    <div class="market-card">
+      <div class="market-card-top">
+        <div>
+          <div class="market-name">Riverside Farmers Market</div>
+          <div class="market-address">123 River Rd, Portland</div>
+        </div>
+        <span class="distance-badge">2.3 mi</span>
+      </div>
+      <div class="market-meta">
+        <div class="market-meta-item">📅 Saturdays, 8AM-1PM</div>
+        <div class="market-meta-item"><span class="vendor-count">24</span> vendors</div>
+      </div>
+      <button class="follow-btn-sm">Follow Market</button>
+    </div>
+
+    <div class="market-card">
+      <div class="market-card-top">
+        <div>
+          <div class="market-name">Downtown Sunday Market</div>
+          <div class="market-address">456 Main St, Portland</div>
+        </div>
+        <span class="distance-badge">4.1 mi</span>
+      </div>
+      <div class="market-meta">
+        <div class="market-meta-item">📅 Sundays, 9AM-2PM</div>
+        <div class="market-meta-item"><span class="vendor-count">38</span> vendors</div>
+      </div>
+      <button class="follow-btn-sm">Follow Market</button>
+    </div>
+
+    <div class="section-title">Vendors Selling "Organic Eggs"</div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar-sm">🥚</div>
+      <div class="vendor-row-info">
+        <div class="vendor-row-name">Sunny Side Eggs</div>
+        <div class="vendor-row-products">Free Range Eggs &middot; Riverside Market</div>
+      </div>
+      <div class="status-dot gray"></div>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar-sm">🐔</div>
+      <div class="vendor-row-info">
+        <div class="vendor-row-name">Happy Hen Farm</div>
+        <div class="vendor-row-products">Organic Eggs, Duck Eggs &middot; Downtown Market</div>
+      </div>
+      <div class="status-dot green"></div>
+    </div>
+
+    <div class="vendor-row">
+      <div class="vendor-avatar-sm">🌾</div>
+      <div class="vendor-row-info">
+        <div class="vendor-row-name">Meadow Creek Ranch</div>
+        <div class="vendor-row-products">Pasture Raised Eggs &middot; Riverside Market</div>
+      </div>
+      <div class="status-dot green"></div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item active"><div class="tab-icon">🔍</div>Discover</div>
+    <div class="tab-item"><div class="tab-icon">❤️</div>Following</div>
+    <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+</body>
+</html>

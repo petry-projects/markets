@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=375">
+<title>Markets — Customer Following v2 — 2026-03-24 10:00am</title>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 375px; min-height: 812px; margin: 0 auto; position: relative; }
+  .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; }
+  .header h1 { font-size: 28px; font-weight: 700; }
+  .header-sub { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .content { padding-bottom: 100px; }
+
+  /* Market Group */
+  .market-group { margin-bottom: 4px; }
+  .market-group-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: linear-gradient(135deg, #E8F5EC, #D4EDDA); cursor: pointer; border-bottom: 1px solid #C6E4CF; }
+  .mg-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .mg-chevron { font-size: 14px; color: #2D7D46; flex-shrink: 0; width: 16px; }
+  .mg-name { font-size: 15px; font-weight: 600; }
+  .mg-meta { font-size: 11px; color: #6B7280; margin-top: 2px; }
+  .mg-directions { font-size: 20px; padding: 4px 8px; }
+  .mg-vendors { padding: 4px 0; background: #F8F9FA; }
+
+  .vendor-card { background: #fff; border-radius: 16px; padding: 16px; margin: 8px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .vc-header { display: flex; align-items: center; gap: 12px; }
+  .vc-avatar { width: 48px; height: 48px; border-radius: 12px; background: #E8F5EC; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .vc-info { flex: 1; }
+  .vc-name { font-size: 16px; font-weight: 600; }
+  .vc-market { font-size: 13px; color: #6B7280; }
+  .follow-btn { background: #E8F5EC; border: 1.5px solid #E8F5EC; color: #2D7D46; font-size: 13px; font-weight: 600; padding: 6px 14px; border-radius: 20px; }
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; margin-top: 10px; }
+  .sb-checked-in { background: #DCFCE7; color: #166534; }
+  .sb-running-late { background: #FEF3C7; color: #92400E; }
+  .sb-not-attending { background: #F1F5F9; color: #64748B; }
+  .sb-pending { background: #F3F4F6; color: #6B7280; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: #22C55E; }
+  .dot-yellow { background: #F59E0B; }
+  .dot-gray { background: #94A3B8; }
+  .dot-pending { background: #D1D5DB; }
+  .freshness { font-size: 12px; color: #9CA3AF; margin-left: 6px; }
+  .product-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .product-tag { background: #F3F4F6; color: #4B5563; font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+
+  .tab-bar { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 375px; height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+</style>
+</head>
+<body>
+  <div class="status-bar">9:41</div>
+  <div class="header">
+    <h1>Following</h1>
+    <div class="header-sub">5 vendors across 2 markets today</div>
+  </div>
+  <div class="content">
+    <!-- Market 1: Riverside (expanded) -->
+    <div class="market-group">
+      <div class="market-group-header">
+        <div class="mg-left">
+          <span class="mg-chevron">▾</span>
+          <div>
+            <div class="mg-name">Riverside Farmers Market</div>
+            <div class="mg-meta">🕐 8AM–5PM · 2.3 mi · <span style="color:#22C55E; font-weight:600;">3 checked in</span> · 1 exception</div>
+          </div>
+        </div>
+        <span class="mg-directions">📍</span>
+      </div>
+      <div class="mg-vendors">
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🥬</div>
+            <div class="vc-info"><div class="vc-name">Green Valley Farm</div><div class="vc-market">Organic Produce</div></div>
+            <button class="follow-btn">Following</button>
+          </div>
+          <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked In</span><span class="freshness">14 min ago</span></div>
+          <div class="product-tags"><span class="product-tag">Organic Lettuce</span><span class="product-tag">Kale</span><span class="product-tag">Herbs</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🍯</div>
+            <div class="vc-info"><div class="vc-name">Honey Beeeham</div><div class="vc-market">Honey & Bee Products</div></div>
+            <button class="follow-btn">Following</button>
+          </div>
+          <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked In</span><span class="freshness">8 min ago</span></div>
+          <div class="product-tags"><span class="product-tag">Raw Honey</span><span class="product-tag">Beeswax Candles</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🧀</div>
+            <div class="vc-info"><div class="vc-name">Alpine Creamery</div><div class="vc-market">Artisan Dairy</div></div>
+            <button class="follow-btn">Following</button>
+          </div>
+          <div><span class="status-badge sb-running-late"><span class="dot dot-yellow"></span> Running Late</span><span class="freshness">3 min ago</span></div>
+          <div class="product-tags"><span class="product-tag">Artisan Cheese</span><span class="product-tag">Butter</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🥚</div>
+            <div class="vc-info"><div class="vc-name">Sunny Side Eggs</div><div class="vc-market">Free Range Eggs</div></div>
+            <button class="follow-btn">Following</button>
+          </div>
+          <div><span class="status-badge sb-not-attending"><span class="dot dot-gray"></span> Not Attending</span><span class="freshness">1 hr ago</span></div>
+          <div style="margin-top:10px; padding:10px; background:#F8F9FA; border-radius:10px; font-size:13px; color:#2D7D46;">2 alternative vendors at this market →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Market 2: Downtown (collapsed) -->
+    <div class="market-group">
+      <div class="market-group-header">
+        <div class="mg-left">
+          <span class="mg-chevron">▸</span>
+          <div>
+            <div class="mg-name">Downtown Sunday Market</div>
+            <div class="mg-meta">📅 Tomorrow 9AM–2PM · 4.1 mi · 1 vendor followed</div>
+          </div>
+        </div>
+        <span class="mg-directions">📍</span>
+      </div>
+    </div>
+
+    <!-- Market 3: Midweek (collapsed) -->
+    <div class="market-group">
+      <div class="market-group-header">
+        <div class="mg-left">
+          <span class="mg-chevron">▸</span>
+          <div>
+            <div class="mg-name">Midweek Market at City Hall</div>
+            <div class="mg-meta">📅 Wednesday 3–7PM · 3.8 mi · No vendors followed</div>
+          </div>
+        </div>
+        <span class="mg-directions">📍</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab-item"><div class="tab-icon">🔍</div>Discover</div>
+    <div class="tab-item active"><div class="tab-icon">❤️</div>Following</div>
+    <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+</body>
+</html>

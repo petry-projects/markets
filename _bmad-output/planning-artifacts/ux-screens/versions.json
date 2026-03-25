@@ -1,0 +1,83 @@
+{
+  "screens": {
+    "customer-following": {
+      "version": 2,
+      "file": "customer-following.html",
+      "figmaNodes": ["12:2", "34:2"],
+      "lastUpdated": "2026-03-24T07:19:00"
+    },
+    "customer-discover": {
+      "version": 1,
+      "file": "customer-discover.html",
+      "figmaNodes": ["11:2"],
+      "lastUpdated": "2026-03-21T16:40:00"
+    },
+    "vendor-home": {
+      "version": 1,
+      "file": "vendor-home.html",
+      "figmaNodes": ["10:2"],
+      "lastUpdated": "2026-03-21T16:40:00"
+    },
+    "manager-dashboard": {
+      "version": 1,
+      "file": "manager-dashboard.html",
+      "figmaNodes": ["13:2"],
+      "lastUpdated": "2026-03-21T16:40:00"
+    },
+    "design-system-colors-typography": {
+      "version": 1,
+      "file": "design-system-colors-typography.html",
+      "figmaNodes": ["15:2"],
+      "lastUpdated": "2026-03-21T16:55:00"
+    },
+    "design-system-components": {
+      "version": 1,
+      "file": "design-system-components.html",
+      "figmaNodes": ["16:2"],
+      "lastUpdated": "2026-03-21T16:55:00"
+    },
+    "onboarding-auth": {
+      "version": 1,
+      "file": "onboarding-auth.html",
+      "figmaNodes": ["20:2"],
+      "lastUpdated": "2026-03-21T17:04:00"
+    },
+    "onboarding-vendor": {
+      "version": 3,
+      "file": "onboarding-vendor.html",
+      "figmaNodes": ["19:2", "22:2", "23:2", "25:2"],
+      "lastUpdated": "2026-03-21T17:22:00"
+    },
+    "onboarding-manager": {
+      "version": 3,
+      "file": "onboarding-manager.html",
+      "figmaNodes": ["18:2", "24:2", "26:2"],
+      "lastUpdated": "2026-03-21T17:22:00"
+    },
+    "onboarding-customer": {
+      "version": 1,
+      "file": "onboarding-customer.html",
+      "figmaNodes": ["29:2"],
+      "lastUpdated": "2026-03-21T22:26:00"
+    },
+    "notification-preferences": {
+      "version": 1,
+      "file": "notification-preferences.html",
+      "figmaNodes": ["30:2"],
+      "lastUpdated": "2026-03-21T22:41:00"
+    },
+    "activity-log": {
+      "version": 1,
+      "file": "activity-log.html",
+      "figmaNodes": ["33:2"],
+      "lastUpdated": "2026-03-22T09:05:00"
+    },
+    "prototype": {
+      "version": 2,
+      "file": "prototype.html",
+      "figmaNodes": [],
+      "lastUpdated": "2026-03-24T12:00:00",
+      "note": "Interactive clickable prototype v2 — review feedback incorporated. Open locally."
+    }
+  }
+}

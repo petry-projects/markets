@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>Markets Design System — Colors & Typography</title>
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #fff; color: #1A1A1A; width: 1200px; margin: 0 auto; padding: 48px; }
+  h1 { font-size: 36px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 48px; }
+  h2 { font-size: 24px; font-weight: 700; margin-bottom: 24px; margin-top: 48px; border-bottom: 2px solid #E5E7EB; padding-bottom: 8px; }
+  h3 { font-size: 18px; font-weight: 600; margin-bottom: 16px; margin-top: 32px; color: #374151; }
+
+  /* Color Swatches */
+  .color-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+  .color-swatch { border-radius: 12px; overflow: hidden; border: 1px solid #E5E7EB; }
+  .color-swatch .swatch { height: 80px; }
+  .color-swatch .info { padding: 10px 12px; }
+  .color-swatch .name { font-size: 13px; font-weight: 600; }
+  .color-swatch .token { font-size: 11px; color: #6B7280; font-family: monospace; margin-top: 2px; }
+  .color-swatch .hex { font-size: 11px; color: #9CA3AF; font-family: monospace; }
+
+  /* Status Colors */
+  .status-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px; margin-bottom: 32px; }
+
+  /* Typography */
+  .type-row { display: flex; align-items: baseline; gap: 24px; padding: 16px 0; border-bottom: 1px solid #F3F4F6; }
+  .type-label { width: 160px; flex-shrink: 0; }
+  .type-label .name { font-size: 13px; font-weight: 600; color: #374151; }
+  .type-label .detail { font-size: 11px; color: #9CA3AF; font-family: monospace; margin-top: 2px; }
+  .type-sample { flex: 1; }
+
+  /* Spacing */
+  .spacing-row { display: flex; align-items: center; gap: 16px; padding: 8px 0; }
+  .spacing-bar { background: #2D7D46; border-radius: 4px; height: 24px; }
+  .spacing-label { width: 100px; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+  .spacing-value { font-size: 12px; color: #6B7280; font-family: monospace; width: 60px; flex-shrink: 0; }
+
+  /* Radius */
+  .radius-grid { display: flex; gap: 24px; margin-bottom: 32px; }
+  .radius-item { text-align: center; }
+  .radius-box { width: 80px; height: 80px; background: #E8F5EC; border: 2px solid #2D7D46; margin-bottom: 8px; }
+  .radius-item .name { font-size: 12px; font-weight: 600; }
+  .radius-item .val { font-size: 11px; color: #6B7280; font-family: monospace; }
+
+  /* Shadows */
+  .shadow-grid { display: flex; gap: 32px; margin-bottom: 32px; }
+  .shadow-item { text-align: center; }
+  .shadow-box { width: 120px; height: 80px; background: #fff; border-radius: 16px; margin-bottom: 8px; }
+  .shadow-item .name { font-size: 12px; font-weight: 600; }
+  .shadow-item .val { font-size: 10px; color: #6B7280; font-family: monospace; }
+</style>
+</head>
+<body>
+
+<h1>Markets Design System</h1>
+<div class="subtitle">Gluestack UI v3 + NativeWind v4 — Token Reference for Figma</div>
+
+<!-- BRAND COLORS -->
+<h2>Brand Colors</h2>
+<h3>Primary — Forest Green</h3>
+<div class="color-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#E8F5EC"></div><div class="info"><div class="name">Primary 100</div><div class="token">--color-primary-100</div><div class="hex">#E8F5EC</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#A7D5B8"></div><div class="info"><div class="name">Primary 300</div><div class="token">--color-primary-300</div><div class="hex">#A7D5B8</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#2D7D46"></div><div class="info"><div class="name">Primary 500</div><div class="token">--color-primary-500</div><div class="hex">#2D7D46</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#1E6B35"></div><div class="info"><div class="name">Primary 600</div><div class="token">--color-primary-600</div><div class="hex">#1E6B35</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#145524"></div><div class="info"><div class="name">Primary 800</div><div class="token">--color-primary-800</div><div class="hex">#145524</div></div></div>
+</div>
+
+<h3>Secondary — Harvest Gold</h3>
+<div class="color-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#FEF3C7"></div><div class="info"><div class="name">Secondary 100</div><div class="token">--color-secondary-100</div><div class="hex">#FEF3C7</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#D4A732"></div><div class="info"><div class="name">Secondary 300</div><div class="token">--color-secondary-300</div><div class="hex">#D4A732</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#8B6914"></div><div class="info"><div class="name">Secondary 500</div><div class="token">--color-secondary-500</div><div class="hex">#8B6914</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#6B5010"></div><div class="info"><div class="name">Secondary 600</div><div class="token">--color-secondary-600</div><div class="hex">#6B5010</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#4A380B"></div><div class="info"><div class="name">Secondary 800</div><div class="token">--color-secondary-800</div><div class="hex">#4A380B</div></div></div>
+</div>
+
+<h3>Backgrounds & Surfaces</h3>
+<div class="color-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#FFFFFF; border-bottom: 1px solid #E5E7EB"></div><div class="info"><div class="name">Background 0</div><div class="token">--color-background-0</div><div class="hex">#FFFFFF</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#F8F9FA"></div><div class="info"><div class="name">Background 50</div><div class="token">--color-background-50</div><div class="hex">#F8F9FA</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#F1F3F5"></div><div class="info"><div class="name">Background 100</div><div class="token">--color-background-100</div><div class="hex">#F1F3F5</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#E5E7EB"></div><div class="info"><div class="name">Border</div><div class="token">--color-border</div><div class="hex">#E5E7EB</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#F3F4F6"></div><div class="info"><div class="name">Surface Muted</div><div class="token">--color-surface-muted</div><div class="hex">#F3F4F6</div></div></div>
+</div>
+
+<h3>Text Colors</h3>
+<div class="color-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#1A1A1A"></div><div class="info"><div class="name">Text 900</div><div class="token">--color-text-900</div><div class="hex">#1A1A1A</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#374151"></div><div class="info"><div class="name">Text 700</div><div class="token">--color-text-700</div><div class="hex">#374151</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#6B7280"></div><div class="info"><div class="name">Text 600</div><div class="token">--color-text-600</div><div class="hex">#6B7280</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#9CA3AF"></div><div class="info"><div class="name">Text 400</div><div class="token">--color-text-400</div><div class="hex">#9CA3AF</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#D1D5DB"></div><div class="info"><div class="name">Text 300</div><div class="token">--color-text-300</div><div class="hex">#D1D5DB</div></div></div>
+</div>
+
+<!-- STATUS COLORS -->
+<h2>Semantic Status Colors</h2>
+<div class="status-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#22C55E"></div><div class="info"><div class="name">Present / Checked In</div><div class="token">--color-status-present</div><div class="hex">#22C55E</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#F59E0B"></div><div class="info"><div class="name">Exception / Late</div><div class="token">--color-status-exception</div><div class="hex">#F59E0B</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#94A3B8"></div><div class="info"><div class="name">Absent / Not Attending</div><div class="token">--color-status-absent</div><div class="hex">#94A3B8</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#EF4444"></div><div class="info"><div class="name">Sold Out</div><div class="token">--color-status-sold-out</div><div class="hex">#EF4444</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#D1D5DB"></div><div class="info"><div class="name">Pending / Unconfirmed</div><div class="token">--color-status-pending</div><div class="hex">#D1D5DB</div></div></div>
+</div>
+
+<h3>Feedback Colors</h3>
+<div class="color-grid">
+  <div class="color-swatch"><div class="swatch" style="background:#16A34A"></div><div class="info"><div class="name">Success</div><div class="token">--color-success</div><div class="hex">#16A34A</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#DC2626"></div><div class="info"><div class="name">Error</div><div class="token">--color-error</div><div class="hex">#DC2626</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#D97706"></div><div class="info"><div class="name">Warning</div><div class="token">--color-warning</div><div class="hex">#D97706</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#2563EB"></div><div class="info"><div class="name">Info</div><div class="token">--color-info</div><div class="hex">#2563EB</div></div></div>
+  <div class="color-swatch"><div class="swatch" style="background:#fff; border-bottom:1px solid #eee"></div><div class="info"><div class="name">&nbsp;</div><div class="token">&nbsp;</div><div class="hex">&nbsp;</div></div></div>
+</div>
+
+<!-- TYPOGRAPHY -->
+<h2>Typography Scale</h2>
+<p style="font-size:14px; color:#6B7280; margin-bottom:24px;">System font stack: San Francisco (iOS) / Roboto (Android). Mapped to Gluestack type tokens.</p>
+
+<div class="type-row">
+  <div class="type-label"><div class="name">Heading XL</div><div class="detail">28px / Bold 700</div></div>
+  <div class="type-sample" style="font-size:28px; font-weight:700;">Screen Titles</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Heading LG</div><div class="detail">22px / SemiBold 600</div></div>
+  <div class="type-sample" style="font-size:22px; font-weight:600;">Section Headers</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Heading MD</div><div class="detail">18px / SemiBold 600</div></div>
+  <div class="type-sample" style="font-size:18px; font-weight:600;">Card Titles, Vendor Names</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Body LG</div><div class="detail">16px / Regular 400</div></div>
+  <div class="type-sample" style="font-size:16px; font-weight:400;">Primary body text for descriptions and content</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Body MD</div><div class="detail">14px / Regular 400</div></div>
+  <div class="type-sample" style="font-size:14px; font-weight:400;">Secondary text, descriptions, market info</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Body SM</div><div class="detail">12px / Regular 400</div></div>
+  <div class="type-sample" style="font-size:12px; font-weight:400;">Captions, timestamps, metadata — "checked in 14 min ago"</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Label MD</div><div class="detail">14px / Medium 500</div></div>
+  <div class="type-sample" style="font-size:14px; font-weight:500;">Button Text, Form Labels</div>
+</div>
+<div class="type-row">
+  <div class="type-label"><div class="name">Label SM</div><div class="detail">12px / Medium 500</div></div>
+  <div class="type-sample" style="font-size:12px; font-weight:500;">Badge Text, Status Labels, Filter Chips</div>
+</div>
+
+<!-- SPACING -->
+<h2>Spacing Scale (4px base)</h2>
+<div style="margin-bottom:32px;">
+  <div class="spacing-row"><div class="spacing-label">space-1</div><div class="spacing-value">4px</div><div class="spacing-bar" style="width:16px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-2</div><div class="spacing-value">8px</div><div class="spacing-bar" style="width:32px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-3</div><div class="spacing-value">12px</div><div class="spacing-bar" style="width:48px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-4</div><div class="spacing-value">16px</div><div class="spacing-bar" style="width:64px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-5</div><div class="spacing-value">20px</div><div class="spacing-bar" style="width:80px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-6</div><div class="spacing-value">24px</div><div class="spacing-bar" style="width:96px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-8</div><div class="spacing-value">32px</div><div class="spacing-bar" style="width:128px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-10</div><div class="spacing-value">40px</div><div class="spacing-bar" style="width:160px"></div></div>
+  <div class="spacing-row"><div class="spacing-label">space-12</div><div class="spacing-value">48px</div><div class="spacing-bar" style="width:192px"></div></div>
+</div>
+
+<!-- BORDER RADIUS -->
+<h2>Border Radius</h2>
+<div class="radius-grid">
+  <div class="radius-item"><div class="radius-box" style="border-radius:4px"></div><div class="name">rounded-sm</div><div class="val">4px</div></div>
+  <div class="radius-item"><div class="radius-box" style="border-radius:8px"></div><div class="name">rounded</div><div class="val">8px</div></div>
+  <div class="radius-item"><div class="radius-box" style="border-radius:12px"></div><div class="name">rounded-lg</div><div class="val">12px</div></div>
+  <div class="radius-item"><div class="radius-box" style="border-radius:16px"></div><div class="name">rounded-xl</div><div class="val">16px (cards)</div></div>
+  <div class="radius-item"><div class="radius-box" style="border-radius:20px"></div><div class="name">rounded-2xl</div><div class="val">20px (badges)</div></div>
+  <div class="radius-item"><div class="radius-box" style="border-radius:40px"></div><div class="name">rounded-full</div><div class="val">9999px (pills)</div></div>
+</div>
+
+<!-- SHADOWS -->
+<h2>Elevation / Shadows</h2>
+<div class="shadow-grid">
+  <div class="shadow-item"><div class="shadow-box" style="box-shadow:0 1px 2px rgba(0,0,0,0.04)"></div><div class="name">shadow-sm</div><div class="val">0 1px 2px 0.04</div></div>
+  <div class="shadow-item"><div class="shadow-box" style="box-shadow:0 1px 3px rgba(0,0,0,0.06)"></div><div class="name">shadow</div><div class="val">0 1px 3px 0.06</div></div>
+  <div class="shadow-item"><div class="shadow-box" style="box-shadow:0 2px 8px rgba(0,0,0,0.08)"></div><div class="name">shadow-md</div><div class="val">0 2px 8px 0.08</div></div>
+  <div class="shadow-item"><div class="shadow-box" style="box-shadow:0 4px 16px rgba(0,0,0,0.12)"></div><div class="name">shadow-lg</div><div class="val">0 4px 16px 0.12</div></div>
+</div>
+
+</body>
+</html>

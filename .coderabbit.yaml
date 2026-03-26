@@ -1,0 +1,29 @@
+# CodeRabbit configuration
+# https://docs.coderabbit.ai/guides/configure-coderabbit
+language: en-US
+reviews:
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches:
+      - main
+  path_instructions:
+    - path: "**/*.md"
+      instructions: >
+        Focus on Markdown best practices, clear and consistent formatting,
+        correct link references, and accurate technical documentation.
+        Flag broken links, inconsistent heading levels, and unclear instructions.
+    - path: "**/*.yaml"
+      instructions: >
+        Focus on YAML best practices, correct indentation, valid syntax,
+        and consistent structure. Flag any schema issues or misconfigurations.
+    - path: "**/*.yml"
+      instructions: >
+        Focus on YAML best practices, correct indentation, valid syntax,
+        and consistent structure. Flag any schema issues or misconfigurations
+        in GitHub Actions workflows and Dependabot config.
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+chat:
+  auto_reply: true

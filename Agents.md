@@ -4,6 +4,7 @@
 >
 > For detailed Markets-specific application of each principle (bounded contexts, aggregate roots, repository interfaces, domain events, typed IDs, dependency direction, test-by-layer guidance, coverage thresholds, and CI commands), see `_bmad-output/planning-artifacts/coding-standards.md`.
 
+
 ## Project Overview
 
 **markets** is a real-time coordination platform for local farmers markets. Mobile-first (iOS/Android) with web via React Native for Web. Three user roles: Customer, Vendor, Market Manager.
@@ -152,12 +153,23 @@ theme: {
 
 ## Test-Driven Development
 
+<<<<<<< HEAD
 TDD rules are defined in the [org AGENTS.md](https://github.com/petry-projects/.github/blob/main/AGENTS.md). Markets-specific test framework configuration, mocking strategy, coverage thresholds, and per-layer test guidance are in `_bmad-output/planning-artifacts/coding-standards.md`.
 
 - **Go backend:** `*_test.go` co-located with source; `//go:build integration` for integration tests
 - **React Native frontend:** `*.test.tsx` co-located or `__tests__/`; Jest + React Native Testing Library
 - **GraphQL resolvers:** Integration tests for the full resolver → database → response path
 - **Acceptance criteria drive tests:** Each story's Given/When/Then maps directly to test cases
+=======
+- IMPORTANT: All development MUST follow test-driven development (TDD) practices
+- Write failing tests BEFORE writing implementation code (Red → Green → Refactor)
+- **Go backend:** Write Go test files (`_test.go`) co-located with source files before implementing resolvers, middleware, or services. Use `go test ./...` to verify.
+- **React Native frontend:** Write tests using Jest + React Native Testing Library before implementing components and hooks. Test files co-located as `*.test.tsx` or in `__tests__/` directories.
+- **GraphQL resolvers:** Write integration tests (tagged `//go:build integration`) that test the full resolver → database → response path
+- **Acceptance criteria drive tests:** Each story's Given/When/Then acceptance criteria should map directly to test cases
+- Every PR must include tests that cover the new or changed functionality
+- Do not merge code without passing tests
+>>>>>>> 58c45f4 (chore: add planning artifacts, UX screen prototypes, and Claude config (#6))
 
 ## Event-Driven Architecture
 

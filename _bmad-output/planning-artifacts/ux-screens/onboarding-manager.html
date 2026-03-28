@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>Markets — Manager Onboarding & Market Management</title>
+<!-- Figma capture script disabled by default to avoid loading remote third-party code.
+     To enable for Figma HTML-to-design capture, uncomment: -->
+<!-- <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script> -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 1200px; margin: 0 auto; padding: 48px; }
+  h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 48px; }
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; color: #374151; }
+  .screen-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .screen-label { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .phone { width: 375px; min-height: 812px; background: #fff; border-radius: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+  .status-bar { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; }
+  .header h3 { font-size: 28px; font-weight: 700; }
+  .header-sub { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .content { padding: 16px; overflow-y: auto; }
+  .safe-bottom { height: 34px; }
+
+  .form-group { margin-bottom: 20px; }
+  .form-label { font-size: 14px; font-weight: 500; margin-bottom: 6px; display: block; }
+  .form-required { color: #DC2626; }
+  .form-input { width: 100%; height: 48px; background: #F8F9FA; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 0 16px; font-size: 15px; }
+  .form-textarea { width: 100%; height: 80px; background: #F8F9FA; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 12px 16px; font-size: 15px; resize: none; }
+  .form-hint { font-size: 12px; color: #9CA3AF; margin-top: 4px; }
+
+  .save-btn { width: 100%; height: 56px; background: #2D7D46; color: #fff; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+
+  .info-banner { background: #EFF6FF; border-radius: 12px; padding: 12px 16px; margin-bottom: 20px; display: flex; gap: 10px; align-items: flex-start; }
+  .info-banner-icon { font-size: 18px; flex-shrink: 0; }
+  .info-banner-text { font-size: 13px; color: #1E40AF; line-height: 1.4; }
+
+  .step-indicator { display: flex; gap: 8px; justify-content: center; margin-bottom: 24px; }
+  .step-dot { width: 8px; height: 8px; border-radius: 50%; background: #D1D5DB; }
+  .step-dot.active { background: #2D7D46; width: 24px; border-radius: 4px; }
+  .step-dot.done { background: #22C55E; }
+
+  /* Schedule */
+  .day-grid { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+  .day-chip { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid #E5E7EB; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; color: #6B7280; cursor: pointer; }
+  .day-chip.selected { background: #2D7D46; border-color: #2D7D46; color: #fff; }
+  .time-row { display: flex; gap: 12px; align-items: center; margin-bottom: 16px; }
+  .time-input { flex: 1; height: 48px; background: #F8F9FA; border: 1.5px solid #E5E7EB; border-radius: 12px; padding: 0 16px; font-size: 15px; text-align: center; }
+  .time-sep { font-size: 16px; color: #6B7280; font-weight: 600; }
+
+  /* Vendor Roster */
+  .vendor-roster-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: #F8F9FA; border-radius: 12px; margin-bottom: 8px; }
+  .vr-avatar { width: 40px; height: 40px; border-radius: 10px; background: #E8F5EC; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .vr-info { flex: 1; }
+  .vr-name { font-size: 15px; font-weight: 600; }
+  .vr-products { font-size: 12px; color: #6B7280; }
+  .vr-action { font-size: 13px; font-weight: 600; color: #2D7D46; cursor: pointer; padding: 6px 12px; border: 1.5px solid #2D7D46; border-radius: 10px; }
+  .vr-action.approved { background: #E8F5EC; border-color: #E8F5EC; color: #166534; }
+  .vr-action.pending { background: #FEF3C7; border-color: #FEF3C7; color: #92400E; }
+
+  .add-btn { width: 100%; height: 44px; background: none; border: 1.5px dashed #2D7D46; border-radius: 12px; color: #2D7D46; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+
+  /* Co-Manager */
+  .co-manager { display: flex; align-items: center; gap: 12px; padding: 14px; background: #F8F9FA; border-radius: 12px; margin-bottom: 8px; }
+  .cm-avatar { width: 40px; height: 40px; border-radius: 20px; background: #DBEAFE; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+  .cm-info { flex: 1; }
+  .cm-name { font-size: 15px; font-weight: 600; }
+  .cm-role { font-size: 12px; color: #6B7280; }
+  .cm-badge { font-size: 11px; font-weight: 500; padding: 3px 8px; border-radius: 8px; background: #E8F5EC; color: #166534; }
+
+  /* Tab Bar */
+  .tab-bar { height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+</style>
+</head>
+<body>
+
+<h1>Manager Onboarding & Market Management</h1>
+<div class="subtitle">FR5, FR8, FR9, FR10, FR41a, FR41b: Create market, set schedule, manage roster, co-managers (Stories 2.1, 2.2, 2.3) — FR-NEW: Optional social links — FR-NEW: Multi-schedule support</div>
+
+<h2>Manager Onboarding</h2>
+<div class="screen-row">
+  <div>
+    <div class="screen-label">Step 1: Recovery Contact (FR41b)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Recovery Contact</h3><div class="header-sub">Required for account security</div></div>
+      <div class="content">
+        <div class="step-indicator">
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="info-banner">
+          <div class="info-banner-icon">🔒</div>
+          <div class="info-banner-text">A recovery contact ensures you can regain access to your market if needed. This is required for all market managers.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recovery Email <span class="form-required">*</span></label>
+          <input class="form-input" value="maria@riverside-market.org" />
+          <div class="form-hint">Must be different from your sign-in email</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Recovery Phone (optional)</label>
+          <input class="form-input" placeholder="+1 (555) 000-0000" />
+        </div>
+        <button class="save-btn">Continue →</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Step 2: Create Market Profile (FR8)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Create Your Market</h3><div class="header-sub">Set up your market's profile</div></div>
+      <div class="content">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+          <div class="step-dot"></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Market Name <span class="form-required">*</span></label>
+          <input class="form-input" value="Riverside Farmers Market" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address <span class="form-required">*</span></label>
+          <input class="form-input" value="123 River Rd, Portland, OR" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea">Portland's favorite Saturday morning market featuring local produce, artisan goods, and community.</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contact Email <span class="form-required">*</span></label>
+          <input class="form-input" value="info@riverside-market.org" />
+        </div>
+        <div style="border-top:1px solid #E5E7EB; margin:20px 0 16px; padding-top:16px;">
+          <label class="form-label" style="font-size:16px; font-weight:600; margin-bottom:12px;">Social Links</label>
+          <div class="form-hint" style="margin-bottom:12px;">Help customers find your market on social media</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Instagram</label>
+          <input class="form-input" placeholder="@username" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Facebook</label>
+          <input class="form-input" placeholder="facebook.com/your-market" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Website</label>
+          <input class="form-input" placeholder="your-market.com" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Twitter/X</label>
+          <input class="form-input" placeholder="@handle" />
+        </div>
+        <button class="save-btn">Continue to Schedule →</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Step 3a: Schedule List (FR9) — Multi-schedule</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Market Schedule</h3><div class="header-sub">When does your market operate?</div></div>
+      <div class="content">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+          <div class="step-dot"></div>
+        </div>
+
+        <!-- Schedule List -->
+        <div style="margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <label class="form-label" style="margin:0;">Schedules</label>
+            <div style="font-size:12px; color:#6B7280;">Tap a schedule to edit</div>
+          </div>
+
+          <!-- Recurring Schedule 1 -->
+          <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:12px; padding:14px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:14px; font-weight:600; color:#15803D;">🔁 Every Saturday</div>
+                <div style="font-size:13px; color:#4B5563; margin-top:4px;">8:00 AM – 1:00 PM</div>
+                <div style="font-size:12px; color:#6B7280; margin-top:2px;">Apr 1 – Nov 30</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <span style="font-size:16px; cursor:pointer;" title="Edit">✏️</span>
+                <span style="font-size:16px; cursor:pointer;" title="Remove">🗑️</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recurring Schedule 2 -->
+          <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:12px; padding:14px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:14px; font-weight:600; color:#15803D;">🔁 Every Wednesday</div>
+                <div style="font-size:13px; color:#4B5563; margin-top:4px;">4:00 PM – 7:00 PM</div>
+                <div style="font-size:12px; color:#6B7280; margin-top:2px;">Jun 1 – Sep 30 · Summer evenings</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <span style="font-size:16px; cursor:pointer;" title="Edit">✏️</span>
+                <span style="font-size:16px; cursor:pointer;" title="Remove">🗑️</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ad-hoc Schedule -->
+          <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:12px; padding:14px; margin-bottom:10px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:14px; font-weight:600; color:#B45309;">📅 June 14, 2026</div>
+                <div style="font-size:13px; color:#4B5563; margin-top:4px;">10:00 AM – 4:00 PM</div>
+                <div style="font-size:12px; color:#6B7280; margin-top:2px;">Spring Harvest Festival</div>
+              </div>
+              <div style="display:flex; gap:8px;">
+                <span style="font-size:16px; cursor:pointer;" title="Edit">✏️</span>
+                <span style="font-size:16px; cursor:pointer;" title="Remove">🗑️</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add Schedule Buttons -->
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
+          <div style="flex:1; background:#F8F9FA; border:1.5px dashed #2D7D46; border-radius:12px; padding:14px; text-align:center; cursor:pointer;">
+            <div style="font-size:20px;">🔁</div>
+            <div style="font-size:13px; font-weight:600; color:#2D7D46; margin-top:4px;">+ Recurring</div>
+            <div style="font-size:11px; color:#6B7280; margin-top:2px;">Weekly, biweekly, monthly</div>
+          </div>
+          <div style="flex:1; background:#F8F9FA; border:1.5px dashed #B45309; border-radius:12px; padding:14px; text-align:center; cursor:pointer;">
+            <div style="font-size:20px;">📅</div>
+            <div style="font-size:13px; font-weight:600; color:#B45309; margin-top:4px;">+ One-Time</div>
+            <div style="font-size:11px; color:#6B7280; margin-top:2px;">Special events, pop-ups</div>
+          </div>
+        </div>
+
+        <button class="save-btn">Continue to Co-Manager →</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3 Add Forms (shown as separate screens) -->
+<h2>Step 3: Add Schedule Forms</h2>
+<div class="screen-row">
+  <div>
+    <div class="screen-label">+ Recurring → New Recurring Schedule</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header" style="display:flex; align-items:center; gap:12px; padding:12px 16px 16px; border-bottom:1px solid #E5E7EB;">
+        <span style="font-size:24px; cursor:pointer; color:#374151;">‹</span>
+        <h3 style="font-size:20px;">New Recurring Schedule</h3>
+      </div>
+      <div class="content">
+        <div class="form-group">
+          <label class="form-label">Frequency <span class="form-required">*</span></label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;">
+            <div style="padding:8px 14px; background:#2D7D46; color:#fff; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer;">Weekly</div>
+            <div style="padding:8px 14px; background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; color:#4B5563;">Biweekly</div>
+            <div style="padding:8px 14px; background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; color:#4B5563;">1st of Month</div>
+            <div style="padding:8px 14px; background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; color:#4B5563;">2nd Sat</div>
+            <div style="padding:8px 14px; background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; color:#4B5563;">Last Sun</div>
+            <div style="padding:8px 14px; background:#fff; border:1.5px solid #E5E7EB; border-radius:20px; font-size:13px; font-weight:500; cursor:pointer; color:#4B5563;">Custom</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Day(s) <span class="form-required">*</span></label>
+          <div class="day-grid">
+            <div class="day-chip">Mon</div>
+            <div class="day-chip">Tue</div>
+            <div class="day-chip">Wed</div>
+            <div class="day-chip">Thu</div>
+            <div class="day-chip">Fri</div>
+            <div class="day-chip selected">Sat</div>
+            <div class="day-chip">Sun</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hours <span class="form-required">*</span></label>
+          <div class="time-row">
+            <input class="time-input" value="8:00 AM" />
+            <span class="time-sep">to</span>
+            <input class="time-input" value="1:00 PM" />
+          </div>
+          <div class="form-hint">Auto-checkout triggers when market closes (FR20c)</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Season (optional)</label>
+          <div class="time-row">
+            <input class="time-input" value="Apr 1" />
+            <span class="time-sep">to</span>
+            <input class="time-input" value="Nov 30" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Label (optional)</label>
+          <input class="form-input" placeholder="e.g. Summer Evening Market" />
+        </div>
+        <button class="save-btn">Add Recurring Schedule</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">+ One-Time → New One-Time Event</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header" style="display:flex; align-items:center; gap:12px; padding:12px 16px 16px; border-bottom:1px solid #E5E7EB;">
+        <span style="font-size:24px; cursor:pointer; color:#374151;">‹</span>
+        <h3 style="font-size:20px;">New One-Time Event</h3>
+      </div>
+      <div class="content">
+        <div class="form-group">
+          <label class="form-label">Event Name <span class="form-required">*</span></label>
+          <input class="form-input" placeholder="e.g. Spring Harvest Festival" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date <span class="form-required">*</span></label>
+          <input class="form-input" type="date" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hours <span class="form-required">*</span></label>
+          <div class="time-row">
+            <input class="time-input" placeholder="Start" />
+            <span class="time-sep">to</span>
+            <input class="time-input" placeholder="End" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description (optional)</label>
+          <textarea class="form-textarea" placeholder="What's special about this event?"></textarea>
+        </div>
+        <button class="save-btn" style="background:#B45309;">Add One-Time Event</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+<h2>Market Management (Post-Onboarding)</h2>
+<div class="screen-row">
+  <div>
+    <div class="screen-label">Step 4: Invite Co-Manager (FR6, FR41a: min 2)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Co-Managers</h3><div class="header-sub">Riverside Farmers Market</div></div>
+      <div class="content">
+        <div class="step-indicator">
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot done"></div>
+          <div class="step-dot active"></div>
+        </div>
+        <div class="info-banner">
+          <div class="info-banner-icon">👥</div>
+          <div class="info-banner-text">Every market requires at least 2 managers. Invite a co-manager to complete setup.</div>
+        </div>
+        <div class="co-manager">
+          <div class="cm-avatar">👤</div>
+          <div class="cm-info"><div class="cm-name">Maria Rodriguez</div><div class="cm-role">maria@riverside-market.org</div></div>
+          <span class="cm-badge">You</span>
+        </div>
+        <div class="co-manager">
+          <div class="cm-avatar" style="background:#FEF3C7;">👤</div>
+          <div class="cm-info"><div class="cm-name">Juan Martinez</div><div class="cm-role">juan@riverside-market.org</div></div>
+          <span class="cm-badge" style="background:#FEF3C7; color:#92400E;">Invited</span>
+        </div>
+        <button class="add-btn" style="margin-top:8px;">+ Invite Another Manager</button>
+        <button class="save-btn" style="margin-top:24px;">Complete Market Setup ✓</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Per-Date Vendor Roster (FR10, FR13)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Vendor Roster</h3><div class="header-sub">Riverside Farmers Market</div></div>
+      <div class="content">
+        <!-- Calendar Date Picker -->
+        <div style="background:#fff; border-radius:16px; padding:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:15px; font-weight:600;">April 2026</span>
+            <div style="display:flex; gap:12px;">
+              <span style="color:#6B7280; cursor:pointer; font-size:16px;">‹</span>
+              <span style="color:#6B7280; cursor:pointer; font-size:16px;">›</span>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; margin-bottom:4px;">
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">M</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">W</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">F</span>
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;">
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;"></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;"></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;"></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">1</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">2</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">3</span>
+            <span style="font-size:11px; background:#2D7D46; color:#fff; border-radius:8px; padding:5px 0; font-weight:700; position:relative;">4<span style="position:absolute; bottom:1px; left:50%; transform:translateX(-50%); font-size:7px; font-weight:400;">24</span></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">5</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">6</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">7</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">8</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">9</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">10</span>
+            <span style="font-size:11px; background:#E8F5EC; color:#2D7D46; border-radius:8px; padding:5px 0; font-weight:600;">11<span style="display:block; font-size:7px; font-weight:400;">22</span></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">12</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">13</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">14</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">15</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">16</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">17</span>
+            <span style="font-size:11px; background:#E8F5EC; color:#2D7D46; border-radius:8px; padding:5px 0; font-weight:600;">18<span style="display:block; font-size:7px; font-weight:400;">20</span></span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">19</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">20</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">21</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">22</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">23</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:5px 0;">24</span>
+            <span style="font-size:11px; background:#E8F5EC; color:#2D7D46; border-radius:8px; padding:5px 0; font-weight:600;">25<span style="display:block; font-size:7px; font-weight:400;">23</span></span>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:6px; font-size:10px; color:#6B7280;">
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:6px; height:6px; border-radius:3px; background:#2D7D46;"></span> Selected</span>
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:6px; height:6px; border-radius:3px; background:#E8F5EC;"></span> Market day</span>
+            <span>Numbers = vendor count</span>
+          </div>
+        </div>
+
+        <!-- Selected Date Context -->
+        <div style="background:#E8F5EC; border-radius:12px; padding:12px 14px; margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <div style="font-size:15px; font-weight:600; color:#166534;">Saturday, Apr 4</div>
+            <div style="font-size:12px; color:#2D7D46;">24 vendors committed &middot; 2 pending</div>
+          </div>
+          <span style="font-size:12px; color:#6B7280;">8AM–1PM</span>
+        </div>
+
+        <!-- Pending for this date -->
+        <div style="font-size:12px; font-weight:600; color:#92400E; margin-bottom:8px;">PENDING FOR APR 4 (2)</div>
+        <div class="vendor-roster-item" style="background:#FFFBEB; border:1.5px solid #FDE68A;">
+          <div class="vr-avatar">🌸</div>
+          <div class="vr-info">
+            <div class="vr-name">Bloom Botanicals</div>
+            <div class="vr-products">Flowers &middot; Requested 12 dates</div>
+          </div>
+          <div style="display:flex; gap:6px; flex-direction:column;">
+            <span class="vr-action" style="background:#2D7D46; color:#fff; border-color:#2D7D46; text-align:center; font-size:12px;">Approve</span>
+            <span class="vr-action" style="background:#166534; color:#fff; border-color:#166534; text-align:center; font-size:11px;">Approve All 12</span>
+            <span class="vr-action" style="background:#fff; color:#DC2626; border-color:#FECACA; text-align:center; font-size:11px;">Reject</span>
+          </div>
+        </div>
+        <!-- Rejection reason (shown when Reject is tapped) -->
+        <div style="background:#FEF2F2; border:1.5px solid #FECACA; border-radius:10px; padding:10px; margin-top:8px; margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:600; color:#991B1B; margin-bottom:4px;">Reason for rejecting <span style="color:#DC2626;">*</span></div>
+          <div style="width:100%; height:40px; background:#fff; border:1.5px solid #DC2626; border-radius:8px; padding:8px 10px; font-size:12px; color:#374151;">Too many flower vendors already</div>
+          <div style="font-size:10px; color:#2D7D46; margin-top:3px;">31 / 5 minimum characters</div>
+          <div style="display:flex; gap:6px; margin-top:6px;">
+            <span class="vr-action" style="background:#DC2626; color:#fff; border-color:#DC2626; text-align:center; font-size:11px; flex:1;">Confirm Reject</span>
+            <span class="vr-action" style="background:#fff; color:#6B7280; border-color:#E5E7EB; text-align:center; font-size:11px; flex:1;">Cancel</span>
+          </div>
+        </div>
+
+        <!-- Active vendors for this date -->
+        <div style="font-size:12px; font-weight:600; color:#374151; margin:12px 0 8px;">VENDORS FOR APR 4 (24)</div>
+        <div class="vendor-roster-item">
+          <div class="vr-avatar">🥬</div>
+          <div class="vr-info"><div class="vr-name">Green Valley Farm</div><div class="vr-products">Organic Lettuce, Kale, Herbs</div></div>
+          <span class="vr-action approved" style="font-size:11px;">Committed</span>
+        </div>
+        <div class="vendor-roster-item">
+          <div class="vr-avatar">🍯</div>
+          <div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-products">Raw Honey, Beeswax Candles</div></div>
+          <span class="vr-action approved" style="font-size:11px;">Committed</span>
+        </div>
+        <div class="vendor-roster-item">
+          <div class="vr-avatar">🧀</div>
+          <div class="vr-info"><div class="vr-name">Alpine Creamery</div><div class="vr-products">Artisan Cheese, Butter</div></div>
+          <span class="vr-action approved" style="font-size:11px;">Committed</span>
+        </div>
+        <button class="add-btn" style="margin-top:8px;">+ Add Vendor to Apr 4</button>
+        <button class="add-btn" style="margin-top:8px; border-color:#1E40AF; color:#1E40AF;">+ Add Vendor to All Dates</button>
+        <div style="font-size:11px; color:#6B7280; text-align:center; margin-top:6px;">Adds to all 4 Saturdays in April</div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">👩‍🌾</div>Dashboard</div>
+        <div class="tab-item active"><div class="tab-icon">👥</div>Vendors</div>
+        <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Edit Market Details (FR8, FR9)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header"><h3>Market Settings</h3><div class="header-sub">Riverside Farmers Market</div></div>
+      <div class="content">
+        <div class="form-group">
+          <label class="form-label">Market Name</label>
+          <input class="form-input" value="Riverside Farmers Market" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Address</label>
+          <input class="form-input" value="123 River Rd, Portland, OR" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea class="form-textarea">Portland's favorite Saturday morning market featuring local produce, artisan goods, and community.</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Operating Days</label>
+          <div class="day-grid">
+            <div class="day-chip">Mon</div><div class="day-chip">Tue</div><div class="day-chip">Wed</div><div class="day-chip">Thu</div><div class="day-chip">Fri</div><div class="day-chip selected">Sat</div><div class="day-chip">Sun</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Hours</label>
+          <div class="time-row">
+            <input class="time-input" value="8:00 AM" />
+            <span class="time-sep">to</span>
+            <input class="time-input" value="1:00 PM" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Season</label>
+          <div class="time-row">
+            <input class="time-input" value="Apr 1" />
+            <span class="time-sep">to</span>
+            <input class="time-input" value="Nov 30" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Co-Managers (2 required)</label>
+          <div class="co-manager"><div class="cm-avatar">👤</div><div class="cm-info"><div class="cm-name">Maria Rodriguez</div><div class="cm-role">Primary</div></div><span class="cm-badge">You</span></div>
+          <div class="co-manager"><div class="cm-avatar">👤</div><div class="cm-info"><div class="cm-name">Juan Martinez</div><div class="cm-role">Co-Manager</div></div><span class="cm-badge">Active</span></div>
+        </div>
+        <button class="save-btn">Save Changes</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

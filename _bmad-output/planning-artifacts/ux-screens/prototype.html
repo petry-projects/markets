@@ -1,0 +1,2174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markets — Interactive Prototype v2</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1A1A1A; color: #1A1A1A; display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding: 24px; }
+
+  /* Prototype chrome */
+  .proto-header { color: #fff; text-align: center; margin-bottom: 16px; }
+  .proto-header h1 { font-size: 24px; font-weight: 700; }
+  .proto-header p { font-size: 13px; color: #9CA3AF; margin-top: 4px; }
+  .role-switcher { display: flex; gap: 8px; margin-bottom: 16px; }
+  .role-btn { padding: 8px 20px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; border: 1.5px solid #4B5563; background: none; color: #9CA3AF; transition: all 0.2s; }
+  .role-btn.active { border-color: #2D7D46; background: #2D7D46; color: #fff; }
+  .role-btn:hover { border-color: #2D7D46; color: #fff; }
+
+  /* Phone frame */
+  .phone-frame { width: 375px; height: 812px; background: #fff; border-radius: 40px; overflow: hidden; position: relative; box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .status-bar { height: 44px; background: #fff; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; position: sticky; top: 0; z-index: 10; }
+  .safe-bottom { height: 34px; }
+
+  /* Screen container */
+  .screen { display: none; height: calc(812px - 44px - 83px); overflow-y: auto; }
+  .screen.active { display: block; }
+  .screen-scroll { padding: 0 0 16px; }
+
+  /* Header */
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; position: sticky; top: 0; z-index: 5; }
+  .header h2 { font-size: 28px; font-weight: 700; }
+  .header-sub { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .nav-header { display: flex; align-items: center; padding: 8px 16px; background: #fff; border-bottom: 1px solid #E5E7EB; position: sticky; top: 0; z-index: 5; }
+  .nav-back { font-size: 24px; color: #2D7D46; cursor: pointer; margin-right: 12px; padding: 4px; }
+  .nav-title { font-size: 17px; font-weight: 600; }
+  .content { padding: 16px; }
+
+  /* Tab Bar */
+  .tab-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; z-index: 20; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; cursor: pointer; padding: 4px 8px; transition: color 0.15s; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-item:hover { color: #2D7D46; }
+  .tab-icon { font-size: 18px; }
+
+  /* Shared components */
+  .search-bar { background: #F3F4F6; border-radius: 12px; padding: 12px 16px; font-size: 15px; color: #9CA3AF; cursor: pointer; margin: 16px; }
+  .section-title { font-size: 18px; font-weight: 600; margin: 8px 16px 12px; }
+  .filter-row { display: flex; gap: 8px; padding: 12px 16px 0; flex-wrap: wrap; }
+  .chip { background: #fff; border: 1.5px solid #E5E7EB; border-radius: 20px; padding: 6px 14px; font-size: 13px; font-weight: 500; color: #4B5563; cursor: pointer; white-space: nowrap; }
+  .chip.active { background: #2D7D46; border-color: #2D7D46; color: #fff; }
+  .chip:hover { border-color: #2D7D46; }
+
+  /* Heart Follow Button */
+  .heart-btn { background: none; border: none; font-size: 22px; cursor: pointer; padding: 4px; line-height: 1; transition: transform 0.15s; }
+  .heart-btn:hover { transform: scale(1.15); }
+  .heart-btn.active { animation: heartPop 0.3s ease-out; }
+  @keyframes heartPop { 0% { transform: scale(1); } 50% { transform: scale(1.3); } 100% { transform: scale(1); } }
+
+  /* Vendor Card */
+  .vendor-card { background: #fff; border-radius: 16px; padding: 16px; margin: 0 16px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 0.15s; }
+  .vendor-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .vc-header { display: flex; align-items: center; gap: 12px; }
+  .vc-avatar { width: 48px; height: 48px; border-radius: 12px; background: #E8F5EC; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .vc-info { flex: 1; }
+  .vc-name { font-size: 16px; font-weight: 600; }
+  .vc-market { font-size: 13px; color: #6B7280; }
+
+  /* Status Badge */
+  .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; margin-top: 10px; }
+  .sb-checked-in { background: #DCFCE7; color: #166534; }
+  .sb-running-late { background: #FEF3C7; color: #92400E; }
+  .sb-not-attending { background: #F1F5F9; color: #64748B; }
+  .sb-sold-out { background: #FEE2E2; color: #991B1B; }
+  .sb-pending { background: #F3F4F6; color: #6B7280; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+  .dot-green { background: #22C55E; }
+  .dot-yellow { background: #F59E0B; }
+  .dot-gray { background: #94A3B8; }
+  .dot-red { background: #EF4444; }
+  .dot-pending { background: #D1D5DB; }
+  .freshness { font-size: 12px; color: #9CA3AF; margin-left: 6px; }
+
+  .product-tags { display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap; }
+  .product-tag { background: #F3F4F6; color: #4B5563; font-size: 12px; padding: 4px 10px; border-radius: 12px; }
+
+  /* Market Card */
+  .market-card { background: #fff; border-radius: 16px; padding: 16px; margin: 0 16px 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); cursor: pointer; transition: box-shadow 0.15s; }
+  .market-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .mc-top { display: flex; gap: 12px; align-items: flex-start; }
+  .mc-name { font-size: 16px; font-weight: 600; }
+  .mc-addr { font-size: 13px; color: #6B7280; margin-top: 2px; }
+  .mc-distance { background: #EFF6FF; color: #2563EB; font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 12px; height: fit-content; margin-left: auto; flex-shrink: 0; }
+  .mc-meta { display: flex; gap: 16px; margin-top: 10px; font-size: 13px; color: #6B7280; }
+  .mc-actions { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; }
+  .day-badge { display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 10px; font-size: 12px; font-weight: 700; color: #fff; background: #2D7D46; flex-shrink: 0; text-transform: uppercase; }
+  .day-badge.sat { background: #2D7D46; }
+  .day-badge.sun { background: #1E40AF; }
+  .day-badge.wed { background: #7C3AED; }
+  .day-badge.fri { background: #B45309; }
+  .day-badge.event { background: #DC2626; font-size: 10px; }
+
+  /* Check-in Button */
+  .checkin-btn { width: 100%; height: 56px; border-radius: 14px; border: none; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 16px; transition: all 0.2s; }
+  .checkin-ready { background: #2D7D46; color: #fff; }
+  .checkin-ready:hover { background: #1E6B35; }
+  .checkin-done { background: #E8F5EC; color: #166534; }
+
+  /* Market Day Banner */
+  .banner { background: linear-gradient(135deg, #E8F5EC, #D4EDDA); border-radius: 16px; padding: 16px; margin: 0 16px 16px; }
+  .banner-label { font-size: 12px; font-weight: 500; color: #2D7D46; text-transform: uppercase; letter-spacing: 0.5px; }
+  .banner-title { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  .banner-info { font-size: 14px; color: #6B7280; margin-top: 4px; }
+
+  /* Checkin Card */
+  .checkin-card { background: #fff; border-radius: 16px; padding: 20px; margin: 0 16px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .checkin-card .market-label { font-size: 12px; font-weight: 500; color: #2D7D46; text-transform: uppercase; letter-spacing: 0.5px; }
+  .checkin-card .market-name { font-size: 20px; font-weight: 600; margin-top: 4px; }
+  .checkin-card .market-time { font-size: 14px; color: #6B7280; margin-top: 4px; }
+  .followers-info { text-align: center; font-size: 13px; color: #6B7280; margin-top: 10px; }
+  .followers-info strong { color: #2D7D46; }
+
+  /* Stats */
+  .stats-row { display: flex; gap: 12px; margin: 0 16px 16px; }
+  .stat-card { flex: 1; background: #fff; border-radius: 16px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.06); }
+  .stat-number { font-size: 24px; font-weight: 700; color: #2D7D46; }
+  .stat-label { font-size: 12px; color: #6B7280; margin-top: 4px; }
+
+  /* Attendance Bar */
+  .att-bar { background: #fff; border-radius: 16px; padding: 16px; margin: 0 16px 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .att-label { font-size: 13px; color: #6B7280; margin-bottom: 8px; }
+  .bar-visual { height: 12px; border-radius: 6px; background: #F3F4F6; display: flex; overflow: hidden; margin-bottom: 12px; }
+  .bar-seg { height: 100%; }
+  .att-stats { display: flex; justify-content: space-between; font-size: 14px; }
+  .att-stat { display: flex; align-items: center; gap: 6px; }
+  .att-stat .label { font-weight: 400; color: #6B7280; font-size: 12px; }
+
+  /* Exception Alert */
+  .exception-alert { background: #FEF3C7; border-radius: 12px; padding: 12px 14px; margin: 0 16px 12px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
+  .alert-text { font-size: 13px; color: #92400E; }
+  .alert-text strong { color: #78350F; }
+  .alert-time { font-size: 11px; color: #B45309; margin-top: 2px; }
+
+  /* Filter Tabs */
+  .filter-tabs { display: flex; gap: 8px; margin: 0 16px 16px; }
+  .filter-tab { flex: 1; text-align: center; padding: 8px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6B7280; background: #fff; border: 1px solid #E5E7EB; cursor: pointer; transition: all 0.15s; }
+  .filter-tab.active { background: #2D7D46; color: #fff; border-color: #2D7D46; }
+  .filter-tab:hover { border-color: #2D7D46; }
+
+  /* Vendor Row (manager) */
+  .vendor-row { background: #fff; border-radius: 12px; padding: 12px 14px; margin: 0 16px 8px; display: flex; align-items: center; gap: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.04); cursor: pointer; }
+  .vendor-row:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .vr-info { flex: 1; }
+  .vr-name { font-size: 15px; font-weight: 600; }
+  .vr-detail { font-size: 12px; color: #6B7280; margin-top: 1px; }
+  .status-pill { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .pill-present { background: #DCFCE7; color: #166534; }
+  .pill-late { background: #FEF3C7; color: #92400E; }
+  .pill-pending { background: #F3F4F6; color: #6B7280; }
+  .pill-absent { background: #FEE2E2; color: #991B1B; }
+
+  .action-btn { background: #2D7D46; color: #fff; border: none; border-radius: 12px; padding: 12px; font-size: 15px; font-weight: 600; width: calc(100% - 32px); margin: 12px 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; }
+  .action-btn:hover { background: #1E6B35; }
+
+  /* Settings */
+  .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 14px 16px; border-bottom: 1px solid #F3F4F6; cursor: pointer; }
+  .settings-row:hover { background: #F8F9FA; }
+  .settings-label { font-size: 15px; font-weight: 500; }
+  .settings-desc { font-size: 12px; color: #6B7280; margin-top: 2px; }
+  .settings-arrow { color: #D1D5DB; font-size: 16px; }
+  .section-header { font-size: 12px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; padding: 16px 16px 8px; }
+
+  /* Toast notification */
+  .toast { position: absolute; top: 56px; left: 16px; right: 16px; padding: 12px 16px; border-radius: 12px; font-size: 14px; font-weight: 500; z-index: 100; display: none; animation: slideDown 0.3s ease-out; }
+  .toast.show { display: flex; align-items: center; gap: 8px; }
+  .toast-success { background: #DCFCE7; color: #166534; }
+  @keyframes slideDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* Upcoming */
+  .upcoming-card { background: #fff; border-radius: 16px; padding: 14px 16px; margin: 0 16px 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 14px; cursor: pointer; }
+  .upcoming-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .upcoming-day { width: 48px; height: 48px; background: #F3F4F6; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; }
+  .day-name { font-size: 10px; font-weight: 600; color: #6B7280; text-transform: uppercase; }
+  .day-num { font-size: 18px; font-weight: 700; }
+  .upcoming-market { font-size: 15px; font-weight: 600; }
+  .upcoming-time { font-size: 13px; color: #6B7280; margin-top: 1px; }
+
+  /* Market Groups (collapsible) */
+  .market-group { margin-bottom: 4px; }
+  .market-group-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: linear-gradient(135deg, #E8F5EC, #D4EDDA); cursor: pointer; border-bottom: 1px solid #C6E4CF; }
+  .market-group-header:hover { background: linear-gradient(135deg, #D4EDDA, #C6E4CF); }
+  .mg-left { display: flex; align-items: center; gap: 10px; flex: 1; }
+  .mg-chevron { font-size: 14px; color: #2D7D46; flex-shrink: 0; width: 16px; transition: transform 0.2s; }
+  .mg-name { font-size: 15px; font-weight: 600; color: #1A1A1A; }
+  .mg-meta { font-size: 11px; color: #6B7280; margin-top: 2px; line-height: 1.3; }
+  .mg-directions { font-size: 20px; padding: 4px 8px; cursor: pointer; flex-shrink: 0; }
+  .mg-vendors { padding: 4px 0; background: #F8F9FA; }
+  .mg-vendors .vendor-card { margin: 8px 12px; }
+
+  /* GPS Pin icon */
+  .gps-pin { width: 28px; height: 28px; background: #2D7D46; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); display: flex; align-items: center; justify-content: center; flex-shrink: 0; cursor: pointer; }
+  .gps-pin::after { content: ''; width: 10px; height: 10px; background: #fff; border-radius: 50%; transform: rotate(45deg); }
+
+  /* Guidance box */
+  .guidance-box { background: #EFF6FF; border-radius: 12px; padding: 12px 14px; margin: 16px 0; }
+  .guidance-box .guidance-title { font-size: 13px; font-weight: 600; color: #1E40AF; margin-bottom: 4px; }
+  .guidance-box .guidance-text { font-size: 12px; color: #6B7280; line-height: 1.4; }
+
+  /* Toggle pill group */
+  .toggle-group { display: flex; background: #F3F4F6; border-radius: 10px; padding: 3px; margin-bottom: 16px; }
+  .toggle-pill { flex: 1; text-align: center; padding: 8px; border-radius: 8px; font-size: 13px; font-weight: 500; color: #6B7280; cursor: pointer; transition: all 0.15s; }
+  .toggle-pill.active { background: #fff; color: #1A1A1A; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+
+  /* Transition */
+  .screen { animation: fadeIn 0.2s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+</style>
+</head>
+<body>
+
+<div class="proto-header">
+  <h1>markets — Interactive Prototype v2</h1>
+  <p>Click tabs, buttons, and cards to navigate between screens</p>
+</div>
+
+<div class="role-switcher">
+  <button class="role-btn active" onclick="switchRole('customer')">Customer (Rachel)</button>
+  <button class="role-btn" onclick="switchRole('vendor')">Vendor (Brad)</button>
+  <button class="role-btn" onclick="switchRole('manager')">Manager (Maria)</button>
+</div>
+
+<div class="phone-frame" id="phone">
+  <div class="status-bar">9:41</div>
+  <div id="toast" class="toast toast-success"></div>
+
+  <!-- ==================== CUSTOMER SCREENS ==================== -->
+
+  <!-- Customer: Following -->
+  <div class="screen active" id="customer-following">
+    <div class="header"><h2>Following</h2><div class="header-sub">5 vendors across 2 markets today</div></div>
+    <div class="screen-scroll">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:12px 16px 8px; cursor:pointer;" onclick="toggleFollowSection('follow-markets-section')">
+        <div style="font-size:16px; font-weight:700;">Markets <span style="font-size:13px; font-weight:500; color:#6B7280;">(3)</span></div>
+        <span id="follow-markets-section-arrow" style="font-size:14px; color:#6B7280;">▾</span>
+      </div>
+      <div id="follow-markets-section">
+      <!-- Market Group 1: Riverside (expanded) -->
+      <div class="market-group">
+        <div class="market-group-header" onclick="toggleMarketGroup(this)">
+          <div class="mg-left">
+            <span class="mg-chevron">▾</span>
+            <div class="day-badge sat" style="width:32px; height:32px; font-size:11px; border-radius:8px;">Sat</div>
+            <div>
+              <div class="mg-name">Riverside Farmers Market</div>
+              <div class="mg-meta">🕐 8AM–5PM · 2.3 mi · <span style="color:#22C55E; font-weight:600;">3 checked in</span> · 1 exception</div>
+            </div>
+          </div>
+          <button class="heart-btn active" onclick="event.stopPropagation(); toggleHeart(event)" style="font-size:18px;">❤️</button>
+          <div class="gps-pin" onclick="event.stopPropagation(); openMaps('123 River Rd, Portland, OR')" title="Get Directions"></div>
+        </div>
+        <div class="mg-vendors">
+          <div class="vendor-card" onclick="showScreen('customer-vendor-detail')">
+            <div class="vc-header">
+              <div class="vc-avatar">🥬</div>
+              <div class="vc-info"><div class="vc-name">Green Valley Farm</div><div class="vc-market">Organic Produce</div></div>
+              <button class="heart-btn active" onclick="toggleHeart(event)" title="Following">❤️</button>
+            </div>
+            <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In</span><span class="freshness">14 min ago</span></div>
+            <div class="product-tags"><span class="product-tag">Organic Lettuce</span><span class="product-tag">Kale</span><span class="product-tag">Herbs</span></div>
+          </div>
+          <div class="vendor-card">
+            <div class="vc-header">
+              <div class="vc-avatar">🍯</div>
+              <div class="vc-info"><div class="vc-name">Honey Beeeham</div><div class="vc-market">Honey & Bee Products</div></div>
+              <button class="heart-btn active" onclick="toggleHeart(event)" title="Following">❤️</button>
+            </div>
+            <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In</span><span class="freshness">8 min ago</span></div>
+            <div class="product-tags"><span class="product-tag">Raw Honey</span><span class="product-tag">Beeswax Candles</span></div>
+          </div>
+          <div class="vendor-card">
+            <div class="vc-header">
+              <div class="vc-avatar">🧀</div>
+              <div class="vc-info"><div class="vc-name">Alpine Creamery</div><div class="vc-market">Artisan Dairy</div></div>
+              <button class="heart-btn active" onclick="toggleHeart(event)" title="Following">❤️</button>
+            </div>
+            <div><span class="status-badge sb-running-late"><span class="dot dot-yellow"></span> Running Late</span><span class="freshness">3 min ago</span></div>
+            <div class="product-tags"><span class="product-tag">Artisan Cheese</span><span class="product-tag">Butter</span></div>
+          </div>
+          <div class="vendor-card">
+            <div class="vc-header">
+              <div class="vc-avatar">🥚</div>
+              <div class="vc-info"><div class="vc-name">Sunny Side Eggs</div><div class="vc-market">Free Range Eggs</div></div>
+              <button class="heart-btn active" onclick="toggleHeart(event)" title="Following">❤️</button>
+            </div>
+            <div><span class="status-badge sb-not-attending"><span class="dot dot-gray"></span> Not Attending</span><span class="freshness">1 hr ago</span></div>
+            <div style="margin-top:10px; padding:10px; background:#F8F9FA; border-radius:10px; font-size:13px; color:#2D7D46; cursor:pointer;">2 alternative vendors at this market →</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Group 2: Downtown (collapsed) -->
+      <div class="market-group">
+        <div class="market-group-header" onclick="toggleMarketGroup(this)">
+          <div class="mg-left">
+            <span class="mg-chevron">▸</span>
+            <div class="day-badge sun" style="width:32px; height:32px; font-size:11px; border-radius:8px;">Sun</div>
+            <div>
+              <div class="mg-name">Downtown Sunday Market</div>
+              <div class="mg-meta">Tomorrow 9AM–2PM · 4.1 mi · <span style="color:#6B7280;">1 vendor followed</span></div>
+            </div>
+          </div>
+          <button class="heart-btn active" onclick="event.stopPropagation(); toggleHeart(event)" style="font-size:18px;">❤️</button>
+          <div class="gps-pin" onclick="event.stopPropagation(); openMaps('456 Main St, Portland, OR')" title="Get Directions"></div>
+        </div>
+        <div class="mg-vendors" style="display:none;">
+          <div class="vendor-card">
+            <div class="vc-header">
+              <div class="vc-avatar">🐔</div>
+              <div class="vc-info"><div class="vc-name">Happy Hen Farm</div><div class="vc-market">Organic Eggs, Duck Eggs</div></div>
+              <button class="heart-btn active" onclick="toggleHeart(event)" title="Following">❤️</button>
+            </div>
+            <div><span class="status-badge sb-pending"><span class="dot dot-pending"></span> Tomorrow</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Group 3: Midweek (collapsed) -->
+      <div class="market-group">
+        <div class="market-group-header" onclick="toggleMarketGroup(this)">
+          <div class="mg-left">
+            <span class="mg-chevron">▸</span>
+            <div class="day-badge wed" style="width:32px; height:32px; font-size:11px; border-radius:8px;">Wed</div>
+            <div>
+              <div class="mg-name">Midweek Market at City Hall</div>
+              <div class="mg-meta">Wednesday 3–7PM · 3.8 mi · <span style="color:#6B7280;">No vendors followed yet</span></div>
+            </div>
+          </div>
+          <button class="heart-btn active" onclick="event.stopPropagation(); toggleHeart(event)" style="font-size:18px;">❤️</button>
+          <div class="gps-pin" onclick="event.stopPropagation(); openMaps('City Hall, Portland, OR')" title="Get Directions"></div>
+        </div>
+        <div class="mg-vendors" style="display:none;">
+          <div style="text-align:center; padding:24px 16px;">
+            <div style="font-size:32px; margin-bottom:8px;">🔍</div>
+            <div style="font-size:14px; font-weight:600; margin-bottom:4px;">No vendors followed here</div>
+            <div style="font-size:13px; color:#6B7280; margin-bottom:12px;">Discover vendors at this market</div>
+            <button style="background:#2D7D46; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:600; cursor:pointer;" onclick="showScreen('customer-discover')">Browse Vendors</button>
+          </div>
+        </div>
+      </div>
+      </div>
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 16px 8px; border-top:1px solid #E5E7EB; cursor:pointer;" onclick="toggleFollowSection('follow-vendors-section')">
+        <div style="font-size:16px; font-weight:700;">Vendors <span style="font-size:13px; font-weight:500; color:#6B7280;">(5)</span></div>
+        <span id="follow-vendors-section-arrow" style="font-size:14px; color:#6B7280;">▾</span>
+      </div>
+      <div id="follow-vendors-section">
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🥬</div>
+            <div class="vc-info"><div class="vc-name">Green Valley Farm</div><div class="vc-market">Riverside Market · Checked-In 14 min ago</div></div>
+            <button class="heart-btn active" onclick="toggleHeart(event)">❤️</button>
+          </div>
+          <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🍯</div>
+            <div class="vc-info"><div class="vc-name">Honey Beeeham</div><div class="vc-market">Riverside Market · Checked-In 8 min ago</div></div>
+            <button class="heart-btn active" onclick="toggleHeart(event)">❤️</button>
+          </div>
+          <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🧀</div>
+            <div class="vc-info"><div class="vc-name">Alpine Creamery</div><div class="vc-market">Riverside Market · Running Late</div></div>
+            <button class="heart-btn active" onclick="toggleHeart(event)">❤️</button>
+          </div>
+          <div><span class="status-badge sb-late"><span class="dot dot-yellow"></span> Running Late</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🥚</div>
+            <div class="vc-info"><div class="vc-name">Sunny Side Eggs</div><div class="vc-market">Riverside Market</div></div>
+            <button class="heart-btn active" onclick="toggleHeart(event)">❤️</button>
+          </div>
+          <div><span class="status-badge sb-not-attending"><span class="dot dot-gray"></span> Not Attending</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🐔</div>
+            <div class="vc-info"><div class="vc-name">Happy Hen Farm</div><div class="vc-market">Downtown Sunday Market · Tomorrow</div></div>
+            <button class="heart-btn active" onclick="toggleHeart(event)">❤️</button>
+          </div>
+          <div><span class="status-badge sb-pending"><span class="dot dot-pending"></span> Attending</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Discover -->
+  <div class="screen" id="customer-discover">
+    <div class="header"><h2>Discover</h2></div>
+    <div class="screen-scroll">
+      <div style="display:flex; gap:0; margin:12px 16px 0; background:#F3F4F6; border-radius:10px; padding:3px;">
+        <div class="discover-mode active" data-mode="markets" onclick="toggleDiscoverMode(event)" style="flex:1; text-align:center; padding:8px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:#fff; color:#2D7D46; box-shadow:0 1px 2px rgba(0,0,0,0.06);">Markets</div>
+        <div class="discover-mode" data-mode="vendors" onclick="toggleDiscoverMode(event)" style="flex:1; text-align:center; padding:8px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:transparent; color:#6B7280;">Vendors</div>
+      </div>
+      <div class="search-bar">🔍 Search markets, vendors, or products...</div>
+      <!-- Primary filters (always visible) -->
+      <div class="filter-row" id="discover-filters" onclick="activateFilter(event)">
+        <span class="chip active" data-filter="nearby">Nearby</span><span class="chip" data-filter="open-today">Open Today</span><span class="chip" data-filter="date">Sort by Date</span><span class="chip" data-filter="free">Free</span>
+      </div>
+      <!-- Category filter groups (expandable) -->
+      <div id="discover-filter-categories" style="padding:0 16px;">
+        <div style="display:flex; align-items:center; gap:8px; margin:12px 0 8px; cursor:pointer;" onclick="toggleFilterExpand()">
+          <span style="font-size:12px; font-weight:600; color:#2D7D46;" id="filter-toggle-label">Show All Filters (50+)</span>
+          <span style="font-size:10px; color:#2D7D46;" id="filter-toggle-arrow">&#x25BC;</span>
+        </div>
+        <div id="discover-expanded-filters" style="display:none;">
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:8px 0 6px;">Produce</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="produce">Produce</span><span class="chip" data-filter="organic">Organic</span><span class="chip" data-filter="vegetables">Vegetables</span><span class="chip" data-filter="fruits">Fruits</span><span class="chip" data-filter="herbs">Herbs</span><span class="chip" data-filter="mushrooms">Mushrooms</span><span class="chip" data-filter="microgreens">Microgreens</span><span class="chip" data-filter="sprouts">Sprouts</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Dairy &amp; Eggs</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="dairy">Dairy</span><span class="chip" data-filter="eggs">Eggs</span><span class="chip" data-filter="cheese">Cheese</span><span class="chip" data-filter="milk">Milk</span><span class="chip" data-filter="yogurt">Yogurt</span><span class="chip" data-filter="butter">Butter</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Meat &amp; Seafood</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="meat">Meat</span><span class="chip" data-filter="poultry">Poultry</span><span class="chip" data-filter="beef">Beef</span><span class="chip" data-filter="pork">Pork</span><span class="chip" data-filter="lamb">Lamb</span><span class="chip" data-filter="seafood">Seafood</span><span class="chip" data-filter="jerky">Jerky</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Baked Goods &amp; Grains</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="baked">Baked Goods</span><span class="chip" data-filter="bread">Bread</span><span class="chip" data-filter="pastries">Pastries</span><span class="chip" data-filter="pies">Pies</span><span class="chip" data-filter="cookies">Cookies</span><span class="chip" data-filter="flour">Flour</span><span class="chip" data-filter="grains">Grains</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Pantry &amp; Preserves</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="honey">Honey</span><span class="chip" data-filter="jams">Jams</span><span class="chip" data-filter="pickles">Pickles</span><span class="chip" data-filter="sauces">Sauces</span><span class="chip" data-filter="oils">Oils</span><span class="chip" data-filter="vinegar">Vinegar</span><span class="chip" data-filter="spices">Spices</span><span class="chip" data-filter="maple-syrup">Maple Syrup</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Beverages</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="coffee">Coffee</span><span class="chip" data-filter="tea">Tea</span><span class="chip" data-filter="cider">Cider</span><span class="chip" data-filter="kombucha">Kombucha</span><span class="chip" data-filter="juice">Juice</span><span class="chip" data-filter="wine">Wine</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Plants &amp; Flowers</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="flowers">Flowers</span><span class="chip" data-filter="plants">Plants</span><span class="chip" data-filter="succulents">Succulents</span><span class="chip" data-filter="seedlings">Seedlings</span><span class="chip" data-filter="dried-flowers">Dried Flowers</span>
+          </div>
+          <div style="font-size:11px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.5px; margin:12px 0 6px;">Artisan &amp; Crafts</div>
+          <div class="filter-row" style="padding:0;" onclick="activateFilter(event)">
+            <span class="chip" data-filter="crafts">Artisan Crafts</span><span class="chip" data-filter="pottery">Pottery</span><span class="chip" data-filter="woodwork">Woodwork</span><span class="chip" data-filter="textiles">Textiles</span><span class="chip" data-filter="jewelry">Jewelry</span><span class="chip" data-filter="candles">Candles</span><span class="chip" data-filter="soap">Soap</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dynamic results area -->
+      <div id="discover-results">
+        <div id="discover-markets-results">
+        <div class="section-title" style="margin-top:16px;">Markets Near You</div>
+        <div class="market-card" onclick="showScreen('customer-market-detail')">
+          <div class="mc-top">
+            <div class="day-badge sat">Sat</div>
+            <div style="flex:1;"><div class="mc-name">Riverside Farmers Market</div><div class="mc-addr">123 River Rd, Portland</div></div>
+            <span class="mc-distance">2.3 mi</span>
+          </div>
+          <div class="mc-meta"><span>Saturdays, 8AM–5PM</span><span style="color:#2D7D46; font-weight:600;">24 vendors</span><span style="color:#6B7280;">Free entry</span></div>
+          <div class="mc-actions">
+            <span style="font-size:12px; color:#6B7280;">Every week · Year-round</span>
+            <button class="heart-btn" onclick="toggleHeart(event)" title="Follow">🤍</button>
+          </div>
+        </div>
+        <div class="market-card">
+          <div class="mc-top">
+            <div class="day-badge sun">Sun</div>
+            <div style="flex:1;"><div class="mc-name">Downtown Sunday Market</div><div class="mc-addr">456 Main St, Portland</div></div>
+            <span class="mc-distance">4.1 mi</span>
+          </div>
+          <div class="mc-meta"><span>Sundays, 9AM–2PM</span><span style="color:#2D7D46; font-weight:600;">38 vendors</span><span style="color:#B45309; font-weight:500;">$5 entry</span></div>
+          <div class="mc-actions">
+            <span style="font-size:12px; color:#6B7280;">Every week · Apr–Oct</span>
+            <button class="heart-btn" onclick="toggleHeart(event)" title="Follow">🤍</button>
+          </div>
+        </div>
+        <div class="market-card">
+          <div class="mc-top">
+            <div class="day-badge event">Jun 14</div>
+            <div style="flex:1;"><div class="mc-name">Spring Harvest Festival</div><div class="mc-addr">Hawthorne Park, Portland</div></div>
+            <span class="mc-distance">5.8 mi</span>
+          </div>
+          <div class="mc-meta"><span>June 14, 10AM–4PM</span><span style="color:#2D7D46; font-weight:600;">45 vendors</span><span style="color:#B45309; font-weight:500;">$10 entry</span></div>
+          <div class="mc-actions">
+            <span style="font-size:12px; color:#F59E0B; font-weight:500;">One-time event</span>
+            <button class="heart-btn" onclick="toggleHeart(event)" title="Follow">🤍</button>
+          </div>
+        </div>
+        </div>
+
+        <div id="discover-vendors-results" style="display:none;">
+        <div class="section-title">Vendors Selling "Organic Eggs"</div>
+        <div class="vendor-card" onclick="showScreen('customer-vendor-detail')">
+          <div class="vc-header">
+            <div class="vc-avatar">🐔</div>
+            <div class="vc-info"><div class="vc-name">Happy Hen Farm</div><div class="vc-market">Downtown Market · 4.1 mi</div></div>
+            <button class="heart-btn" onclick="toggleHeart(event)" title="Follow">🤍</button>
+          </div>
+          <div><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In</span><span class="freshness">22 min ago</span></div>
+        </div>
+        <div class="vendor-card">
+          <div class="vc-header">
+            <div class="vc-avatar">🌾</div>
+            <div class="vc-info"><div class="vc-name">Meadow Creek Ranch</div><div class="vc-market">Riverside Market · 2.3 mi</div></div>
+            <button class="heart-btn" onclick="toggleHeart(event)" title="Follow">🤍</button>
+          </div>
+          <div><span class="status-badge sb-pending"><span class="dot dot-pending"></span> Pending</span></div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Market Detail -->
+  <div class="screen" id="customer-market-detail">
+    <div class="nav-header"><span class="nav-back" onclick="goBack()">‹</span><span class="nav-title">Market Details</span></div>
+    <div class="screen-scroll">
+      <div style="padding:24px 16px; text-align:center; background: linear-gradient(135deg, #E8F5EC, #D4EDDA);">
+        <div style="font-size:40px; margin-bottom:12px;">🚜</div>
+        <div style="font-size:22px; font-weight:700;">Riverside Farmers Market</div>
+        <div style="font-size:14px; color:#6B7280; margin-top:4px;">123 River Rd, Portland, OR</div>
+        <div style="margin-top:12px; display:flex; gap:8px; justify-content:center;">
+          <button class="heart-btn" onclick="toggleHeart(event)" style="font-size:28px;" title="Follow">🤍</button>
+          <div class="gps-pin" onclick="openMaps('123 River Rd, Portland, OR')" title="Get Directions" style="margin-left:8px;"></div>
+        </div>
+      </div>
+      <div style="padding:16px;">
+        <div style="font-size:16px; font-weight:600; margin-bottom:8px;">Schedule</div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px;">
+          <div style="font-size:14px; font-weight:500;">🔁 Every Saturday</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">8:00 AM – 1:00 PM · Apr – Nov</div>
+        </div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px;">
+          <div style="font-size:14px; font-weight:500;">🔁 Every Wednesday</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">4:00 PM – 7:00 PM · Jun – Sep</div>
+        </div>
+        <div style="background:#FFFBEB; border-radius:12px; padding:14px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:500;">📅 June 14 · Spring Harvest Festival</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">10:00 AM – 4:00 PM · One-time event</div>
+        </div>
+
+        <div style="font-size:16px; font-weight:600; margin-bottom:8px;">About</div>
+        <div style="font-size:14px; color:#4B5563; line-height:1.5; margin-bottom:16px;">Portland's original farmers market, featuring local organic produce, artisan goods, and community events since 1992. Family-friendly with live music most Saturdays.</div>
+
+        <div style="display:flex; gap:12px; margin-bottom:16px;">
+          <div style="flex:1; background:#F8F9FA; border-radius:12px; padding:14px; text-align:center;">
+            <div style="font-size:20px; font-weight:700; color:#2D7D46;">24</div>
+            <div style="font-size:12px; color:#6B7280;">Vendors</div>
+          </div>
+          <div style="flex:1; background:#F8F9FA; border-radius:12px; padding:14px; text-align:center;">
+            <div style="font-size:20px; font-weight:700; color:#2D7D46;">180</div>
+            <div style="font-size:12px; color:#6B7280;">Followers</div>
+          </div>
+        </div>
+
+        <div style="font-size:16px; font-weight:600; margin-bottom:8px;">Social</div>
+        <div style="font-size:14px; color:#2D7D46; margin-bottom:16px;">
+          <div style="margin-bottom:8px;">📷 @riversidefarmersmarket</div>
+          <div style="margin-bottom:8px;">📘 facebook.com/riversidefm</div>
+          <div>🌐 riversidefarmersmarket.org</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Vendor Detail -->
+  <div class="screen" id="customer-vendor-detail">
+    <div class="nav-header"><span class="nav-back" onclick="goBack()">‹</span><span class="nav-title">Vendor Profile</span></div>
+    <div class="screen-scroll">
+      <div style="text-align:center; padding:24px 16px;">
+        <div style="width:80px; height:80px; border-radius:20px; background:#E8F5EC; display:inline-flex; align-items:center; justify-content:center; font-size:36px; margin-bottom:12px;">🥬</div>
+        <div style="font-size:22px; font-weight:700;">Green Valley Farm</div>
+        <div style="font-size:14px; color:#6B7280; margin-top:4px;">Organic produce from the Willamette Valley</div>
+        <div style="margin-top:12px;"><span class="status-badge sb-checked-in"><span class="dot dot-green"></span> Checked-In at Riverside Market</span><span class="freshness">14 min ago</span></div>
+        <div style="display:flex; gap:8px; justify-content:center; margin-top:12px;">
+          <button class="heart-btn active" onclick="toggleHeart(event)" style="font-size:28px;" title="Following">❤️</button>
+        </div>
+      </div>
+      <div class="section-title">Products</div>
+      <div style="padding:0 16px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          <span class="product-tag" style="padding:8px 14px;">🥬 Organic Lettuce</span>
+          <span class="product-tag" style="padding:8px 14px;">🥗 Kale</span>
+          <span class="product-tag" style="padding:8px 14px;">🌿 Fresh Herbs</span>
+          <span class="product-tag" style="padding:8px 14px;">🥕 Carrots</span>
+          <span class="product-tag" style="padding:8px 14px;">🍅 Tomatoes</span>
+        </div>
+      </div>
+      <div class="section-title" style="margin-top:24px;">Markets</div>
+      <div class="market-card" onclick="showScreen('customer-market-detail')" style="display:flex; align-items:center; gap:12px;">
+        <div class="day-badge sat" style="width:32px; height:32px; font-size:11px; border-radius:8px;">Sat</div>
+        <div><div class="mc-name">Riverside Farmers Market</div><div class="mc-addr">Saturdays 8AM–5PM · Every week</div></div>
+      </div>
+      <div class="section-title" style="margin-top:16px;">Social</div>
+      <div style="padding:0 16px; font-size:14px; color:#2D7D46;">
+        <div style="margin-bottom:8px;">📷 @greenvalleyfarm</div>
+        <div>🌐 greenvalleyfarm.com</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Profile -->
+  <div class="screen" id="customer-profile">
+    <div class="header"><h2>Profile</h2></div>
+    <div class="screen-scroll">
+      <div style="text-align:center; padding:24px 16px; border-bottom:1px solid #E5E7EB;">
+        <div style="width:64px; height:64px; border-radius:32px; background:#E8F5EC; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">🧺</div>
+        <div style="font-size:18px; font-weight:600;">Rachel</div>
+        <div style="font-size:13px; color:#6B7280;">Portland, OR · Customer</div>
+      </div>
+      <div class="section-header">Preferences</div>
+      <div class="settings-row" onclick="showScreen('customer-notifications')">
+        <div><div class="settings-label">🔔 Notifications</div><div class="settings-desc">Manage alert preferences</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="showScreen('customer-product-prefs')">
+        <div><div class="settings-label">🏷️ Product Preferences</div><div class="settings-desc">Produce, Eggs, Honey</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="showScreen('customer-activity')">
+        <div><div class="settings-label">📋 Activity Log</div><div class="settings-desc">View your history</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="section-header">Account</div>
+      <div class="settings-row">
+        <div><div class="settings-label">🔀 Switch Mode</div><div class="settings-desc">Currently: Customer</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label" style="color:#DC2626;">🗑️ Delete Account</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Product Preferences -->
+  <div class="screen" id="customer-product-prefs">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('customer-profile')">‹</span><span class="nav-title">Product Preferences</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="font-size:14px; color:#6B7280; margin-bottom:16px;">Select products you're interested in. We'll use these to recommend vendors and highlight matching products in search.</div>
+        <div style="display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;" onclick="togglePrefChip(event)">
+          <span class="chip active" style="padding:10px 16px; font-size:14px;">🥬 Produce</span>
+          <span class="chip active" style="padding:10px 16px; font-size:14px;">🥚 Eggs</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🧀 Dairy</span>
+          <span class="chip active" style="padding:10px 16px; font-size:14px;">🍯 Honey</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🥖 Baked Goods</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🌸 Flowers</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🥩 Meat</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🫒 Preserves</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🧴 Body Care</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🎨 Artisan Crafts</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">🌶️ Hot Sauce</span>
+          <span class="chip" style="padding:10px 16px; font-size:14px;">☕ Coffee & Tea</span>
+        </div>
+        <div style="text-align:center; font-size:13px; color:#2D7D46; font-weight:500; margin-bottom:16px;">3 categories selected</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Customer: Notifications Preferences -->
+  <div class="screen" id="customer-notifications">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('customer-profile')">‹</span><span class="nav-title">Notifications</span></div>
+    <div class="screen-scroll">
+      <div style="background:#EFF6FF; border-radius:12px; padding:12px 14px; margin:16px; font-size:13px; color:#1E40AF;">🔔 Changes save automatically</div>
+      <div class="section-header">Vendor Updates</div>
+      <div class="settings-row"><div><div class="settings-label">Vendor Check-Ins</div><div class="settings-desc">When a followed vendor checks in</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Exception Alerts</div><div class="settings-desc">Running late, sold out, not attending</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Vendor Checkouts</div><div class="settings-desc">When vendors leave the market</div></div><div style="width:51px;height:31px;border-radius:16px;background:#D1D5DB;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:2px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="section-header">Market Updates</div>
+      <div class="settings-row"><div><div class="settings-label">Market Announcements</div><div class="settings-desc">Updates from followed markets</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Market Day Reminders</div><div class="settings-desc">Morning reminders for followed markets</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+    </div>
+  </div>
+
+  <!-- Customer: Activity Log -->
+  <div class="screen" id="customer-activity">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('customer-profile')">‹</span><span class="nav-title">Activity Log</span></div>
+    <div class="screen-scroll">
+      <div class="filter-row" style="padding:12px 16px;" onclick="toggleChip(event)"><span class="chip active">This Week</span><span class="chip">This Month</span><span class="chip">All Time</span></div>
+      <div class="section-header">Today</div>
+      <div class="settings-row"><div><div class="settings-label">❤️ Followed Berry Good Farm</div><div class="settings-desc">10:14 AM · Riverside Market</div></div></div>
+      <div class="settings-row"><div><div class="settings-label">❤️ Followed Riverside Farmers Market</div><div class="settings-desc">9:32 AM</div></div></div>
+      <div class="section-header">Yesterday</div>
+      <div class="settings-row"><div><div class="settings-label">🤍 Unfollowed Sunset Bakery</div><div class="settings-desc">3:15 PM · Downtown Market</div></div></div>
+      <div class="settings-row"><div><div class="settings-label">✏️ Updated notification preferences</div><div class="settings-desc">2:45 PM</div></div></div>
+    </div>
+  </div>
+
+  <!-- ==================== VENDOR SCREENS ==================== -->
+
+  <!-- Vendor: Markets (Home) — renamed to "Upcoming Markets" -->
+  <div class="screen" id="vendor-markets">
+    <div class="header"><h2>Upcoming Markets</h2><div class="header-sub">Honey Beeeham · 3 upcoming</div></div>
+    <div class="screen-scroll">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-number">34</div><div class="stat-label">Followers</div></div>
+        <div class="stat-card"><div class="stat-number">12</div><div class="stat-label">Markets Attended</div></div>
+        <div class="stat-card"><div class="stat-number">3</div><div class="stat-label">Upcoming</div></div>
+      </div>
+      <div class="section-title">Upcoming</div>
+      <div class="upcoming-card" onclick="showScreen('vendor-upcoming-detail')">
+        <div class="upcoming-day"><div class="day-name">Sun</div><div class="day-num">23</div></div>
+        <div style="flex:1;"><div class="upcoming-market">Downtown Sunday Market</div><div class="upcoming-time">9:00 AM - 2:00 PM</div></div>
+        <span class="settings-arrow" style="color:#D1D5DB;">›</span>
+      </div>
+      <div class="upcoming-card" onclick="showScreen('vendor-upcoming-detail')">
+        <div class="upcoming-day"><div class="day-name">Wed</div><div class="day-num">26</div></div>
+        <div style="flex:1;"><div class="upcoming-market">Midweek Market at City Hall</div><div class="upcoming-time">3:00 PM - 7:00 PM</div></div>
+        <span class="settings-arrow" style="color:#D1D5DB;">›</span>
+      </div>
+      <div class="upcoming-card" onclick="showScreen('vendor-upcoming-detail')">
+        <div class="upcoming-day"><div class="day-name">Sat</div><div class="day-num">29</div></div>
+        <div style="flex:1;"><div class="upcoming-market">Riverside Farmers Market</div><div class="upcoming-time">8:00 AM - 1:00 PM</div></div>
+        <span class="settings-arrow" style="color:#D1D5DB;">›</span>
+      </div>
+      <div style="display:flex; gap:8px; padding:8px 16px 0;">
+        <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('vendor-find-markets')">🔍 Find & Join Market</button>
+        <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('vendor-products')">📦 Products</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Upcoming Market Detail (NEW) -->
+  <div class="screen" id="vendor-upcoming-detail">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-markets')">‹</span><span class="nav-title">Market Details</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:linear-gradient(135deg, #E8F5EC, #D4EDDA); border-radius:16px; padding:20px; margin-bottom:16px;">
+          <div style="font-size:20px; font-weight:700;">Downtown Sunday Market</div>
+          <div style="font-size:14px; color:#6B7280; margin-top:4px;">456 Main St, Portland</div>
+          <div style="display:flex; gap:12px; margin-top:12px;">
+            <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:8px 14px;">
+              <div style="font-size:12px; color:#6B7280;">Date</div>
+              <div style="font-size:15px; font-weight:600;">Sun, Mar 23</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:8px 14px;">
+              <div style="font-size:12px; color:#6B7280;">Time</div>
+              <div style="font-size:15px; font-weight:600;">9:00 AM – 2:00 PM</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="guidance-box">
+          <div class="guidance-title">📋 Market Guidance</div>
+          <div class="guidance-text">
+            <strong>Setup:</strong> Arrive by 8:30 AM for setup<br>
+            <strong>Fee:</strong> $30/day stall fee, due on arrival<br>
+            <strong>Requirements:</strong> Liability insurance required<br>
+            <strong>Policy:</strong> All products must be locally sourced or handmade
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-top:16px;">
+          <div class="gps-pin" onclick="openMaps('456 Main St, Portland, OR')" title="Get Directions"></div>
+          <div style="flex:1; font-size:14px; color:#6B7280; display:flex; align-items:center;">Get Directions</div>
+        </div>
+
+        <button class="action-btn" style="width:100%; margin:24px 0 0; background:#FEE2E2; color:#991B1B;" onclick="showToast('⚠️ Are you sure? This will notify the market manager.'); setTimeout(()=>showScreen('vendor-markets'),2000)">Withdraw from This Date</button>
+        <div style="text-align:center; font-size:12px; color:#9CA3AF; margin-top:8px;">The market manager will be notified</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Products (NEW) -->
+  <div class="screen" id="vendor-products">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-markets')">‹</span><span class="nav-title">Products</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="font-size:14px; color:#6B7280; margin-bottom:16px;">Manage your product offerings. Customers see these when browsing your profile.</div>
+
+        <div style="font-size:12px; font-weight:600; color:#374151; margin-bottom:8px;">YOUR PRODUCTS (3)</div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🍯</span>
+          <div style="flex:1;"><div style="font-size:15px; font-weight:600;">Raw Wildflower Honey</div><div style="font-size:12px; color:#6B7280;">16oz and 32oz jars · Seasonal</div></div>
+          <span class="settings-arrow">›</span>
+        </div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🕯️</span>
+          <div style="flex:1;"><div style="font-size:15px; font-weight:600;">Beeswax Candles</div><div style="font-size:12px; color:#6B7280;">Hand-poured · Various sizes</div></div>
+          <span class="settings-arrow">›</span>
+        </div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:12px;">
+          <span style="font-size:24px;">🧴</span>
+          <div style="flex:1;"><div style="font-size:15px; font-weight:600;">Honey Lip Balm</div><div style="font-size:12px; color:#6B7280;">All-natural ingredients</div></div>
+          <span class="settings-arrow">›</span>
+        </div>
+
+        <button class="action-btn" style="width:100%; margin:16px 0 0;" onclick="showScreen('vendor-add-product')">+ Add Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Add Product -->
+  <div class="screen" id="vendor-add-product">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-profile')">‹</span><span class="nav-title">Add Product</span></div>
+    <div class="screen-scroll">
+      <div class="search-bar" style="margin:16px;">🔍 Search product types...</div>
+
+      <div class="section-title">Produce</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Tomatoes</span><span class="chip">Lettuce</span><span class="chip">Kale</span><span class="chip">Spinach</span><span class="chip">Carrots</span><span class="chip">Peppers</span><span class="chip">Onions</span><span class="chip">Garlic</span><span class="chip">Potatoes</span><span class="chip">Squash</span><span class="chip">Zucchini</span><span class="chip">Cucumbers</span><span class="chip">Corn</span><span class="chip">Beans</span><span class="chip">Peas</span><span class="chip">Beets</span><span class="chip">Radishes</span><span class="chip">Turnips</span><span class="chip">Herbs</span><span class="chip">Mushrooms</span><span class="chip">Microgreens</span><span class="chip">Sprouts</span>
+      </div>
+
+      <div class="section-title">Fruits</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Apples</span><span class="chip">Berries</span><span class="chip">Peaches</span><span class="chip">Pears</span><span class="chip">Plums</span><span class="chip">Cherries</span><span class="chip">Grapes</span><span class="chip">Melons</span><span class="chip">Citrus</span><span class="chip">Figs</span>
+      </div>
+
+      <div class="section-title">Dairy & Eggs</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Eggs</span><span class="chip">Milk</span><span class="chip">Cheese</span><span class="chip">Yogurt</span><span class="chip">Butter</span><span class="chip">Cream</span><span class="chip">Ice Cream</span>
+      </div>
+
+      <div class="section-title">Meat & Seafood</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Beef</span><span class="chip">Pork</span><span class="chip">Chicken</span><span class="chip">Turkey</span><span class="chip">Lamb</span><span class="chip">Sausage</span><span class="chip">Bacon</span><span class="chip">Jerky</span><span class="chip">Fish</span><span class="chip">Shrimp</span>
+      </div>
+
+      <div class="section-title">Baked Goods</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Bread</span><span class="chip">Sourdough</span><span class="chip">Pastries</span><span class="chip">Pies</span><span class="chip">Cookies</span><span class="chip">Cakes</span><span class="chip">Muffins</span><span class="chip">Bagels</span>
+      </div>
+
+      <div class="section-title">Pantry</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Honey</span><span class="chip">Jams</span><span class="chip">Pickles</span><span class="chip">Sauces</span><span class="chip">Oils</span><span class="chip">Vinegar</span><span class="chip">Spices</span><span class="chip">Maple Syrup</span><span class="chip">Salsa</span><span class="chip">Granola</span>
+      </div>
+
+      <div class="section-title">Beverages</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Coffee</span><span class="chip">Tea</span><span class="chip">Cider</span><span class="chip">Kombucha</span><span class="chip">Juice</span><span class="chip">Lemonade</span>
+      </div>
+
+      <div class="section-title">Plants & Flowers</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Cut Flowers</span><span class="chip">Bouquets</span><span class="chip">Potted Plants</span><span class="chip">Succulents</span><span class="chip">Seedlings</span><span class="chip">Dried Flowers</span><span class="chip">Wreaths</span>
+      </div>
+
+      <div class="section-title">Artisan & Crafts</div>
+      <div class="filter-row" onclick="selectProductType(event)" style="margin-bottom:12px;">
+        <span class="chip">Pottery</span><span class="chip">Woodwork</span><span class="chip">Candles</span><span class="chip">Soap</span><span class="chip">Textiles</span><span class="chip">Jewelry</span><span class="chip">Leather Goods</span>
+      </div>
+
+      <div class="content" style="padding-top:8px;">
+        <div style="margin-bottom:12px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">Product Name</label>
+          <input type="text" placeholder="e.g. Organic Roma Tomatoes" style="width:100%; padding:12px 14px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:15px; outline:none;" onfocus="this.style.borderColor='#2D7D46'" onblur="this.style.borderColor='#E5E7EB'">
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px; font-weight:600; color:#374151; display:block; margin-bottom:6px;">Description</label>
+          <textarea placeholder="Describe your product..." rows="3" style="width:100%; padding:12px 14px; border:1.5px solid #E5E7EB; border-radius:10px; font-size:15px; outline:none; resize:vertical; font-family:inherit;" onfocus="this.style.borderColor='#2D7D46'" onblur="this.style.borderColor='#E5E7EB'"></textarea>
+        </div>
+        <button class="action-btn" style="width:100%;" onclick="showToast('Product saved successfully!'); showScreen('vendor-profile');">Save Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Find Markets -->
+  <div class="screen" id="vendor-find-markets">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-markets')">‹</span><span class="nav-title">Find Markets</span></div>
+    <div class="screen-scroll">
+      <div class="search-bar" style="margin:16px;">🔍 Search by market name, city, or product...</div>
+      <div class="filter-row" onclick="toggleChip(event)" style="margin-bottom:16px;">
+        <span class="chip active">Nearby</span><span class="chip">Weekends</span><span class="chip">Weekdays</span><span class="chip">Accepting Vendors</span>
+      </div>
+      <div class="section-title">Markets Near You</div>
+      <div class="market-card">
+        <div class="mc-top"><div class="day-badge sat">Sat</div><div style="flex:1;"><div class="mc-name">Hillside Organic Market</div><div class="mc-addr">789 Hill St, Portland</div></div><span class="mc-distance">3.2 mi</span></div>
+        <div class="mc-meta"><span>Saturdays, 9AM–1PM</span><span style="color:#2D7D46; font-weight:600;">18 vendors</span><span style="color:#6B7280;">Free entry</span></div>
+        <div style="margin-top:10px; background:#F8F9FA; border-radius:10px; padding:10px; cursor:pointer;" onclick="showToast('📋 Market Guidance: Setup by 8:30AM · $25/day stall fee · Insurance required')">
+          <div style="font-size:12px; font-weight:600; color:#374151;">📋 Market Guidance</div>
+          <div style="font-size:11px; color:#6B7280; margin-top:2px;">Setup, fees, conduct — tap to view before joining</div>
+        </div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button style="flex:1; height:40px; background:#2D7D46; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;" onclick="showScreen('vendor-request-join')">Request to Join</button>
+          <div class="gps-pin" onclick="openMaps('789 Hill St, Portland, OR')" title="Directions" style="transform:rotate(-45deg) scale(0.8);"></div>
+        </div>
+      </div>
+      <div class="market-card">
+        <div class="mc-top"><div class="day-badge fri">Fri</div><div style="flex:1;"><div class="mc-name">Eastside Night Market</div><div class="mc-addr">222 East Ave, Portland</div></div><span class="mc-distance">5.1 mi</span></div>
+        <div class="mc-meta"><span>Fridays, 5–9PM</span><span style="color:#2D7D46; font-weight:600;">32 vendors</span><span style="color:#B45309; font-weight:500;">$3 entry</span></div>
+        <div style="margin-top:8px; display:flex; gap:8px;">
+          <button style="flex:1; height:40px; background:#2D7D46; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;" onclick="showScreen('vendor-request-join')">Request to Join</button>
+          <div class="gps-pin" onclick="openMaps('222 East Ave, Portland, OR')" title="Directions" style="transform:rotate(-45deg) scale(0.8);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Request to Join (NEW) -->
+  <div class="screen" id="vendor-request-join">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-find-markets')">‹</span><span class="nav-title">Request to Join</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:linear-gradient(135deg, #E8F5EC, #D4EDDA); border-radius:16px; padding:16px; margin-bottom:16px;">
+          <div style="font-size:18px; font-weight:700;">Hillside Organic Market</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">789 Hill St, Portland · Saturdays 9AM–1PM</div>
+        </div>
+
+        <div style="font-size:15px; font-weight:600; margin-bottom:8px;">Select Dates</div>
+        <div style="font-size:13px; color:#6B7280; margin-bottom:12px;">Choose which Saturdays you'd like to attend:</div>
+
+        <!-- Mini calendar / date selector -->
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:16px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px;" onclick="togglePrefChip(event)">
+            <span class="chip active" style="padding:8px 14px;">Sat, Mar 29</span>
+            <span class="chip active" style="padding:8px 14px;">Sat, Apr 5</span>
+            <span class="chip active" style="padding:8px 14px;">Sat, Apr 12</span>
+            <span class="chip" style="padding:8px 14px;">Sat, Apr 19</span>
+            <span class="chip active" style="padding:8px 14px;">Sat, Apr 26</span>
+            <span class="chip" style="padding:8px 14px;">Sat, May 3</span>
+            <span class="chip" style="padding:8px 14px;">Sat, May 10</span>
+            <span class="chip" style="padding:8px 14px;">Sat, May 17</span>
+          </div>
+          <div style="text-align:center; font-size:13px; color:#2D7D46; font-weight:500; margin-top:8px;">4 dates selected</div>
+        </div>
+
+        <div class="guidance-box">
+          <div class="guidance-title">📋 Market Guidance — Please Review</div>
+          <div class="guidance-text">
+            <strong>Setup:</strong> Arrive by 8:30 AM · Stalls must be ready by open<br>
+            <strong>Fee:</strong> $25/day stall fee, due on arrival<br>
+            <strong>Insurance:</strong> $1M liability insurance required<br>
+            <strong>Products:</strong> All items must be locally sourced or handmade<br>
+            <strong>Cancellation:</strong> 24hr notice required; 3 no-shows may result in removal
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; gap:8px; margin:16px 0;">
+          <div style="width:24px; height:24px; border-radius:6px; background:#2D7D46; display:flex; align-items:center; justify-content:center; color:#fff; font-size:14px;">✓</div>
+          <span style="font-size:14px;">I acknowledge and agree to the Market Guidance</span>
+        </div>
+
+        <button class="action-btn" style="width:100%; margin:8px 0 0;" onclick="showToast('✓ Request submitted for 4 dates — awaiting manager approval'); showScreen('vendor-markets')">Submit Request</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Status -->
+  <div class="screen" id="vendor-today">
+    <div class="header"><h2>Today</h2><div class="header-sub">Riverside Farmers Market · Saturday, Apr 4</div></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <!-- Check-in card (moved from Markets) -->
+        <div style="background:linear-gradient(135deg, #E8F5EC, #D4EDDA); border-radius:16px; padding:20px; margin-bottom:16px; text-align:center;">
+          <div style="font-size:13px; color:#6B7280; margin-bottom:4px;">Riverside Farmers Market</div>
+          <div style="font-size:15px; font-weight:600; margin-bottom:4px;">Opens 8:00 AM · Closes 1:00 PM</div>
+          <button class="checkin-btn checkin-ready" id="checkin-btn-today" onclick="doCheckIn()" style="margin:12px auto 8px;">📍 Check In</button>
+          <div style="font-size:13px; color:#6B7280;"><strong>34</strong> followers will be notified</div>
+        </div>
+
+        <!-- Current Status -->
+        <div style="text-align:center; margin-bottom:20px;">
+          <span class="status-badge sb-checked-in" style="font-size:15px; padding:8px 16px;"><span class="dot dot-green"></span> Checked-In</span>
+          <span class="freshness" style="font-size:14px;">14 min ago</span>
+        </div>
+
+        <!-- Today's Announcements -->
+        <div style="font-size:15px; font-weight:600; margin-bottom:10px;">Announcements</div>
+        <div style="background:#EFF6FF; border-radius:12px; padding:12px 14px; margin-bottom:8px;">
+          <div style="font-size:13px; font-weight:600; color:#1E40AF;">📢 From Market Manager</div>
+          <div style="font-size:13px; color:#4B5563; margin-top:4px;">Parking lot A is closed today. Use lot B entrance.</div>
+          <div style="font-size:11px; color:#9CA3AF; margin-top:4px;">Maria Rodriguez · 5:30 AM</div>
+        </div>
+        <div style="background:#FEF3C7; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+          <div style="font-size:13px; font-weight:600; color:#92400E;">⚡ Expected high traffic</div>
+          <div style="font-size:13px; color:#4B5563; margin-top:4px;">Community event nearby — expect 2x foot traffic today.</div>
+          <div style="font-size:11px; color:#9CA3AF; margin-top:4px;">Maria Rodriguez · Yesterday</div>
+        </div>
+
+        <!-- Market Guidance -->
+        <div style="background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:14px; margin-bottom:16px;">
+          <div style="font-size:13px; font-weight:600; color:#374151;">📋 Market Guidance</div>
+          <div style="font-size:13px; color:#6B7280; margin-top:4px;">
+            <strong>Setup:</strong> Arrive 30 min before open<br>
+            <strong>Fee:</strong> $25/day · <strong>Insurance:</strong> $1M required<br>
+            <strong>Policy:</strong> No early breakdown without approval
+          </div>
+        </div>
+
+        <!-- Update Status -->
+        <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Update Status</div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:14px; cursor:pointer;" onclick="showToast('Status: Running Late')">
+          <div style="width:40px;height:40px;border-radius:10px;background:#FEF3C7;display:flex;align-items:center;justify-content:center;font-size:20px;">🕐</div>
+          <div><div style="font-size:15px;font-weight:600;">Running Late</div><div style="font-size:13px;color:#6B7280;">Let customers know you'll arrive soon</div></div>
+        </div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:14px; cursor:pointer;" onclick="showToast('Status: Not Attending')">
+          <div style="width:40px;height:40px;border-radius:10px;background:#F1F5F9;display:flex;align-items:center;justify-content:center;font-size:20px;">🚫</div>
+          <div><div style="font-size:15px;font-weight:600;">Not Attending</div><div style="font-size:13px;color:#6B7280;">You won't be at this market today</div></div>
+        </div>
+        <div style="background:#F8F9FA; border-radius:12px; padding:14px; margin-bottom:8px; display:flex; align-items:center; gap:14px; cursor:pointer;" onclick="showToast('Status: Left Early')">
+          <div style="width:40px;height:40px;border-radius:10px;background:#DBEAFE;display:flex;align-items:center;justify-content:center;font-size:20px;">👋</div>
+          <div><div style="font-size:15px;font-weight:600;">Left Early</div><div style="font-size:13px;color:#6B7280;">You're packing up before market closes</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Profile -->
+  <div class="screen" id="vendor-profile">
+    <div class="header"><h2>Profile</h2></div>
+    <div class="screen-scroll">
+      <div style="text-align:center; padding:24px 16px; border-bottom:1px solid #E5E7EB;">
+        <div style="width:64px; height:64px; border-radius:32px; background:#E8F5EC; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">🍯</div>
+        <div style="font-size:18px; font-weight:600;">Honey Beeeham</div>
+        <div style="font-size:13px; color:#6B7280;">Vendor · 34 followers</div>
+      </div>
+      <div class="section-header">Business</div>
+      <div class="settings-row" onclick="showScreen('vendor-edit-profile')"><div><div class="settings-label">✏️ Edit Profile</div><div class="settings-desc">Name, description, social links</div></div><span class="settings-arrow">›</span></div>
+      <div class="section-header">Settings</div>
+      <div class="settings-row" onclick="showScreen('vendor-notifications')"><div><div class="settings-label">🔔 Notifications</div><div class="settings-desc">Manage alert preferences</div></div><span class="settings-arrow">›</span></div>
+      <div class="settings-row" onclick="showScreen('vendor-activity')"><div><div class="settings-label">📋 Activity Log</div><div class="settings-desc">View your history</div></div><span class="settings-arrow">›</span></div>
+      <div class="section-header">Account</div>
+      <div class="settings-row">
+        <div><div class="settings-label">🔀 Switch Mode</div><div class="settings-desc">Currently: Vendor</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label" style="color:#DC2626;">🗑️ Delete Account</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Edit Profile -->
+  <div class="screen" id="vendor-edit-profile">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-profile')">‹</span><span class="nav-title">Edit Profile</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="display:flex; align-items:center; gap:16px; margin-bottom:24px;">
+          <div style="width:80px; height:80px; border-radius:20px; background:#E8F5EC; display:flex; align-items:center; justify-content:center; font-size:32px;">🍯</div>
+          <div><div style="font-size:13px; color:#2D7D46; font-weight:500; cursor:pointer;">Change photo</div><div style="font-size:12px; color:#9CA3AF; margin-top:2px;">Shown on your vendor card</div></div>
+        </div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Business Name *</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="Honey Beeeham" /></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Description</label><textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;">We produce raw, unfiltered honey and beeswax products from our family apiaries.</textarea></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Contact Email *</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="hello@honeybeeeham.com" /></div>
+        <div style="border-top:1px solid #E5E7EB; margin:20px 0 16px; padding-top:16px;"><div style="font-size:16px; font-weight:600; margin-bottom:4px;">Social Links</div><div style="font-size:12px; color:#9CA3AF; margin-bottom:12px;">Help customers find you on social media</div></div>
+        <div style="margin-bottom:16px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Instagram</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="@honeybeeeham" /></div>
+        <div style="margin-bottom:16px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Facebook</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" placeholder="facebook.com/your-page" /></div>
+        <div style="margin-bottom:16px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">TikTok</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="@honeybeeeham" /></div>
+        <div style="margin-bottom:16px;"><label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Website</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="honeybeeeham.com" /></div>
+        <button class="action-btn" style="width:100%; margin:16px 0 0;" onclick="showToast('Profile saved ✓'); showScreen('vendor-profile');">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor: Activity Log (NEW) -->
+  <div class="screen" id="vendor-activity">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-profile')">‹</span><span class="nav-title">Activity Log</span></div>
+    <div class="screen-scroll">
+      <div class="filter-row" style="padding:12px 16px;" onclick="toggleChip(event)"><span class="chip active">This Week</span><span class="chip">This Month</span><span class="chip">All Time</span></div>
+      <div class="section-header">Today</div>
+      <div class="settings-row"><div><div class="settings-label">📍 Checked in at Riverside Market</div><div class="settings-desc">8:27 AM · 34 followers notified</div></div></div>
+      <div class="settings-row"><div><div class="settings-label">📦 Updated product: Raw Wildflower Honey</div><div class="settings-desc">7:45 AM</div></div></div>
+      <div class="section-header">Yesterday</div>
+      <div class="settings-row"><div><div class="settings-label">📍 Checked in at Downtown Sunday Market</div><div class="settings-desc">9:12 AM · 28 followers notified</div></div></div>
+      <div class="settings-row"><div><div class="settings-label">🚫 Marked Not Attending — Midweek Market</div><div class="settings-desc">6:30 AM</div></div></div>
+      <div class="section-header">Mar 20</div>
+      <div class="settings-row"><div><div class="settings-label">✅ Join request approved — Hillside Market</div><div class="settings-desc">2:15 PM · 4 dates confirmed</div></div></div>
+    </div>
+  </div>
+
+  <!-- Vendor: Notifications -->
+  <div class="screen" id="vendor-notifications">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('vendor-profile')">‹</span><span class="nav-title">Notifications</span></div>
+    <div class="screen-scroll">
+      <div style="background:#EFF6FF; border-radius:12px; padding:12px 14px; margin:16px; font-size:13px; color:#1E40AF;">🔔 Changes save automatically</div>
+      <div class="section-header">Market Day</div>
+      <div class="settings-row"><div><div class="settings-label">Check-In Reminders</div><div class="settings-desc">Reminder on scheduled market mornings</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Follower Milestones</div><div class="settings-desc">When you reach 10, 25, 50 followers...</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="section-header">Manager Communications</div>
+      <div class="settings-row"><div><div class="settings-label">Confirmation Requests</div><div class="settings-desc">When managers ask you to confirm attendance</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Market Broadcasts</div><div class="settings-desc">Operational updates from market managers</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+      <div class="settings-row"><div><div class="settings-label">Join Request Updates</div><div class="settings-desc">When market join requests are approved or rejected</div></div><div style="width:51px;height:31px;border-radius:16px;background:#2D7D46;position:relative;cursor:pointer;" onclick="toggleSwitch(this)"><div style="width:27px;height:27px;border-radius:50%;background:#fff;position:absolute;top:2px;left:22px;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div></div></div>
+    </div>
+  </div>
+
+  <!-- ==================== MANAGER SCREENS ==================== -->
+
+  <!-- Manager: Dashboard -->
+  <div class="screen" id="manager-dashboard">
+    <div class="header"><h2>Dashboard</h2><div class="header-sub">Riverside Farmers Market · Saturday</div></div>
+    <div class="screen-scroll">
+      <div class="att-bar">
+        <div class="att-label">Vendor Attendance</div>
+        <div class="bar-visual"><div class="bar-seg" style="width:68%;background:#22C55E;"></div><div class="bar-seg" style="width:8%;background:#F59E0B;"></div><div class="bar-seg" style="width:24%;background:#D1D5DB;"></div></div>
+        <div class="att-stats">
+          <div class="att-stat"><span class="dot dot-green"></span> <strong>26</strong> <span class="label">Checked-In</span></div>
+          <div class="att-stat"><span class="dot dot-yellow"></span> <strong>3</strong> <span class="label">Running Late</span></div>
+          <div class="att-stat"><span class="dot dot-pending"></span> <strong>9</strong> <span class="label">Pending</span></div>
+        </div>
+      </div>
+      <div class="exception-alert">
+        <span style="font-size:20px;">⚠️</span>
+        <div><div class="alert-text"><strong>Alpine Creamery</strong> is running late</div><div class="alert-time">3 min ago</div></div>
+      </div>
+      <div class="filter-tabs" onclick="toggleFilterTab(event)">
+        <div class="filter-tab active">All 38</div>
+        <div class="filter-tab">Pending 9</div>
+        <div class="filter-tab">Exceptions 3</div>
+      </div>
+      <div id="manager-vendor-list">
+        <div class="vendor-row"><div class="vc-avatar">🥬</div><div class="vr-info"><div class="vr-name">Green Valley Farm</div><div class="vr-detail">Checked in 14 min ago</div></div><span class="status-pill pill-present">Checked-In</span></div>
+        <div class="vendor-row"><div class="vc-avatar">🍯</div><div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-detail">Checked in 8 min ago</div></div><span class="status-pill pill-present">Checked-In</span></div>
+        <div class="vendor-row"><div class="vc-avatar">🧀</div><div class="vr-info"><div class="vr-name">Alpine Creamery</div><div class="vr-detail">Running late · 3 min ago</div></div><span class="status-pill pill-late">Running Late</span></div>
+        <div class="vendor-row"><div class="vc-avatar">🥖</div><div class="vr-info"><div class="vr-name">Artisan Bakehouse</div><div class="vr-detail">Not confirmed</div></div><span class="status-pill pill-pending">Pending</span></div>
+        <div class="vendor-row"><div class="vc-avatar">🥚</div><div class="vr-info"><div class="vr-name">Sunny Side Eggs</div><div class="vr-detail">Not attending · 1 hr ago</div></div><span class="status-pill pill-absent">Not Attending</span></div>
+      </div>
+      <button class="action-btn">📨 Request Confirmation (9 pending)</button>
+      <div style="display:flex; gap:8px; padding:0 16px;">
+        <button class="action-btn" style="flex:1; margin:0; background:#F3F4F6; color:#4B5563;" onclick="showScreen('manager-send-notification')">📢 Notify</button>
+        <button class="action-btn" style="flex:1; margin:0; background:#FEE2E2; color:#991B1B;" onclick="showScreen('manager-cancel-market')">❌ Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Future Planning -->
+  <div class="screen" id="manager-planning">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-dashboard')">‹</span><span class="nav-title">Plan Ahead</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <!-- Mini Calendar -->
+        <div style="background:#fff; border-radius:16px; padding:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:15px; font-weight:600;">April 2026</span>
+            <div style="display:flex; gap:12px;"><span style="color:#6B7280; cursor:pointer;">‹</span><span style="color:#6B7280; cursor:pointer;">›</span></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; margin-bottom:4px;">
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">M</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">W</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">F</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;">
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">1</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">2</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">3</span>
+            <span style="font-size:11px; background:#22C55E; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;" onclick="selectPlanDate(this,'Apr 4','24/24','full')">4</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">5</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">6</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">7</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">8</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">9</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">10</span>
+            <span style="font-size:11px; background:#F59E0B; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;" onclick="selectPlanDate(this,'Apr 11','18/24','gaps')">11</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">12</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">13</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">14</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">15</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">16</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">17</span>
+            <span style="font-size:11px; background:#F59E0B; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;" onclick="selectPlanDate(this,'Apr 18','20/24','gaps')">18</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">19</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">20</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">21</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">22</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">23</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">24</span>
+            <span style="font-size:11px; background:#DC2626; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;" onclick="selectPlanDate(this,'Apr 25','12/24','critical')">25</span>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:8px; font-size:10px; color:#6B7280;">
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#22C55E;"></span> Full</span>
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#F59E0B;"></span> Gaps</span>
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#DC2626;"></span> Critical</span>
+          </div>
+        </div>
+
+        <!-- Product / Vendor Toggle (NEW - feedback 4a) -->
+        <div class="toggle-group" onclick="togglePlanView(event)">
+          <div class="toggle-pill active" data-view="product">Product View</div>
+          <div class="toggle-pill" data-view="vendor">Vendor View</div>
+        </div>
+
+        <!-- Selected Date Detail -->
+        <div id="plan-date-detail">
+          <div style="background:#FEF3C7; border-radius:12px; padding:14px; margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <div>
+                <div id="plan-date-title" style="font-size:16px; font-weight:600;">Saturday, Apr 11</div>
+                <div id="plan-date-count" style="font-size:13px; color:#92400E; margin-top:2px;">18 of 24 vendor slots filled</div>
+              </div>
+              <div id="plan-date-bar" style="width:60px; height:8px; border-radius:4px; background:#F3F4F6; overflow:hidden;">
+                <div style="width:75%; height:100%; background:#F59E0B; border-radius:4px;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Product View (default) -->
+          <div id="plan-product-view">
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Category Coverage</div>
+            <div style="background:#fff; border-radius:12px; padding:12px; margin-bottom:12px; box-shadow:0 1px 2px rgba(0,0,0,0.04);">
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6;"><span style="font-size:13px;">🥬 Produce</span><span style="font-size:13px; color:#22C55E; font-weight:600;">6 vendors ✓</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6;"><span style="font-size:13px;">🧀 Dairy</span><span style="font-size:13px; color:#22C55E; font-weight:600;">2 vendors ✓</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6;"><span style="font-size:13px;">🍯 Honey & Bee</span><span style="font-size:13px; color:#22C55E; font-weight:600;">2 vendors ✓</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6;"><span style="font-size:13px;">🥖 Baked Goods</span><span style="font-size:13px; color:#22C55E; font-weight:600;">3 vendors ✓</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6;"><span style="font-size:13px;">🥩 Meat</span><span style="font-size:13px; color:#22C55E; font-weight:600;">2 vendors ✓</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6; background:#FEF2F2; margin:0 -12px; padding-left:12px; padding-right:12px;"><span style="font-size:13px; font-weight:600; color:#991B1B;">🌸 Flowers</span><span style="font-size:13px; color:#DC2626; font-weight:600;">0 vendors ⚠️</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #F3F4F6; background:#FEF2F2; margin:0 -12px; padding-left:12px; padding-right:12px;"><span style="font-size:13px; font-weight:600; color:#991B1B;">🥚 Eggs</span><span style="font-size:13px; color:#DC2626; font-weight:600;">0 vendors ⚠️</span></div>
+              <div style="display:flex; justify-content:space-between; padding:8px 0;"><span style="font-size:13px;">🎨 Artisan</span><span style="font-size:13px; color:#F59E0B; font-weight:600;">1 vendor (low)</span></div>
+            </div>
+          </div>
+
+          <!-- Vendor View (hidden by default) -->
+          <div id="plan-vendor-view" style="display:none;">
+            <div style="font-size:13px; font-weight:600; margin-bottom:8px;">Committed Vendors (18)</div>
+            <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥬</div><div class="vr-info"><div class="vr-name">Green Valley Farm</div><div class="vr-detail">Produce · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+            <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🍯</div><div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-detail">Honey & Bee · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+            <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🧀</div><div class="vr-info"><div class="vr-name">Alpine Creamery</div><div class="vr-detail">Dairy · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+            <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥖</div><div class="vr-info"><div class="vr-name">Artisan Bakehouse</div><div class="vr-detail">Baked Goods · Pending</div></div><span class="status-pill pill-pending">Pending</span></div>
+          </div>
+
+          <!-- Date Actions (NEW - feedback 4f, 4g, 4h) -->
+          <div style="font-size:13px; font-weight:600; color:#991B1B; margin-bottom:8px;">⚠️ 2 categories with no vendors</div>
+          <button class="action-btn" onclick="showScreen('manager-find-vendors'); showToast('Filtered for Flowers & Eggs vendors')" style="margin:0 0 8px;">🔍 Fill Gaps — Find Vendors</button>
+          <div style="display:flex; gap:8px;">
+            <button class="action-btn" style="flex:1; margin:0; background:#F3F4F6; color:#4B5563;" onclick="showScreen('manager-plan-notify')">📢 Notify Vendors</button>
+            <button class="action-btn" style="flex:1; margin:0; background:#FEE2E2; color:#991B1B;" onclick="showScreen('manager-plan-cancel-date')">❌ Cancel Date</button>
+          </div>
+          <button class="action-btn" style="margin:8px 0 0; width:100%; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('manager-plan-add-date')">+ Add Market Date</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Plan — Notify Vendors for Date (NEW) -->
+  <div class="screen" id="manager-plan-notify">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-planning')">‹</span><span class="nav-title">Notify Vendors — Apr 11</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:#E8F5EC; border-radius:12px; padding:12px 14px; margin-bottom:16px;">
+          <div style="font-size:13px; font-weight:600; color:#166534;">📢 Saturday, Apr 11 — Riverside Farmers Market</div>
+          <div style="font-size:12px; color:#2D7D46; margin-top:2px;">18 committed vendors for this date</div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Message *</label>
+          <textarea style="width:100%; height:100px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;" placeholder="Type your message to vendors for this date...">Reminder: We have 6 open slots for Apr 11. If you know vendors in the Flowers or Eggs categories, please encourage them to join!</textarea>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Send to</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="toggleChip(event)">
+            <span class="chip active">All Committed (18)</span><span class="chip">Confirmed Only (14)</span><span class="chip">Pending Only (4)</span>
+          </div>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('📢 Notification sent to 18 vendors for Apr 11'); showScreen('manager-planning');">Send Notification</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Plan — Cancel Date (NEW) -->
+  <div class="screen" id="manager-plan-cancel-date">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-planning')">‹</span><span class="nav-title">Cancel Market Date</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:#FEE2E2; border-radius:12px; padding:16px; margin-bottom:20px; border:2px solid #DC2626;">
+          <div style="font-size:18px; font-weight:700; color:#991B1B; text-align:center;">⚠️ WARNING</div>
+          <div style="font-size:14px; color:#991B1B; margin-top:8px; text-align:center; line-height:1.5;">You are about to cancel <strong>Saturday, Apr 11</strong>. This will immediately notify:</div>
+          <div style="margin-top:12px; display:flex; gap:12px; justify-content:center;">
+            <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:10px 16px; text-align:center;">
+              <div style="font-size:20px; font-weight:700; color:#991B1B;">18</div>
+              <div style="font-size:11px; color:#6B7280;">Vendors</div>
+            </div>
+            <div style="background:rgba(255,255,255,0.7); border-radius:10px; padding:10px 16px; text-align:center;">
+              <div style="font-size:20px; font-weight:700; color:#991B1B;">180</div>
+              <div style="font-size:11px; color:#6B7280;">Followers</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:8px;">Reason *</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="toggleChip(event)">
+            <span class="chip active">🌧️ Weather</span><span class="chip">🚨 Emergency</span><span class="chip">👥 Low Attendance</span><span class="chip">🔧 Venue Issue</span><span class="chip">Other</span>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Additional Message (optional)</label>
+          <textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;" placeholder="Add details..."></textarea>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0; background:#DC2626;" onclick="showToast('❌ Apr 11 cancelled — 18 vendors and 180 followers notified'); showScreen('manager-planning');">I Understand — Cancel This Date</button>
+        <div style="text-align:center; font-size:12px; color:#9CA3AF; margin-top:8px;">This action cannot be undone</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Plan — Add Date (NEW) -->
+  <div class="screen" id="manager-plan-add-date">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-planning')">‹</span><span class="nav-title">Add Market Date</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">New Date</label>
+          <input type="date" style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="2026-05-02" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Hours</label>
+          <div style="display:flex; gap:8px;">
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="8:00 AM" />
+            <span style="display:flex; align-items:center; color:#6B7280;">to</span>
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="1:00 PM" />
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Clone Vendor Roster From</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="toggleChip(event)">
+            <span class="chip active">Apr 4 (24 vendors)</span><span class="chip">Apr 11 (18 vendors)</span><span class="chip">None — start empty</span>
+          </div>
+          <div style="font-size:12px; color:#6B7280; margin-top:6px;">Cloned vendors will receive an invitation to join the new date</div>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('✓ May 2 added — 24 vendors invited to join'); showScreen('manager-planning');">Add Date & Invite Vendors</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Plan Ahead (formerly Vendors) -->
+  <div class="screen" id="manager-vendors">
+    <div class="header"><h2>Plan Ahead</h2><div class="header-sub">Riverside Farmers Market</div></div>
+    <div class="screen-scroll">
+      <!-- View Toggle -->
+      <div style="display:flex; gap:0; margin:12px 16px 0; background:#F3F4F6; border-radius:10px; padding:3px;">
+        <div class="plan-mode active" data-mode="calendar" onclick="togglePlanMode(event)" style="flex:1; text-align:center; padding:8px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:#fff; color:#2D7D46; box-shadow:0 1px 2px rgba(0,0,0,0.06);">Calendar</div>
+        <div class="plan-mode" data-mode="vendor-roster" onclick="togglePlanMode(event)" style="flex:1; text-align:center; padding:8px; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; background:transparent; color:#6B7280;">Vendors</div>
+      </div>
+
+      <!-- Calendar View -->
+      <div id="plan-calendar-view" style="padding:16px;">
+        <!-- Mini Calendar -->
+        <div style="background:#fff; border-radius:16px; padding:14px; margin-bottom:16px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <span style="font-size:15px; font-weight:600;">April 2026</span>
+            <div style="display:flex; gap:12px;"><span style="color:#6B7280; cursor:pointer;">‹</span><span style="color:#6B7280; cursor:pointer;">›</span></div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center; margin-bottom:4px;">
+            <span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">M</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">W</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">T</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">F</span><span style="font-size:10px; color:#9CA3AF; font-weight:600;">S</span>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(7,1fr); gap:2px; text-align:center;">
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;"></span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">1</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">2</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">3</span>
+            <span style="font-size:11px; background:#22C55E; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;">4</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">5</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">6</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">7</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">8</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">9</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">10</span>
+            <span style="font-size:11px; background:#F59E0B; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;">11</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">12</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">13</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">14</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">15</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">16</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">17</span>
+            <span style="font-size:11px; background:#F59E0B; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;">18</span>
+            <span style="font-size:11px; color:#D1D5DB; padding:4px 0;">19</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">20</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">21</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">22</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">23</span><span style="font-size:11px; color:#D1D5DB; padding:4px 0;">24</span>
+            <span style="font-size:11px; background:#DC2626; color:#fff; border-radius:8px; padding:4px 0; font-weight:600; cursor:pointer;">25</span>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:8px; font-size:10px; color:#6B7280;">
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#22C55E;"></span> Full</span>
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#F59E0B;"></span> Gaps</span>
+            <span style="display:flex; align-items:center; gap:3px;"><span style="width:8px; height:8px; border-radius:4px; background:#DC2626;"></span> Critical</span>
+          </div>
+        </div>
+
+        <!-- Selected date detail -->
+        <div style="background:#FEF3C7; border-radius:12px; padding:14px; margin-bottom:12px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:16px; font-weight:600;">Saturday, Apr 11</div>
+              <div style="font-size:13px; color:#92400E; margin-top:2px;">18 of 24 vendor slots filled</div>
+            </div>
+            <div style="width:60px; height:8px; border-radius:4px; background:#F3F4F6; overflow:hidden;">
+              <div style="width:75%; height:100%; background:#F59E0B; border-radius:4px;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Vendor list for date -->
+        <div style="font-size:13px; font-weight:600; color:#374151; margin-bottom:8px;">Vendors for Apr 11</div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥬</div><div class="vr-info"><div class="vr-name">Green Valley Farm</div><div class="vr-detail">Produce · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🍯</div><div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-detail">Honey & Bee · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🧀</div><div class="vr-info"><div class="vr-name">Alpine Creamery</div><div class="vr-detail">Dairy · Attending</div></div><span class="status-pill pill-present">Attending</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥖</div><div class="vr-info"><div class="vr-name">Artisan Bakehouse</div><div class="vr-detail">Baked Goods · Pending</div></div><span class="status-pill pill-pending">Pending</span></div>
+
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('manager-find-vendors')">+ Add Vendor</button>
+          <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #1E40AF; color:#1E40AF;" onclick="showToast('Adding vendor to all dates...')">+ Add to All Dates</button>
+        </div>
+        <button class="action-btn" style="margin:8px 16px 0; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('manager-edit-schedule')">⚙️ Edit Schedule</button>
+      </div>
+
+      <!-- Vendor Roster View -->
+      <div id="plan-vendor-view" style="display:none; padding:16px;">
+        <div class="search-bar" style="margin:0 0 12px;">🔍 Search vendors...</div>
+        <div style="background:#FEF3C7; border-radius:12px; padding:12px 14px; margin-bottom:12px; display:flex; align-items:center; gap:8px; cursor:pointer;" onclick="showScreen('manager-pending-requests')">
+          <span style="font-size:18px;">📨</span>
+          <span style="font-size:14px; font-weight:600; color:#92400E;">2 pending join requests</span>
+          <span style="margin-left:auto; color:#92400E;">›</span>
+        </div>
+        <div style="font-size:13px; font-weight:600; color:#374151; margin-bottom:8px;">All Vendors (24)</div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥬</div><div class="vr-info"><div class="vr-name">Green Valley Farm</div><div class="vr-detail">Every Saturday · 12 dates</div></div><span class="status-pill pill-present">Active</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🍯</div><div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-detail">Every Saturday · 12 dates</div></div><span class="status-pill pill-present">Active</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🧀</div><div class="vr-info"><div class="vr-name">Alpine Creamery</div><div class="vr-detail">1st & 3rd Saturday · 6 dates</div></div><span class="status-pill pill-present">Active</span></div>
+        <div class="vendor-row" style="margin:0 0 8px;"><div class="vc-avatar">🥖</div><div class="vr-info"><div class="vr-name">Artisan Bakehouse</div><div class="vr-detail">Every Saturday · 10 dates</div></div><span class="status-pill pill-present">Active</span></div>
+        <div style="display:flex; gap:8px; margin-top:12px;">
+          <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #2D7D46; color:#2D7D46;" onclick="showScreen('manager-find-vendors')">🔍 Find & Invite</button>
+          <button class="action-btn" style="flex:1; margin:0; background:none; border:1.5px solid #1E40AF; color:#1E40AF;" onclick="showToast('Select a vendor to add to all market dates')">+ Add to All Dates</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Pending Join Requests (NEW - feedback 4c) -->
+  <div class="screen" id="manager-pending-requests">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-vendors')">‹</span><span class="nav-title">Pending Requests</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="font-size:14px; color:#6B7280; margin-bottom:16px;">Review and approve or reject vendor join requests.</div>
+
+        <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:16px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <div class="vc-avatar">🌸</div>
+            <div style="flex:1;"><div style="font-size:16px; font-weight:600;">Bloom Botanicals</div><div style="font-size:13px; color:#6B7280;">Fresh Cut Flowers · 12 followers</div></div>
+          </div>
+          <div style="font-size:13px; color:#92400E; margin-bottom:12px;">Requested 12 Saturdays · Submitted 3 days ago</div>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <button style="flex:1; height:40px; background:#2D7D46; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;" onclick="showToast('✓ Bloom Botanicals approved for this date!')">Approve</button>
+            <button style="flex:1; height:40px; background:#F3F4F6; color:#6B7280; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;" onclick="showRejectForm(this)">Decline</button>
+          </div>
+          <button style="width:100%; height:36px; background:#166534; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;" onclick="showToast('✓ Bloom Botanicals approved for all 12 Saturdays!')">Approve All 12 Dates</button>
+          <div class="reject-form" style="display:none; margin-top:10px; background:#FEF2F2; border:1.5px solid #FECACA; border-radius:10px; padding:12px;">
+            <label style="font-size:13px; font-weight:600; color:#991B1B; display:block; margin-bottom:6px;">Reason for declining <span style="color:#DC2626;">*</span></label>
+            <textarea class="reject-reason" style="width:100%; height:60px; background:#fff; border:1.5px solid #E5E7EB; border-radius:8px; padding:8px 12px; font-size:13px; resize:none;" placeholder="Explain why this request is being declined (min 5 characters)"></textarea>
+            <div class="reject-hint" style="font-size:11px; color:#9CA3AF; margin-top:4px;">0 / 5 minimum characters</div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button style="flex:1; height:36px; background:#DC2626; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; opacity:0.5;" onclick="submitReject(this, 'Bloom Botanicals')" disabled>Confirm Decline</button>
+              <button style="flex:1; height:36px; background:#F3F4F6; color:#6B7280; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;" onclick="hideRejectForm(this)">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:16px; padding:16px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
+            <div class="vc-avatar">🫐</div>
+            <div style="flex:1;"><div style="font-size:16px; font-weight:600;">Berry Good Farm</div><div style="font-size:13px; color:#6B7280;">Blueberries, Raspberries · 8 followers</div></div>
+          </div>
+          <div style="font-size:13px; color:#92400E; margin-bottom:12px;">Requested 4 Saturdays · Submitted 1 day ago</div>
+          <div style="display:flex; gap:8px; margin-bottom:8px;">
+            <button style="flex:1; height:40px; background:#2D7D46; color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;" onclick="showToast('✓ Berry Good Farm approved for this date!')">Approve</button>
+            <button style="flex:1; height:40px; background:#F3F4F6; color:#6B7280; border:none; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer;" onclick="showRejectForm(this)">Decline</button>
+          </div>
+          <button style="width:100%; height:36px; background:#166534; color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; cursor:pointer;" onclick="showToast('✓ Berry Good Farm approved for all 4 Saturdays!')">Approve All 4 Dates</button>
+          <div class="reject-form" style="display:none; margin-top:10px; background:#FEF2F2; border:1.5px solid #FECACA; border-radius:10px; padding:12px;">
+            <label style="font-size:13px; font-weight:600; color:#991B1B; display:block; margin-bottom:6px;">Reason for declining <span style="color:#DC2626;">*</span></label>
+            <textarea class="reject-reason" style="width:100%; height:60px; background:#fff; border:1.5px solid #E5E7EB; border-radius:8px; padding:8px 12px; font-size:13px; resize:none;" placeholder="Explain why this request is being declined (min 5 characters)"></textarea>
+            <div class="reject-hint" style="font-size:11px; color:#9CA3AF; margin-top:4px;">0 / 5 minimum characters</div>
+            <div style="display:flex; gap:8px; margin-top:8px;">
+              <button style="flex:1; height:36px; background:#DC2626; color:#fff; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; opacity:0.5;" onclick="submitReject(this, 'Berry Good Farm')" disabled>Confirm Decline</button>
+              <button style="flex:1; height:36px; background:#F3F4F6; color:#6B7280; border:none; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;" onclick="hideRejectForm(this)">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Send Notification -->
+  <div class="screen" id="manager-send-notification">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-dashboard')">‹</span><span class="nav-title">Send Notification</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:#E8F5EC; border-radius:12px; padding:14px; margin-bottom:16px;">
+          <div style="font-size:14px; font-weight:600; color:#166534;">📢 Riverside Farmers Market</div>
+          <div style="display:flex; gap:16px; margin-top:8px;">
+            <div style="font-size:13px; color:#2D7D46;"><strong>Date:</strong> Saturday, Apr 4, 2026</div>
+            <div style="font-size:13px; color:#2D7D46;"><strong>Hours:</strong> 8:00 AM – 1:00 PM</div>
+          </div>
+          <div style="font-size:12px; color:#6B7280; margin-top:4px;">26 of 38 vendors checked in · 180 followers</div>
+        </div>
+
+        <!-- Audience Toggle (NEW - feedback 4e) -->
+        <div style="margin-bottom:16px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Audience</label>
+          <div class="toggle-group" onclick="toggleNotifyAudience(event)">
+            <div class="toggle-pill active" data-audience="vendors">Vendors</div>
+            <div class="toggle-pill" data-audience="followers">Followers</div>
+          </div>
+        </div>
+
+        <!-- Vendor sub-filter -->
+        <div id="notify-vendor-filter" style="margin-bottom:16px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Send to</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="toggleChip(event)">
+            <span class="chip active">All Vendors (24)</span><span class="chip">Confirmed Only (18)</span><span class="chip">Pending Only (6)</span>
+          </div>
+        </div>
+
+        <!-- Follower info (hidden by default) -->
+        <div id="notify-follower-info" style="display:none; margin-bottom:16px;">
+          <div style="background:#F8F9FA; border-radius:12px; padding:12px 14px; font-size:13px; color:#6B7280;">Will notify <strong>180 followers</strong> of this market</div>
+        </div>
+
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Message *</label>
+          <textarea style="width:100%; height:120px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;" placeholder="Type your message...">Reminder: Please arrive by 7:30 AM this Saturday for early setup. We have a special community event and expect higher foot traffic.</textarea>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('📢 Notification sent!'); showScreen('manager-dashboard');">Send Notification</button>
+        <div style="text-align:center; font-size:12px; color:#9CA3AF; margin-top:8px;">Recipients will receive a push notification immediately</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Cancel/End Market -->
+  <div class="screen" id="manager-cancel-market">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-dashboard')">‹</span><span class="nav-title">Cancel Market Day</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:#FEE2E2; border-radius:12px; padding:16px; margin-bottom:20px; border:2px solid #DC2626;">
+          <div style="font-size:18px; font-weight:700; color:#991B1B; text-align:center;">⚠️ WARNING</div>
+          <div style="font-size:14px; color:#991B1B; margin-top:8px; text-align:center;">This will immediately notify <strong>26 rostered vendors</strong> and <strong>180 following customers</strong>.</div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:8px;">Action *</label>
+          <div style="display:flex; flex-direction:column; gap:8px;">
+            <div style="background:#FEE2E2; border:2px solid #DC2626; border-radius:12px; padding:14px; cursor:pointer; display:flex; align-items:center; gap:12px;">
+              <span style="font-size:20px;">❌</span><div><div style="font-size:15px; font-weight:600;">Cancel Market</div><div style="font-size:12px; color:#6B7280;">Market will not open today</div></div>
+            </div>
+            <div style="background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:14px; cursor:pointer; display:flex; align-items:center; gap:12px;">
+              <span style="font-size:20px;">⏰</span><div><div style="font-size:15px; font-weight:600;">End Market Early</div><div style="font-size:12px; color:#6B7280;">Market is closing before scheduled time</div></div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:8px;">Reason *</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="toggleChip(event)">
+            <span class="chip active">🌧️ Weather</span><span class="chip">🚨 Emergency</span><span class="chip">👥 Low Attendance</span><span class="chip">🔧 Venue Issue</span><span class="chip">Other</span>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Additional Message (optional)</label>
+          <textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;" placeholder="Add details...">Heavy rain expected all morning. We'll be back next Saturday!</textarea>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0; background:#DC2626;" onclick="showToast('❌ Market cancelled — vendors and customers notified'); showScreen('manager-dashboard');">I Understand — Cancel Market</button>
+        <div style="text-align:center; font-size:12px; color:#9CA3AF; margin-top:8px;">This action cannot be undone</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Market Guidance (renamed from Market Rules) -->
+  <div class="screen" id="manager-market-guidance">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-profile')">‹</span><span class="nav-title">Market Guidance</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="background:#EFF6FF; border-radius:12px; padding:12px 14px; margin-bottom:16px; font-size:13px; color:#1E40AF;">📋 Vendors must acknowledge this guidance before joining your market. Changes save automatically.</div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Setup & Timing</label><textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:14px; resize:none;">Vendors must arrive 30 minutes before market opens for setup. Stalls must be fully set up by opening time. Early breakdown is not permitted without manager approval.</textarea></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Fees & Insurance</label><textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:14px; resize:none;">Stall fee: $25/day, due on arrival. Vendors must carry liability insurance of $1M minimum. Proof of insurance required at first market day.</textarea></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Conduct & Policies</label><textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:14px; resize:none;">All products must be locally sourced or handmade. No reselling commercial products. Vendors must maintain a clean stall area.</textarea></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Cancellation Policy</label><textarea style="width:100%; height:60px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:14px; resize:none;">Please notify at least 24 hours in advance if you cannot attend. Three no-shows without notice may result in roster removal.</textarea></div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('Market guidance saved ✓')">Save Guidance</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Find & Invite Vendors -->
+  <div class="screen" id="manager-find-vendors">
+    <div class="nav-header"><span class="nav-back" onclick="goBack()">‹</span><span class="nav-title">Find & Invite Vendors</span></div>
+    <div class="screen-scroll">
+      <div class="search-bar" style="margin:16px;">🔍 Search by vendor name, product, or category...</div>
+      <div class="filter-row" onclick="toggleChip(event)" style="margin-bottom:16px;">
+        <span class="chip active">All</span><span class="chip">Produce</span><span class="chip">Dairy</span><span class="chip">Baked Goods</span><span class="chip">Artisan</span>
+      </div>
+      <div class="section-title">Vendors in Your Area</div>
+      <div class="vendor-row">
+        <div class="vc-avatar">🌸</div>
+        <div class="vr-info"><div class="vr-name">Bloom Botanicals</div><div class="vr-detail">Fresh Cut Flowers · 12 followers · Attends 2 markets</div></div>
+        <span class="status-pill" style="background:#2D7D46; color:#fff; cursor:pointer; font-size:11px;" onclick="showToast('Invitation sent to Bloom Botanicals!')">Invite</span>
+      </div>
+      <div class="vendor-row">
+        <div class="vc-avatar">🫐</div>
+        <div class="vr-info"><div class="vr-name">Berry Good Farm</div><div class="vr-detail">Blueberries, Raspberries, Jam · 8 followers · Attends 1 market</div></div>
+        <span class="status-pill" style="background:#2D7D46; color:#fff; cursor:pointer; font-size:11px;" onclick="showToast('Invitation sent to Berry Good Farm!')">Invite</span>
+      </div>
+      <div class="vendor-row">
+        <div class="vc-avatar">🥖</div>
+        <div class="vr-info"><div class="vr-name">Stone Mill Bakery</div><div class="vr-detail">Sourdough, Pastries · 22 followers · Attends 3 markets</div></div>
+        <span class="status-pill" style="background:#2D7D46; color:#fff; cursor:pointer; font-size:11px;" onclick="showToast('Invitation sent to Stone Mill Bakery!')">Invite</span>
+      </div>
+      <div class="vendor-row" style="opacity:0.6;">
+        <div class="vc-avatar">🍯</div>
+        <div class="vr-info"><div class="vr-name">Honey Beeeham</div><div class="vr-detail">Raw Honey, Candles · 34 followers</div></div>
+        <span class="status-pill pill-present" style="font-size:11px;">Already Joined</span>
+      </div>
+      <div style="padding:16px; text-align:center; font-size:13px; color:#6B7280;">
+        Vendors who aren't on the platform yet?<br>
+        <span style="color:#2D7D46; font-weight:600; cursor:pointer;" onclick="showToast('Invite link copied to clipboard!')">📋 Copy invite link to share</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Market Settings (NEW - feedback 4i, 4j) -->
+  <div class="screen" id="manager-market-settings">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-profile')">‹</span><span class="nav-title">Market Settings</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Market Name *</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="Riverside Farmers Market" /></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Address *</label><input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="123 River Rd, Portland, OR" /></div>
+        <div style="margin-bottom:20px;"><label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Description</label><textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:14px; resize:none;">Portland's original farmers market, featuring local organic produce and artisan goods since 1992.</textarea></div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Schedules</label>
+          <div style="font-size:12px; color:#6B7280; margin-bottom:10px;">Configure multiple recurring and one-time schedules</div>
+
+          <!-- Existing recurring schedule -->
+          <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:10px; padding:12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:#15803D;">🔁 Every Saturday</div>
+                <div style="font-size:12px; color:#4B5563; margin-top:2px;">8:00 AM – 1:00 PM · Apr – Nov</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <span style="font-size:14px; cursor:pointer;">✏️</span>
+                <span style="font-size:14px; cursor:pointer;">🗑️</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Existing recurring schedule 2 -->
+          <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:10px; padding:12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:#15803D;">🔁 Every Wednesday</div>
+                <div style="font-size:12px; color:#4B5563; margin-top:2px;">4:00 PM – 7:00 PM · Jun – Sep</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <span style="font-size:14px; cursor:pointer;">✏️</span>
+                <span style="font-size:14px; cursor:pointer;">🗑️</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ad-hoc event -->
+          <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:10px; padding:12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+              <div>
+                <div style="font-size:13px; font-weight:600; color:#B45309;">📅 June 14, 2026</div>
+                <div style="font-size:12px; color:#4B5563; margin-top:2px;">10:00 AM – 4:00 PM · Spring Harvest Festival</div>
+              </div>
+              <div style="display:flex; gap:6px;">
+                <span style="font-size:14px; cursor:pointer;">✏️</span>
+                <span style="font-size:14px; cursor:pointer;">🗑️</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Add buttons -->
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <div style="flex:1; background:#F8F9FA; border:1.5px dashed #D1D5DB; border-radius:10px; padding:10px; text-align:center; cursor:pointer;" onclick="showToast('Add recurring schedule form...')">
+              <div style="font-size:13px; font-weight:600; color:#374151;">🔁 + Recurring</div>
+            </div>
+            <div style="flex:1; background:#F8F9FA; border:1.5px dashed #D1D5DB; border-radius:10px; padding:10px; text-align:center; cursor:pointer;" onclick="showToast('Add one-time event form...')">
+              <div style="font-size:13px; font-weight:600; color:#374151;">📅 + One-Time</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Site Map</label>
+          <div style="background:#F8F9FA; border:2px dashed #D1D5DB; border-radius:12px; padding:24px; text-align:center; cursor:pointer;" onclick="showToast('Image picker opening...')">
+            <div style="font-size:32px; margin-bottom:8px;">🗺️</div>
+            <div style="font-size:14px; font-weight:500; color:#6B7280;">Tap to upload site map image</div>
+            <div style="font-size:12px; color:#9CA3AF; margin-top:4px;">Vendors and customers can reference this layout</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Social Links</label>
+          <div style="margin-bottom:8px;"><input style="width:100%; height:44px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:14px;" placeholder="Instagram" value="@riversidefarmersmarket" /></div>
+          <div style="margin-bottom:8px;"><input style="width:100%; height:44px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:14px;" placeholder="Facebook" value="facebook.com/riversidefm" /></div>
+          <div><input style="width:100%; height:44px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:14px;" placeholder="Website" value="riversidefarmersmarket.org" /></div>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('Market settings saved ✓'); showScreen('manager-profile');">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Profile -->
+  <div class="screen" id="manager-profile">
+    <div class="header"><h2>Profile</h2></div>
+    <div class="screen-scroll">
+      <div style="text-align:center; padding:24px 16px; border-bottom:1px solid #E5E7EB;">
+        <div style="width:64px; height:64px; border-radius:32px; background:#DBEAFE; display:inline-flex; align-items:center; justify-content:center; font-size:28px; margin-bottom:8px;">👩‍🌾</div>
+        <div style="font-size:18px; font-weight:600;">Maria Rodriguez</div>
+        <div style="font-size:13px; color:#6B7280;">Manager · Riverside Farmers Market</div>
+      </div>
+      <div class="section-header">Market</div>
+      <div class="settings-row" onclick="showScreen('manager-market-settings')"><div><div class="settings-label">⚙️ Market Settings</div><div class="settings-desc">Name, address, schedule, hours, site map</div></div><span class="settings-arrow">›</span></div>
+      <div class="settings-row" onclick="showScreen('manager-market-guidance')"><div><div class="settings-label">📋 Market Guidance</div><div class="settings-desc">Setup, fees, conduct, cancellation policy</div></div><span class="settings-arrow">›</span></div>
+      <div class="settings-row"><div><div class="settings-label">👥 Co-Managers</div><div class="settings-desc">Maria, Juan (2 active)</div></div><span class="settings-arrow">›</span></div>
+      <div class="section-header">Settings</div>
+      <div class="settings-row"><div><div class="settings-label">🔔 Notifications</div><div class="settings-desc">Manage alert preferences</div></div><span class="settings-arrow">›</span></div>
+      <div class="settings-row"><div><div class="settings-label">📋 Activity Log</div></div><span class="settings-arrow">›</span></div>
+      <div class="settings-row"><div><div class="settings-label">🔒 Recovery Contact</div><div class="settings-desc">maria@riverside-market.org</div></div><span class="settings-arrow">›</span></div>
+      <div class="section-header">Account</div>
+      <div class="settings-row">
+        <div><div class="settings-label">🔀 Switch Mode</div><div class="settings-desc">Currently: Manager</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+      <div class="settings-row">
+        <div><div class="settings-label" style="color:#DC2626;">🗑️ Delete Account</div></div>
+        <span class="settings-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Edit Schedule -->
+  <div class="screen" id="manager-edit-schedule">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-vendors')">‹</span><span class="nav-title">Edit Schedule</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Schedules</div>
+
+        <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:12px; padding:14px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#15803D;">🔁 Every Saturday</div>
+              <div style="font-size:13px; color:#4B5563; margin-top:4px;">8:00 AM – 1:00 PM</div>
+              <div style="font-size:12px; color:#6B7280; margin-top:2px;">Apr 1 – Nov 30</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Editing Saturday schedule...')">✏️</span>
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Remove Saturday schedule?')">🗑️</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#F0FDF4; border:1.5px solid #BBF7D0; border-radius:12px; padding:14px; margin-bottom:10px;">
+          <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#15803D;">🔁 Every Wednesday</div>
+              <div style="font-size:13px; color:#4B5563; margin-top:4px;">4:00 PM – 7:00 PM</div>
+              <div style="font-size:12px; color:#6B7280; margin-top:2px;">Jun 1 – Sep 30</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Editing Wednesday schedule...')">✏️</span>
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Remove Wednesday schedule?')">🗑️</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:#FFFBEB; border:1.5px solid #FDE68A; border-radius:12px; padding:14px; margin-bottom:16px;">
+          <div style="display:flex; justify-content:space-between; align-items:start;">
+            <div>
+              <div style="font-size:14px; font-weight:600; color:#B45309;">📅 June 14, 2026</div>
+              <div style="font-size:13px; color:#4B5563; margin-top:4px;">10:00 AM – 4:00 PM</div>
+              <div style="font-size:12px; color:#6B7280; margin-top:2px;">Spring Harvest Festival</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Editing event...')">✏️</span>
+              <span style="font-size:16px; cursor:pointer;" onclick="showToast('Remove event?')">🗑️</span>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
+          <div style="flex:1; background:#F8F9FA; border:1.5px dashed #2D7D46; border-radius:12px; padding:14px; text-align:center; cursor:pointer;" onclick="showScreen('manager-add-recurring')">
+            <div style="font-size:20px;">🔁</div>
+            <div style="font-size:13px; font-weight:600; color:#2D7D46; margin-top:4px;">+ Recurring</div>
+          </div>
+          <div style="flex:1; background:#F8F9FA; border:1.5px dashed #B45309; border-radius:12px; padding:14px; text-align:center; cursor:pointer;" onclick="showScreen('manager-add-onetime')">
+            <div style="font-size:20px;">📅</div>
+            <div style="font-size:13px; font-weight:600; color:#B45309; margin-top:4px;">+ One-Time</div>
+          </div>
+        </div>
+
+        <div style="font-size:15px; font-weight:600; margin-bottom:12px;">Entry Fees</div>
+        <div style="margin-bottom:16px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Customer Entry Fee</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="togglePrefChip(event)">
+            <span class="chip active" style="padding:8px 14px;">Free</span><span class="chip" style="padding:8px 14px;">$5</span><span class="chip" style="padding:8px 14px;">$10</span><span class="chip" style="padding:8px 14px;">Custom</span>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:500; display:block; margin-bottom:6px;">Vendor Stall Fee</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" value="$25/day" />
+          </div>
+        </div>
+
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('✓ Schedule saved'); showScreen('manager-vendors');">Save Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Add Recurring Schedule -->
+  <div class="screen" id="manager-add-recurring">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-edit-schedule')">‹</span><span class="nav-title">New Recurring Schedule</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:8px;">Frequency</label>
+          <div style="display:flex; gap:8px; flex-wrap:wrap;" onclick="togglePrefChip(event)">
+            <span class="chip active" style="padding:8px 14px;">Weekly</span><span class="chip" style="padding:8px 14px;">Biweekly</span><span class="chip" style="padding:8px 14px;">1st of Month</span><span class="chip" style="padding:8px 14px;">2nd Sat</span><span class="chip" style="padding:8px 14px;">Last Sun</span><span class="chip" style="padding:8px 14px;">Custom</span>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:8px;">Day(s)</label>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;">
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Mon</div>
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Tue</div>
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Wed</div>
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Thu</div>
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Fri</div>
+            <div style="width:44px; height:44px; border-radius:12px; background:#2D7D46; border:1.5px solid #2D7D46; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#fff; cursor:pointer;">Sat</div>
+            <div style="width:44px; height:44px; border-radius:12px; border:1.5px solid #E5E7EB; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:600; color:#6B7280; cursor:pointer;">Sun</div>
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Hours</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" value="8:00 AM" />
+            <span style="color:#6B7280; font-weight:600;">to</span>
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" value="1:00 PM" />
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Season (optional)</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" placeholder="Start date" />
+            <span style="color:#6B7280; font-weight:600;">to</span>
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" placeholder="End date" />
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Label (optional)</label>
+          <input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" placeholder="e.g. Summer Evening Market" />
+        </div>
+        <button class="action-btn" style="width:100%; margin:0;" onclick="showToast('✓ Recurring schedule added'); showScreen('manager-edit-schedule');">Add Recurring Schedule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager: Add One-Time Event -->
+  <div class="screen" id="manager-add-onetime">
+    <div class="nav-header"><span class="nav-back" onclick="showScreen('manager-edit-schedule')">‹</span><span class="nav-title">New One-Time Event</span></div>
+    <div class="screen-scroll">
+      <div style="padding:16px;">
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Event Name</label>
+          <input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" placeholder="e.g. Spring Harvest Festival" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Date</label>
+          <input style="width:100%; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px;" type="date" />
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Hours</label>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" placeholder="Start" />
+            <span style="color:#6B7280; font-weight:600;">to</span>
+            <input style="flex:1; height:48px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:0 16px; font-size:15px; text-align:center;" placeholder="End" />
+          </div>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label style="font-size:14px; font-weight:600; display:block; margin-bottom:6px;">Description (optional)</label>
+          <textarea style="width:100%; height:80px; background:#F8F9FA; border:1.5px solid #E5E7EB; border-radius:12px; padding:12px 16px; font-size:15px; resize:none;" placeholder="What's special about this event?"></textarea>
+        </div>
+        <button class="action-btn" style="width:100%; margin:0; background:#B45309;" onclick="showToast('✓ One-time event added'); showScreen('manager-edit-schedule');">Add One-Time Event</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- ==================== TAB BARS ==================== -->
+  <div class="tab-bar" id="tab-customer">
+    <div class="tab-item" onclick="showScreen('customer-discover')"><div class="tab-icon">🔍</div>Discover</div>
+    <div class="tab-item active" onclick="showScreen('customer-following')"><div class="tab-icon">❤️</div>Following</div>
+    <div class="tab-item" onclick="showScreen('customer-profile')"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+  <div class="tab-bar" id="tab-vendor" style="display:none;">
+    <div class="tab-item active" onclick="showScreen('vendor-markets')"><div class="tab-icon">🚜</div>Markets</div>
+    <div class="tab-item" onclick="showScreen('vendor-today')"><div class="tab-icon">☀️</div>Today</div>
+    <div class="tab-item" onclick="showScreen('vendor-profile')"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+  <div class="tab-bar" id="tab-manager" style="display:none;">
+    <div class="tab-item active" onclick="showScreen('manager-dashboard')"><div class="tab-icon">👩‍🌾</div>Dashboard</div>
+    <div class="tab-item" onclick="showScreen('manager-vendors')"><div class="tab-icon">📅</div>Plan Ahead</div>
+    <div class="tab-item" onclick="showScreen('manager-profile')"><div class="tab-icon">👤</div>Profile</div>
+  </div>
+</div>
+
+<script>
+  let currentRole = 'customer';
+  let screenHistory = [];
+  const roleHomeScreens = { customer: 'customer-following', vendor: 'vendor-today', manager: 'manager-dashboard' };
+  const roleTabBars = { customer: 'tab-customer', vendor: 'tab-vendor', manager: 'tab-manager' };
+  const tabScreens = {
+    'tab-customer': ['customer-discover', 'customer-following', 'customer-profile'],
+    'tab-vendor': ['vendor-markets', 'vendor-today', 'vendor-profile', 'vendor-add-product'],
+    'tab-manager': ['manager-dashboard', 'manager-vendors', 'manager-profile', 'manager-edit-schedule', 'manager-add-recurring', 'manager-add-onetime']
+  };
+
+  function switchRole(role) {
+    currentRole = role;
+    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    document.querySelectorAll('.tab-bar').forEach(t => t.style.display = 'none');
+    document.getElementById(roleTabBars[role]).style.display = 'flex';
+    screenHistory = [];
+    showScreen(roleHomeScreens[role]);
+  }
+
+  function showScreen(id) {
+    const currentScreen = document.querySelector('.screen.active');
+    if (currentScreen) {
+      screenHistory.push(currentScreen.id);
+      currentScreen.classList.remove('active');
+    }
+    document.getElementById(id).classList.add('active');
+    const tabBar = document.getElementById(roleTabBars[currentRole]);
+    const tabs = tabBar.querySelectorAll('.tab-item');
+    const screens = tabScreens[roleTabBars[currentRole]];
+    tabs.forEach((tab, i) => {
+      tab.classList.toggle('active', screens[i] === id);
+    });
+  }
+
+  function goBack() {
+    if (screenHistory.length > 0) {
+      const prev = screenHistory.pop();
+      document.querySelector('.screen.active').classList.remove('active');
+      document.getElementById(prev).classList.add('active');
+    }
+  }
+
+  function doCheckIn() {
+    const btn = document.getElementById('checkin-btn-today');
+    if (btn) {
+      btn.className = 'checkin-btn checkin-done';
+      btn.innerHTML = '✓ Checked-In';
+      btn.onclick = null;
+    }
+    showToast('✓ Checked in — 34 followers notified');
+  }
+
+  function toggleHeart(e) {
+    e.stopPropagation();
+    const btn = e.target;
+    if (btn.textContent === '❤️') {
+      btn.textContent = '🤍';
+      btn.classList.remove('active');
+      showToast('Unfollowed');
+    } else {
+      btn.textContent = '❤️';
+      btn.classList.add('active');
+      showToast('Following ❤️');
+    }
+  }
+
+  function activateFilter(e) {
+    if (!e.target.classList.contains('chip')) return;
+    e.stopPropagation();
+    const filter = e.target.dataset.filter;
+    // Toggle multi-select for product filters, exclusive for sort/location
+    if (['nearby', 'open-today', 'date'].includes(filter)) {
+      e.target.parentElement.querySelectorAll('.chip').forEach(c => {
+        if (['nearby', 'open-today', 'date'].includes(c.dataset.filter)) c.classList.remove('active');
+      });
+    }
+    e.target.classList.toggle('active');
+
+    // Show visual feedback that filters changed results
+    if (filter === 'date') {
+      showToast('Sorted by next market date');
+    } else if (!['nearby', 'open-today', 'date'].includes(filter)) {
+      if (e.target.classList.contains('active')) {
+        showToast('Filtering by ' + e.target.textContent.trim());
+      }
+    }
+  }
+
+  function toggleChip(e) {
+    if (!e.target.classList.contains('chip')) return;
+    e.stopPropagation();
+    const row = e.target.parentElement;
+    row.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    e.target.classList.add('active');
+  }
+
+  function selectProductType(e) {
+    if (!e.target.classList.contains('chip')) return;
+    e.stopPropagation();
+    e.target.classList.toggle('active');
+  }
+
+  function toggleFilterTab(e) {
+    if (!e.target.classList.contains('filter-tab')) return;
+    e.stopPropagation();
+    const row = e.target.parentElement;
+    row.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    e.target.classList.add('active');
+
+    // Filter the vendor list based on selection
+    const filterText = e.target.textContent.trim().toLowerCase();
+    const vendorList = document.getElementById('manager-vendor-list');
+    if (vendorList) {
+      const rows = vendorList.querySelectorAll('.vendor-row');
+      rows.forEach(row => {
+        const pill = row.querySelector('.status-pill');
+        if (!pill) return;
+        if (filterText.startsWith('all')) {
+          row.style.display = 'flex';
+        } else if (filterText.startsWith('pending')) {
+          row.style.display = pill.classList.contains('pill-pending') ? 'flex' : 'none';
+        } else if (filterText.startsWith('exceptions')) {
+          row.style.display = (pill.classList.contains('pill-late') || pill.classList.contains('pill-absent')) ? 'flex' : 'none';
+        }
+      });
+    }
+  }
+
+  function toggleFollow(e) {
+    e.stopPropagation();
+    const btn = e.target;
+    if (btn.classList.contains('active')) {
+      btn.classList.remove('active');
+      btn.textContent = 'Follow';
+      showToast('Unfollowed');
+    } else {
+      btn.classList.add('active');
+      btn.textContent = 'Following';
+      showToast('Following ✓');
+    }
+  }
+
+  function selectPlanDate(el, dateLabel, countLabel, status) {
+    document.getElementById('plan-date-title').textContent = dateLabel;
+    document.getElementById('plan-date-count').textContent = countLabel + ' vendor slots filled';
+    const colors = { full: '#22C55E', gaps: '#F59E0B', critical: '#DC2626' };
+    const pcts = { full: '100%', gaps: '75%', critical: '50%' };
+    const bar = document.getElementById('plan-date-bar');
+    bar.innerHTML = '<div style="width:' + pcts[status] + '; height:100%; background:' + colors[status] + '; border-radius:4px;"></div>';
+    const detail = document.getElementById('plan-date-detail').firstElementChild;
+    if (status === 'full') { detail.style.background = '#DCFCE7'; detail.querySelector('div:last-child').style.color = '#166534'; }
+    else if (status === 'gaps') { detail.style.background = '#FEF3C7'; detail.querySelector('div:last-child').style.color = '#92400E'; }
+    else { detail.style.background = '#FEE2E2'; detail.querySelector('div:last-child').style.color = '#991B1B'; }
+  }
+
+  function togglePlanView(e) {
+    if (!e.target.classList.contains('toggle-pill')) return;
+    e.target.parentElement.querySelectorAll('.toggle-pill').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    const view = e.target.dataset.view;
+    document.getElementById('plan-product-view').style.display = view === 'product' ? 'block' : 'none';
+    document.getElementById('plan-vendor-view').style.display = view === 'vendor' ? 'block' : 'none';
+  }
+
+  function toggleNotifyAudience(e) {
+    if (!e.target.classList.contains('toggle-pill')) return;
+    e.target.parentElement.querySelectorAll('.toggle-pill').forEach(p => p.classList.remove('active'));
+    e.target.classList.add('active');
+    const audience = e.target.dataset.audience;
+    document.getElementById('notify-vendor-filter').style.display = audience === 'vendors' ? 'block' : 'none';
+    document.getElementById('notify-follower-info').style.display = audience === 'followers' ? 'block' : 'none';
+  }
+
+  function toggleMarketGroup(headerEl) {
+    const group = headerEl.parentElement;
+    const vendors = group.querySelector('.mg-vendors');
+    const chevron = headerEl.querySelector('.mg-chevron');
+    if (vendors.style.display === 'none') {
+      vendors.style.display = 'block';
+      chevron.textContent = '▾';
+    } else {
+      vendors.style.display = 'none';
+      chevron.textContent = '▸';
+    }
+  }
+
+  function openMaps(address) {
+    window.open('https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address), '_blank');
+  }
+
+  function toggleSwitch(el) {
+    const isOn = el.style.background === 'rgb(45, 125, 70)';
+    el.style.background = isOn ? '#D1D5DB' : '#2D7D46';
+    el.firstElementChild.style.left = isOn ? '2px' : '22px';
+  }
+
+  function togglePrefChip(e) {
+    if (!e.target.classList.contains('chip')) return;
+    e.target.classList.toggle('active');
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById('toast');
+    toast.textContent = msg;
+    toast.className = 'toast toast-success show';
+    setTimeout(() => { toast.className = 'toast toast-success'; }, 3000);
+  }
+  function toggleFilterExpand() {
+    const expanded = document.getElementById('discover-expanded-filters');
+    const label = document.getElementById('filter-toggle-label');
+    const arrow = document.getElementById('filter-toggle-arrow');
+    if (expanded.style.display === 'none') {
+      expanded.style.display = 'block';
+      label.textContent = 'Hide Filters';
+      arrow.textContent = '\u25B2';
+    } else {
+      expanded.style.display = 'none';
+      label.textContent = 'Show All Filters (50+)';
+      arrow.textContent = '\u25BC';
+    }
+  }
+
+  function showRejectForm(btn) {
+    var card = btn.closest('.reject-form') ? btn.closest('div[style*="background:#FFFBEB"]') : btn.closest('div[style*="padding:16px"]') || btn.parentElement.parentElement;
+    var form = card.querySelector('.reject-form');
+    if (form) { form.style.display = 'block'; }
+  }
+
+  function hideRejectForm(btn) {
+    var form = btn.closest('.reject-form');
+    if (form) {
+      form.style.display = 'none';
+      var ta = form.querySelector('.reject-reason');
+      if (ta) { ta.value = ''; }
+      var hint = form.querySelector('.reject-hint');
+      if (hint) { hint.textContent = '0 / 5 minimum characters'; }
+      var submit = form.querySelector('button[onclick*="submitReject"]');
+      if (submit) { submit.disabled = true; submit.style.opacity = '0.5'; }
+    }
+  }
+
+  function submitReject(btn, vendorName) {
+    var form = btn.closest('.reject-form');
+    var ta = form.querySelector('.reject-reason');
+    if (ta.value.trim().length < 5) {
+      ta.style.borderColor = '#DC2626';
+      showToast('Please provide at least 5 characters');
+      return;
+    }
+    showToast(vendorName + ' declined: "' + ta.value.trim().substring(0, 40) + '"');
+    var card = form.closest('div[style*="background:#FFFBEB"]');
+    if (card) {
+      card.style.opacity = '0.5';
+      card.style.pointerEvents = 'none';
+    }
+  }
+
+  document.addEventListener('input', function(e) {
+    if (!e.target.classList.contains('reject-reason')) return;
+    var form = e.target.closest('.reject-form');
+    var len = e.target.value.trim().length;
+    var hint = form.querySelector('.reject-hint');
+    var submit = form.querySelector('button[onclick*="submitReject"]');
+    if (hint) {
+      hint.textContent = len + ' / 5 minimum characters';
+      hint.style.color = len >= 5 ? '#2D7D46' : '#9CA3AF';
+    }
+    if (submit) {
+      submit.disabled = len < 5;
+      submit.style.opacity = len >= 5 ? '1' : '0.5';
+    }
+    e.target.style.borderColor = len >= 5 ? '#2D7D46' : '#E5E7EB';
+  });
+
+  function toggleDiscoverMode(e) {
+    if (!e.target.classList.contains('discover-mode')) return;
+    document.querySelectorAll('.discover-mode').forEach(m => {
+      m.style.background = 'transparent'; m.style.color = '#6B7280'; m.style.boxShadow = 'none';
+      m.classList.remove('active');
+    });
+    e.target.style.background = '#fff'; e.target.style.color = '#2D7D46'; e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+    e.target.classList.add('active');
+    var mode = e.target.dataset.mode;
+    var markets = document.getElementById('discover-markets-results');
+    var vendors = document.getElementById('discover-vendors-results');
+    if (markets) markets.style.display = mode === 'markets' ? 'block' : 'none';
+    if (vendors) vendors.style.display = mode === 'vendors' ? 'block' : 'none';
+  }
+
+  function toggleFollowSection(sectionId) {
+    var section = document.getElementById(sectionId);
+    var arrow = document.getElementById(sectionId + '-arrow');
+    if (section.style.display === 'none') {
+      section.style.display = 'block';
+      arrow.textContent = '▾';
+    } else {
+      section.style.display = 'none';
+      arrow.textContent = '▸';
+    }
+  }
+  function togglePlanMode(e) {
+    if (!e.target.classList.contains('plan-mode')) return;
+    document.querySelectorAll('.plan-mode').forEach(m => {
+      m.style.background = 'transparent'; m.style.color = '#6B7280'; m.style.boxShadow = 'none';
+    });
+    e.target.style.background = '#fff'; e.target.style.color = '#2D7D46'; e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.06)';
+    var mode = e.target.dataset.mode;
+    document.getElementById('plan-calendar-view').style.display = mode === 'calendar' ? 'block' : 'none';
+    document.getElementById('plan-vendor-view').style.display = mode === 'vendor-roster' ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>

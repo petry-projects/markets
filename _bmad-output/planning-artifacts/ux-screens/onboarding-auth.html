@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>Markets — Onboarding: Auth & Role Selection</title>
+<!-- Figma capture script disabled by default to avoid loading remote third-party code.
+     To enable for Figma HTML-to-design capture, uncomment: -->
+<!-- <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script> -->
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 1200px; margin: 0 auto; padding: 48px; }
+  h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 48px; }
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; color: #374151; }
+  .screen-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .screen-label { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .phone { width: 375px; min-height: 812px; background: #fff; border-radius: 40px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.12); position: relative; flex-shrink: 0; }
+  .status-bar { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .safe-bottom { height: 34px; }
+
+  /* Sign In */
+  .signin-content { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 32px 32px; min-height: 724px; }
+  .logo { width: 80px; height: 80px; background: #E8F5EC; border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 40px; margin-bottom: 24px; }
+  .app-name { font-size: 32px; font-weight: 700; color: #2D7D46; margin-bottom: 8px; }
+  .app-tagline { font-size: 16px; color: #6B7280; margin-bottom: 48px; text-align: center; }
+  .auth-btn { width: 100%; height: 56px; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 12px; margin-bottom: 12px; border: none; }
+  .auth-google { background: #fff; border: 1.5px solid #E5E7EB; color: #1A1A1A; }
+  .auth-apple { background: #1A1A1A; color: #fff; }
+  .auth-icon { font-size: 20px; }
+  .terms { font-size: 12px; color: #9CA3AF; text-align: center; margin-top: 24px; line-height: 1.5; }
+  .terms a { color: #2D7D46; text-decoration: underline; }
+
+  /* Role Selection */
+  .role-content { padding: 24px; }
+  .role-header { text-align: center; padding: 24px 0; }
+  .role-greeting { font-size: 16px; color: #6B7280; }
+  .role-title { font-size: 24px; font-weight: 700; margin-top: 4px; }
+  .role-desc { font-size: 14px; color: #6B7280; margin-top: 8px; }
+  .role-card { background: #F8F9FA; border: 2px solid #E5E7EB; border-radius: 16px; padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+  .role-card:hover { border-color: #2D7D46; background: #E8F5EC; }
+  .role-card.selected { border-color: #2D7D46; background: #E8F5EC; }
+  .role-card-header { display: flex; align-items: center; gap: 14px; }
+  .role-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+  .role-card-info { flex: 1; }
+  .role-card-name { font-size: 17px; font-weight: 600; }
+  .role-card-desc { font-size: 13px; color: #6B7280; margin-top: 2px; line-height: 1.4; }
+  .role-radio { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #D1D5DB; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .role-radio.checked { border-color: #2D7D46; }
+  .role-radio.checked::after { content: ''; width: 12px; height: 12px; border-radius: 50%; background: #2D7D46; }
+  .continue-btn { width: 100%; height: 56px; background: #2D7D46; color: #fff; border: none; border-radius: 14px; font-size: 17px; font-weight: 600; cursor: pointer; margin-top: 16px; }
+  .continue-btn.disabled { background: #D1D5DB; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<h1>Onboarding — All Roles</h1>
+<div class="subtitle">FR1-FR4: Authentication and role selection flow (Google + Apple Sign-In only)</div>
+
+<h2>Step 1: Sign In</h2>
+<div class="screen-row">
+  <div>
+    <div class="screen-label">Sign In — Default</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="signin-content">
+        <div class="logo">🌿</div>
+        <div class="app-name">markets</div>
+        <div class="app-tagline">Know what's fresh.<br>Know who's there.</div>
+        <button class="auth-btn auth-google"><span class="auth-icon">G</span> Continue with Google</button>
+        <button class="auth-btn auth-apple"><span class="auth-icon"></span> Continue with Apple</button>
+        <div class="terms">By continuing, you agree to our <a href="#">Terms of Service</a> and <a href="#">Privacy Policy</a></div>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+
+  <div>
+    <div class="screen-label">Step 2: Role Selection (first sign-in only)</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="role-content">
+        <div class="role-header">
+          <div class="role-greeting">Welcome!</div>
+          <div class="role-title">How will you use markets?</div>
+          <div class="role-desc">Choose your primary role. You can change this later in Settings.</div>
+        </div>
+
+        <div class="role-card selected">
+          <div class="role-card-header">
+            <div class="role-icon" style="background:#DBEAFE;">🧺</div>
+            <div class="role-card-info">
+              <div class="role-card-name">Customer</div>
+              <div class="role-card-desc">Find markets and vendors. Follow your favorites and get notified when they check in.</div>
+            </div>
+            <div class="role-radio checked"></div>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <div class="role-icon" style="background:#E8F5EC;">🚜</div>
+            <div class="role-card-info">
+              <div class="role-card-name">Vendor</div>
+              <div class="role-card-desc">Check in at markets, update your status, and grow your customer base.</div>
+            </div>
+            <div class="role-radio"></div>
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-card-header">
+            <div class="role-icon" style="background:#FEF3C7;">👩‍🌾</div>
+            <div class="role-card-info">
+              <div class="role-card-name">Market Manager</div>
+              <div class="role-card-desc">Manage vendor rosters, track attendance, and coordinate market operations.</div>
+            </div>
+            <div class="role-radio"></div>
+          </div>
+        </div>
+
+        <button class="continue-btn">Continue as Customer</button>
+      </div>
+      <div class="safe-bottom"></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

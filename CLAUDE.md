@@ -32,7 +32,7 @@
 
 ### Project Component Structure
 
-```
+```text
 markets-app/
 ├── app/
 │   ├── (auth)/              # Login, role selection

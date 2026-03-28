@@ -154,12 +154,16 @@ theme: {
 ## Test-Driven Development
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> cd47377 (feat: add Epic 1 sprint planning, coding standards, and test strategy (#22))
 TDD rules are defined in the [org AGENTS.md](https://github.com/petry-projects/.github/blob/main/AGENTS.md). Markets-specific test framework configuration, mocking strategy, coverage thresholds, and per-layer test guidance are in `_bmad-output/planning-artifacts/coding-standards.md`.
 
 - **Go backend:** `*_test.go` co-located with source; `//go:build integration` for integration tests
 - **React Native frontend:** `*.test.tsx` co-located or `__tests__/`; Jest + React Native Testing Library
 - **GraphQL resolvers:** Integration tests for the full resolver → database → response path
 - **Acceptance criteria drive tests:** Each story's Given/When/Then maps directly to test cases
+<<<<<<< HEAD
 =======
 - IMPORTANT: All development MUST follow test-driven development (TDD) practices
 - Write failing tests BEFORE writing implementation code (Red → Green → Refactor)
@@ -170,6 +174,8 @@ TDD rules are defined in the [org AGENTS.md](https://github.com/petry-projects/.
 - Every PR must include tests that cover the new or changed functionality
 - Do not merge code without passing tests
 >>>>>>> 58c45f4 (chore: add planning artifacts, UX screen prototypes, and Claude config (#6))
+=======
+>>>>>>> cd47377 (feat: add Epic 1 sprint planning, coding standards, and test strategy (#22))
 
 ## Event-Driven Architecture
 

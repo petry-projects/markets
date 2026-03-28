@@ -13,7 +13,7 @@ If you discover a security vulnerability in this project, please report it respo
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
 Instead, please send an email to **security@petry-projects.dev** or use
-[GitHub's private vulnerability reporting](https://github.com/petry-projects/markets/security/advisories/new).
+[GitHub's private vulnerability reporting](../../security/advisories/new).
 
 We will acknowledge receipt within 72 hours and aim to provide a fix or mitigation plan within 30 days.
 

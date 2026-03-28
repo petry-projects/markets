@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1200">
+<title>Markets — Notification Examples by Persona</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #F8F9FA; color: #1A1A1A; width: 1200px; margin: 0 auto; padding: 48px; }
+  h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .subtitle { font-size: 16px; color: #6B7280; margin-bottom: 48px; }
+  h2 { font-size: 22px; font-weight: 700; margin-bottom: 16px; margin-top: 48px; color: #374151; }
+  .screen-row { display: flex; gap: 32px; align-items: flex-start; flex-wrap: wrap; }
+  .screen-label { font-size: 11px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .phone { width: 375px; min-height: 812px; background: #fff; border-radius: 40px; box-shadow: 0 4px 24px rgba(0,0,0,0.12); }
+  .status-bar { height: 44px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; }
+  .header { background: #fff; padding: 12px 16px 16px; border-bottom: 1px solid #E5E7EB; }
+  .header h3 { font-size: 24px; font-weight: 700; }
+  .header-sub { font-size: 14px; color: #6B7280; margin-top: 2px; }
+  .content { padding: 16px; }
+  .safe-bottom { height: 34px; }
+
+  /* Tab Bar */
+  .tab-bar { height: 83px; background: #fff; border-top: 1px solid #E5E7EB; display: flex; align-items: flex-start; justify-content: space-around; padding-top: 8px; position: sticky; bottom: 0; }
+  .tab-item { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 10px; color: #9CA3AF; }
+  .tab-item.active { color: #2D7D46; }
+  .tab-icon { font-size: 16px; }
+
+  /* Notification items */
+  .notif-group { margin-bottom: 20px; }
+  .notif-group-label { font-size: 12px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: 0.5px; padding-bottom: 8px; }
+
+  .notif-item { display: flex; gap: 12px; padding: 14px; border-radius: 14px; margin-bottom: 6px; transition: background 0.15s; }
+  .notif-item.unread { background: #F0FDF4; }
+  .notif-item.read { background: #F8F9FA; }
+
+  .notif-icon { width: 40px; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+  .notif-icon.green { background: #DCFCE7; }
+  .notif-icon.blue { background: #DBEAFE; }
+  .notif-icon.amber { background: #FEF3C7; }
+  .notif-icon.red { background: #FEE2E2; }
+  .notif-icon.purple { background: #EDE9FE; }
+  .notif-icon.gray { background: #F3F4F6; }
+
+  .notif-body { flex: 1; min-width: 0; }
+  .notif-title { font-size: 14px; font-weight: 600; line-height: 1.3; }
+  .notif-title .highlight { color: #2D7D46; }
+  .notif-desc { font-size: 13px; color: #6B7280; margin-top: 2px; line-height: 1.4; }
+  .notif-time { font-size: 11px; color: #9CA3AF; margin-top: 4px; }
+  .notif-action { margin-top: 8px; }
+  .notif-action-btn { display: inline-block; padding: 6px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; }
+  .notif-action-btn.primary { background: #2D7D46; color: #fff; }
+  .notif-action-btn.secondary { background: #F3F4F6; color: #4B5563; margin-left: 6px; }
+
+  .unread-dot { width: 8px; height: 8px; border-radius: 50%; background: #2D7D46; flex-shrink: 0; margin-top: 6px; }
+
+  /* Filter tabs */
+  .filter-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .filter-tab { flex: 1; text-align: center; padding: 8px; border-radius: 10px; font-size: 13px; font-weight: 500; color: #6B7280; background: #fff; border: 1px solid #E5E7EB; cursor: pointer; }
+  .filter-tab.active { background: #2D7D46; color: #fff; border-color: #2D7D46; }
+
+  /* Push notification banner (lock screen style) */
+  .push-banner { background: #fff; border-radius: 16px; padding: 14px; margin-bottom: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); display: flex; gap: 12px; align-items: flex-start; }
+  .push-app-icon { width: 36px; height: 36px; border-radius: 8px; background: #2D7D46; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #fff; flex-shrink: 0; }
+  .push-body { flex: 1; }
+  .push-app-name { font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase; letter-spacing: 0.3px; }
+  .push-title { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .push-text { font-size: 13px; color: #4B5563; margin-top: 2px; line-height: 1.3; }
+  .push-time { font-size: 11px; color: #9CA3AF; flex-shrink: 0; }
+
+  /* Lock screen */
+  .lock-screen { background: linear-gradient(135deg, #1A1A1A 0%, #374151 100%); border-radius: 40px; padding: 0; }
+  .lock-time { color: #fff; font-size: 56px; font-weight: 200; text-align: center; padding-top: 60px; }
+  .lock-date { color: #9CA3AF; font-size: 16px; text-align: center; margin-bottom: 32px; }
+  .lock-notifs { padding: 0 16px 16px; }
+</style>
+</head>
+<body>
+
+<h1>Notifications by Persona</h1>
+<div class="subtitle">Push notifications, in-app notification center, and actionable alerts for each role</div>
+
+<!-- ==================== PUSH NOTIFICATIONS (LOCK SCREEN) ==================== -->
+<h2>Push Notifications (Lock Screen Preview)</h2>
+<div class="screen-row">
+
+  <!-- Customer Push -->
+  <div>
+    <div class="screen-label">Customer — Rachel</div>
+    <div class="phone lock-screen">
+      <div class="status-bar" style="color:#fff;">9:41</div>
+      <div class="lock-time">9:41</div>
+      <div class="lock-date">Saturday, April 4</div>
+      <div class="lock-notifs">
+        <div class="push-banner">
+          <div class="push-app-icon">🧺</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">🥬 Green Valley Farm just checked in</div>
+            <div class="push-text">At Riverside Farmers Market — 2.3 mi away</div>
+          </div>
+          <div class="push-time">3m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🧺</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">🍯 Honey Beeeham checked in</div>
+            <div class="push-text">At Riverside Farmers Market — your favorite honey is here!</div>
+          </div>
+          <div class="push-time">8m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🧺</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">⚠️ Happy Hen Farm is not attending today</div>
+            <div class="push-text">Sunny Side Eggs is an alternative at Riverside Market</div>
+          </div>
+          <div class="push-time">22m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🧺</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">📢 Riverside Farmers Market</div>
+            <div class="push-text">Special event next Saturday: Spring Plant Sale! Extra vendors confirmed.</div>
+          </div>
+          <div class="push-time">1h ago</div>
+        </div>
+        <div class="push-banner" style="opacity:0.7;">
+          <div class="push-app-icon">🧺</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">🌅 Market day reminder</div>
+            <div class="push-text">Riverside Farmers Market opens at 8AM. 3 followed vendors are scheduled.</div>
+          </div>
+          <div class="push-time">6:30 AM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor Push -->
+  <div>
+    <div class="screen-label">Vendor — Brad</div>
+    <div class="phone lock-screen">
+      <div class="status-bar" style="color:#fff;">7:15</div>
+      <div class="lock-time">7:15</div>
+      <div class="lock-date">Saturday, April 4</div>
+      <div class="lock-notifs">
+        <div class="push-banner">
+          <div class="push-app-icon">🚜</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">⏰ Check-in reminder</div>
+            <div class="push-text">Riverside Farmers Market opens in 45 min. Tap to check in when you arrive.</div>
+          </div>
+          <div class="push-time">now</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🚜</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">✅ Join request approved</div>
+            <div class="push-text">Hillside Organic Market approved your request for 8 Saturdays. Welcome!</div>
+          </div>
+          <div class="push-time">2h ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🚜</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">❌ Join request declined</div>
+            <div class="push-text">Eastside Night Market: "We already have 3 honey vendors at capacity."</div>
+          </div>
+          <div class="push-time">3h ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">🚜</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">📢 Manager broadcast</div>
+            <div class="push-text">Riverside Market: "Parking lot A is closed today. Use lot B entrance."</div>
+          </div>
+          <div class="push-time">5h ago</div>
+        </div>
+        <div class="push-banner" style="opacity:0.7;">
+          <div class="push-app-icon">🚜</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">🎉 Follower milestone!</div>
+            <div class="push-text">You just hit 50 followers on Markets! Keep it up.</div>
+          </div>
+          <div class="push-time">Yesterday</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager Push -->
+  <div>
+    <div class="screen-label">Manager — Maria</div>
+    <div class="phone lock-screen">
+      <div class="status-bar" style="color:#fff;">7:45</div>
+      <div class="lock-time">7:45</div>
+      <div class="lock-date">Saturday, April 4</div>
+      <div class="lock-notifs">
+        <div class="push-banner">
+          <div class="push-app-icon">👩‍🌾</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">⚠️ Alpine Creamery is running late</div>
+            <div class="push-text">Riverside Market — expected 15 min late. 26/38 vendors checked in so far.</div>
+          </div>
+          <div class="push-time">2m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">👩‍🌾</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">📨 New join request</div>
+            <div class="push-text">Bloom Botanicals wants to join Riverside Market for 12 Saturdays.</div>
+          </div>
+          <div class="push-time">15m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">👩‍🌾</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">🚫 Artisan Bakehouse — no-show</div>
+            <div class="push-text">Not checked in and market opened 30 min ago. No exception reported.</div>
+          </div>
+          <div class="push-time">30m ago</div>
+        </div>
+        <div class="push-banner">
+          <div class="push-app-icon">👩‍🌾</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">✅ Co-manager accepted invite</div>
+            <div class="push-text">Juan Martinez accepted your co-manager invitation for Riverside Market.</div>
+          </div>
+          <div class="push-time">1h ago</div>
+        </div>
+        <div class="push-banner" style="opacity:0.7;">
+          <div class="push-app-icon">👩‍🌾</div>
+          <div class="push-body">
+            <div class="push-app-name">Markets</div>
+            <div class="push-title">📊 Pre-market summary</div>
+            <div class="push-text">Riverside Market opens in 1hr. 31/38 vendors confirmed. 2 pending, 5 not yet responded.</div>
+          </div>
+          <div class="push-time">7:00 AM</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== IN-APP NOTIFICATION CENTER ==================== -->
+<h2>In-App Notification Center</h2>
+<div class="screen-row">
+
+  <!-- Customer Notification Center -->
+  <div>
+    <div class="screen-label">Customer — Rachel</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header">
+        <h3>Notifications</h3>
+        <div class="header-sub">5 unread</div>
+      </div>
+      <div class="content">
+        <div class="filter-tabs">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Vendors</div>
+          <div class="filter-tab">Markets</div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Today</div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon green">🥬</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Green Valley Farm</span> just checked in</div>
+              <div class="notif-desc">Riverside Farmers Market · 2.3 mi away</div>
+              <div class="notif-time">3 min ago</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon green">🍯</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Honey Beeeham</span> checked in</div>
+              <div class="notif-desc">Riverside Farmers Market · Raw honey is available today!</div>
+              <div class="notif-time">8 min ago</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon amber">⚠️</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Happy Hen Farm</span> is not attending today</div>
+              <div class="notif-desc">Sunny Side Eggs and Meadow Creek Ranch sell similar products at this market</div>
+              <div class="notif-time">22 min ago</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon blue">📢</div>
+            <div class="notif-body">
+              <div class="notif-title">Riverside Farmers Market announcement</div>
+              <div class="notif-desc">Special event next Saturday: Spring Plant Sale! Extra vendors confirmed.</div>
+              <div class="notif-time">1 hr ago</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon blue">🌅</div>
+            <div class="notif-body">
+              <div class="notif-title">Market day reminder</div>
+              <div class="notif-desc">Riverside Farmers Market opens at 8AM. 3 followed vendors are scheduled.</div>
+              <div class="notif-time">6:30 AM</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Yesterday</div>
+
+          <div class="notif-item read">
+            <div class="notif-icon gray">👋</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Green Valley Farm</span> checked out</div>
+              <div class="notif-desc">Left Riverside Farmers Market at 12:45 PM</div>
+              <div class="notif-time">Yesterday, 12:45 PM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon green">🧀</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Alpine Creamery</span> checked in</div>
+              <div class="notif-desc">Downtown Sunday Market · Artisan cheese available</div>
+              <div class="notif-time">Yesterday, 9:12 AM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon amber">🕐</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Alpine Creamery</span> is running late</div>
+              <div class="notif-desc">Downtown Sunday Market · Expected 15 min late</div>
+              <div class="notif-time">Yesterday, 8:50 AM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">🔍</div>Discover</div>
+        <div class="tab-item"><div class="tab-icon">❤️</div>Following</div>
+        <div class="tab-item active"><div class="tab-icon">👤</div>Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Vendor Notification Center -->
+  <div>
+    <div class="screen-label">Vendor — Brad</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header">
+        <h3>Notifications</h3>
+        <div class="header-sub">3 unread</div>
+      </div>
+      <div class="content">
+        <div class="filter-tabs">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Market Day</div>
+          <div class="filter-tab">Requests</div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Today</div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon green">⏰</div>
+            <div class="notif-body">
+              <div class="notif-title">Check-in reminder</div>
+              <div class="notif-desc">Riverside Farmers Market opens in 45 min. Tap to check in when you arrive.</div>
+              <div class="notif-time">7:15 AM</div>
+              <div class="notif-action">
+                <button class="notif-action-btn primary">Check In Now</button>
+              </div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon blue">📢</div>
+            <div class="notif-body">
+              <div class="notif-title">Manager broadcast — Riverside Market</div>
+              <div class="notif-desc">"Parking lot A is closed today. Use lot B entrance. Sorry for the inconvenience!"</div>
+              <div class="notif-time">5:30 AM</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon green">✅</div>
+            <div class="notif-body">
+              <div class="notif-title">Join request approved!</div>
+              <div class="notif-desc">Hillside Organic Market approved your request for 8 Saturdays starting Apr 11.</div>
+              <div class="notif-time">6:00 AM</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Yesterday</div>
+
+          <div class="notif-item read">
+            <div class="notif-icon red">❌</div>
+            <div class="notif-body">
+              <div class="notif-title">Join request declined</div>
+              <div class="notif-desc">Eastside Night Market: "We already have 3 honey vendors at capacity. Try applying again next season."</div>
+              <div class="notif-time">Yesterday, 4:15 PM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon purple">🎉</div>
+            <div class="notif-body">
+              <div class="notif-title">You hit 50 followers!</div>
+              <div class="notif-desc">Your Honey Beeeham profile now has 50 followers across all markets. Keep it up!</div>
+              <div class="notif-time">Yesterday, 2:30 PM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon blue">📋</div>
+            <div class="notif-body">
+              <div class="notif-title">Confirmation request</div>
+              <div class="notif-desc">Riverside Market manager is asking you to confirm attendance for Apr 11.</div>
+              <div class="notif-time">Yesterday, 10:00 AM</div>
+              <div class="notif-action">
+                <button class="notif-action-btn primary">Confirm</button>
+                <button class="notif-action-btn secondary">Can't Attend</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon gray">🏁</div>
+            <div class="notif-body">
+              <div class="notif-title">Auto-checkout: Riverside Market</div>
+              <div class="notif-desc">Market closed at 1:00 PM. You were automatically checked out.</div>
+              <div class="notif-time">Yesterday, 1:00 PM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">🚜</div>Markets</div>
+        <div class="tab-item"><div class="tab-icon">📊</div>Status</div>
+        <div class="tab-item active"><div class="tab-icon">👤</div>Profile</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Manager Notification Center -->
+  <div>
+    <div class="screen-label">Manager — Maria</div>
+    <div class="phone">
+      <div class="status-bar">9:41</div>
+      <div class="header">
+        <h3>Notifications</h3>
+        <div class="header-sub">4 unread</div>
+      </div>
+      <div class="content">
+        <div class="filter-tabs">
+          <div class="filter-tab active">All</div>
+          <div class="filter-tab">Vendors</div>
+          <div class="filter-tab">Operations</div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Today</div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon amber">⚠️</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Alpine Creamery</span> is running late</div>
+              <div class="notif-desc">Riverside Market — expected 15 min late. 26/38 vendors present.</div>
+              <div class="notif-time">2 min ago</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon red">🚫</div>
+            <div class="notif-body">
+              <div class="notif-title"><span class="highlight">Artisan Bakehouse</span> — possible no-show</div>
+              <div class="notif-desc">Not checked in 30 min after market opened. No exception reported.</div>
+              <div class="notif-time">30 min ago</div>
+              <div class="notif-action">
+                <button class="notif-action-btn primary">Send Reminder</button>
+                <button class="notif-action-btn secondary">Mark Absent</button>
+              </div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon blue">📨</div>
+            <div class="notif-body">
+              <div class="notif-title">New join request: <span class="highlight">Bloom Botanicals</span></div>
+              <div class="notif-desc">Requesting 12 Saturdays at Riverside Market. Fresh Cut Flowers · 12 followers.</div>
+              <div class="notif-time">15 min ago</div>
+              <div class="notif-action">
+                <button class="notif-action-btn primary">Review</button>
+              </div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+
+          <div class="notif-item unread">
+            <div class="notif-icon green">📊</div>
+            <div class="notif-body">
+              <div class="notif-title">Pre-market summary</div>
+              <div class="notif-desc">Riverside Market opens in 1hr. 31/38 vendors confirmed, 2 pending, 5 unresponsive.</div>
+              <div class="notif-time">7:00 AM</div>
+            </div>
+            <div class="unread-dot"></div>
+          </div>
+        </div>
+
+        <div class="notif-group">
+          <div class="notif-group-label">Yesterday</div>
+
+          <div class="notif-item read">
+            <div class="notif-icon green">✅</div>
+            <div class="notif-body">
+              <div class="notif-title">Co-manager accepted</div>
+              <div class="notif-desc">Juan Martinez accepted your invitation to co-manage Riverside Market.</div>
+              <div class="notif-time">Yesterday, 3:00 PM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon blue">📨</div>
+            <div class="notif-body">
+              <div class="notif-title">New join request: <span class="highlight">Berry Good Farm</span></div>
+              <div class="notif-desc">Requesting 4 Saturdays. Blueberries, Raspberries · 8 followers.</div>
+              <div class="notif-time">Yesterday, 11:30 AM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon gray">🏁</div>
+            <div class="notif-body">
+              <div class="notif-title">Market closed — auto-checkout complete</div>
+              <div class="notif-desc">Riverside Market: 35/38 attended. 2 late, 1 absent (Sunny Side Eggs — 2nd no-show this month).</div>
+              <div class="notif-time">Yesterday, 1:00 PM</div>
+            </div>
+          </div>
+
+          <div class="notif-item read">
+            <div class="notif-icon amber">🔔</div>
+            <div class="notif-body">
+              <div class="notif-title">Vendor roster change</div>
+              <div class="notif-desc">Green Valley Farm cancelled their attendance for Apr 18. 23 vendors remaining for that date.</div>
+              <div class="notif-time">Yesterday, 9:15 AM</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item active"><div class="tab-icon">👩‍🌾</div>Dashboard</div>
+        <div class="tab-item"><div class="tab-icon">👥</div>Vendors</div>
+        <div class="tab-item"><div class="tab-icon">👤</div>Profile</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ==================== NOTIFICATION TYPE REFERENCE ==================== -->
+<h2 style="margin-top:64px;">Notification Type Reference</h2>
+<div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; margin-top:16px;">
+
+  <div style="background:#fff; border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="font-size:18px; font-weight:700; margin-bottom:16px; color:#2D7D46;">🧺 Customer Notifications</div>
+    <div style="font-size:14px; line-height:2;">
+      <div><strong>Vendor Check-In</strong> — followed vendor arrives</div>
+      <div><strong>Vendor Checkout</strong> — followed vendor leaves</div>
+      <div><strong>Exception Alert</strong> — running late, sold out, not attending</div>
+      <div><strong>Alternative Suggestion</strong> — similar vendor when favorite absent</div>
+      <div><strong>Market Announcement</strong> — closures, special events</div>
+      <div><strong>Market Day Reminder</strong> — morning of followed market days</div>
+    </div>
+  </div>
+
+  <div style="background:#fff; border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="font-size:18px; font-weight:700; margin-bottom:16px; color:#2D7D46;">🚜 Vendor Notifications</div>
+    <div style="font-size:14px; line-height:2;">
+      <div><strong>Check-In Reminder</strong> — market day morning prompt</div>
+      <div><strong>Auto-Checkout</strong> — when market closes</div>
+      <div><strong>Join Request Approved</strong> — market accepted you</div>
+      <div><strong>Join Request Declined</strong> — includes manager's reason</div>
+      <div><strong>Confirmation Request</strong> — manager asks to confirm attendance</div>
+      <div><strong>Manager Broadcast</strong> — operational updates from manager</div>
+      <div><strong>Follower Milestone</strong> — 10, 25, 50, 100 followers</div>
+    </div>
+  </div>
+
+  <div style="background:#fff; border-radius:16px; padding:24px; box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+    <div style="font-size:18px; font-weight:700; margin-bottom:16px; color:#2D7D46;">👩‍🌾 Manager Notifications</div>
+    <div style="font-size:14px; line-height:2;">
+      <div><strong>Vendor Exception</strong> — running late, not attending</div>
+      <div><strong>Possible No-Show</strong> — unchecked-in after market opens</div>
+      <div><strong>New Join Request</strong> — vendor wants to join</div>
+      <div><strong>Pre-Market Summary</strong> — confirmed/pending vendor counts</div>
+      <div><strong>Market Close Summary</strong> — attendance recap</div>
+      <div><strong>Co-Manager Accepted</strong> — invite accepted</div>
+      <div><strong>Vendor Roster Change</strong> — vendor cancels a date</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

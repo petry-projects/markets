@@ -1,0 +1,57 @@
+"""
+Customer profile, follows, and discovery queries.
+"""
+
+type CustomerProfile {
+  id: ID!
+  userID: ID!
+  displayName: String!
+  followedVendors: [Vendor!]!
+  followedMarkets: [Market!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Follow {
+  id: ID!
+  customerID: ID!
+  targetType: FollowTargetType!
+  targetID: ID!
+  createdAt: String!
+}
+
+enum FollowTargetType {
+  VENDOR
+  MARKET
+}
+
+extend type Query {
+  """Get the authenticated customer's profile."""
+  myCustomerProfile: CustomerProfile
+
+  """Discover markets near a location."""
+  discoverMarkets(latitude: Float!, longitude: Float!, radiusMiles: Float!, limit: Int, offset: Int): [Market!]!
+
+  """Discover vendors at a specific market."""
+  discoverVendors(marketID: ID!, limit: Int, offset: Int): [Vendor!]!
+
+  """Get the customer's followed vendors and markets activity feed."""
+  followingFeed(limit: Int, offset: Int): [FollowingFeedItem!]!
+}
+
+type FollowingFeedItem {
+  id: ID!
+  type: String!
+  vendor: Vendor
+  market: Market
+  timestamp: String!
+  message: String!
+}
+
+extend type Mutation {
+  """Follow a vendor or market (Customer only)."""
+  follow(targetType: FollowTargetType!, targetID: ID!): Follow!
+
+  """Unfollow a vendor or market (Customer only)."""
+  unfollow(targetType: FollowTargetType!, targetID: ID!): Boolean!
+}

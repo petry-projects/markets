@@ -35,7 +35,7 @@ export default function VendorMarketsScreen() {
             <Heading className="text-xl text-typography-900">My Markets</Heading>
             <Button
               className="bg-primary-500 rounded-lg px-4 h-10"
-              onPress={() => router.push('/(vendor)/markets/search')}
+              onPress={() => { router.push('/(vendor)/markets/search'); }}
               accessibilityLabel="Find markets"
             >
               <ButtonText className="text-white text-sm font-semibold">
@@ -47,7 +47,7 @@ export default function VendorMarketsScreen() {
         renderItem={({ item }) => (
           <Pressable
             onPress={() =>
-              router.push(`/(vendor)/markets/${item.market.id}/detail`)
+              { router.push(`/(vendor)/markets/${item.market.id}/detail`); }
             }
             accessibilityLabel={`Market: ${item.market.name}`}
           >
@@ -86,7 +86,7 @@ export default function VendorMarketsScreen() {
                 <Text className="text-sm text-typography-500">
                   {item.market.address}
                 </Text>
-                {item.nextUpcomingDate && (
+                {item.nextUpcomingDate != null && item.nextUpcomingDate !== '' && (
                   <Text className="text-sm text-primary-600">
                     Next: {item.nextUpcomingDate}
                   </Text>
@@ -103,11 +103,11 @@ export default function VendorMarketsScreen() {
           <Box className="items-center py-8">
             <VStack className="items-center gap-4">
               <Text className="text-typography-400">
-                You haven't joined any markets yet.
+                You haven&apos;t joined any markets yet.
               </Text>
               <Button
                 className="h-12 bg-primary-500 rounded-lg px-6"
-                onPress={() => router.push('/(vendor)/markets/search')}
+                onPress={() => { router.push('/(vendor)/markets/search'); }}
                 accessibilityLabel="Find markets to join"
               >
                 <ButtonText className="text-white font-semibold">
@@ -117,7 +117,7 @@ export default function VendorMarketsScreen() {
             </VStack>
           </Box>
         }
-        onRefresh={refetch}
+        onRefresh={() => { void refetch(); }}
         refreshing={loading}
       />
     </Box>

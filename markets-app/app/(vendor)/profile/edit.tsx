@@ -25,26 +25,25 @@ export default function EditVendorProfileScreen() {
   const profile = data?.myVendorProfile;
 
   const handleSubmit = useCallback(
-    async (formData: VendorProfileFormData) => {
-      try {
-        await updateProfile({
-          variables: {
-            input: {
-              businessName: formData.businessName,
-              description: formData.description || undefined,
-              contactInfo: formData.contactInfo || undefined,
-              instagramHandle: formData.instagramHandle || undefined,
-              facebookURL: formData.facebookURL || undefined,
-              websiteURL: formData.websiteURL || undefined,
-            },
+    (formData: VendorProfileFormData) => {
+      void updateProfile({
+        variables: {
+          input: {
+            businessName: formData.businessName,
+            description: formData.description || undefined,
+            contactInfo: formData.contactInfo || undefined,
+            instagramHandle: formData.instagramHandle || undefined,
+            facebookURL: formData.facebookURL || undefined,
+            websiteURL: formData.websiteURL || undefined,
           },
-        });
+        },
+      }).then(() => {
         router.back();
-      } catch (err) {
+      }).catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : 'An unexpected error occurred';
         Alert.alert('Error', message);
-      }
+      });
     },
     [updateProfile, router],
   );

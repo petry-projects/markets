@@ -114,7 +114,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
     const newErrors: FieldErrors = {};
     for (const field of requiredFields) {
       const error = validateField(field, form[field], mode);
-      if (error !== undefined) newErrors[field] = error;
+      if (error != null) newErrors[field] = error;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -139,12 +139,8 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           value={form.name}
           error={errors.name}
           required
-          onChangeText={(v) => {
-            handleChange('name', v);
-          }}
-          onBlur={() => {
-            handleBlur('name');
-          }}
+          onChangeText={(v) => { handleChange('name', v); }}
+          onBlur={() => { handleBlur('name'); }}
         />
 
         <FormField
@@ -153,21 +149,15 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           value={form.address}
           error={errors.address}
           required
-          onChangeText={(v) => {
-            handleChange('address', v);
-          }}
-          onBlur={() => {
-            handleBlur('address');
-          }}
+          onChangeText={(v) => { handleChange('address', v); }}
+          onBlur={() => { handleBlur('address'); }}
         />
 
         <FormField
           label="Description"
           placeholder="Tell customers about your market (optional)"
           value={form.description}
-          onChangeText={(v) => {
-            handleChange('description', v);
-          }}
+          onChangeText={(v) => { handleChange('description', v); }}
           multiline
         />
 
@@ -180,12 +170,8 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
               error={errors.latitude}
               required
               keyboardType="numeric"
-              onChangeText={(v) => {
-                handleChange('latitude', v);
-              }}
-              onBlur={() => {
-                handleBlur('latitude');
-              }}
+              onChangeText={(v) => { handleChange('latitude', v); }}
+              onBlur={() => { handleBlur('latitude'); }}
             />
           </Box>
           <Box className="flex-1">
@@ -196,12 +182,8 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
               error={errors.longitude}
               required
               keyboardType="numeric"
-              onChangeText={(v) => {
-                handleChange('longitude', v);
-              }}
-              onBlur={() => {
-                handleBlur('longitude');
-              }}
+              onChangeText={(v) => { handleChange('longitude', v); }}
+              onBlur={() => { handleBlur('longitude'); }}
             />
           </Box>
         </Box>
@@ -214,12 +196,8 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           required
           keyboardType="email-address"
           autoCapitalize="none"
-          onChangeText={(v) => {
-            handleChange('contactEmail', v);
-          }}
-          onBlur={() => {
-            handleBlur('contactEmail');
-          }}
+          onChangeText={(v) => { handleChange('contactEmail', v); }}
+          onBlur={() => { handleBlur('contactEmail'); }}
         />
 
         <FormField
@@ -227,9 +205,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           placeholder="+1 (555) 000-0000"
           value={form.contactPhone}
           keyboardType="phone-pad"
-          onChangeText={(v) => {
-            handleChange('contactPhone', v);
-          }}
+          onChangeText={(v) => { handleChange('contactPhone', v); }}
         />
 
         {mode === 'create' && (
@@ -241,12 +217,8 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
             required
             keyboardType="email-address"
             autoCapitalize="none"
-            onChangeText={(v) => {
-              handleChange('recoveryContact', v);
-            }}
-            onBlur={() => {
-              handleBlur('recoveryContact');
-            }}
+            onChangeText={(v) => { handleChange('recoveryContact', v); }}
+            onBlur={() => { handleBlur('recoveryContact'); }}
             hint="Required for account security. Must differ from sign-in email."
           />
         )}
@@ -258,9 +230,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           placeholder="@yourmarket"
           value={form.instagram}
           autoCapitalize="none"
-          onChangeText={(v) => {
-            handleChange('instagram', v);
-          }}
+          onChangeText={(v) => { handleChange('instagram', v); }}
         />
 
         <FormField
@@ -268,9 +238,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           placeholder="facebook.com/your-market"
           value={form.facebook}
           autoCapitalize="none"
-          onChangeText={(v) => {
-            handleChange('facebook', v);
-          }}
+          onChangeText={(v) => { handleChange('facebook', v); }}
         />
 
         <FormField
@@ -278,9 +246,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           placeholder="your-market.com"
           value={form.website}
           autoCapitalize="none"
-          onChangeText={(v) => {
-            handleChange('website', v);
-          }}
+          onChangeText={(v) => { handleChange('website', v); }}
         />
 
         <FormField
@@ -288,15 +254,13 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
           placeholder="@yourmarket"
           value={form.twitter}
           autoCapitalize="none"
-          onChangeText={(v) => {
-            handleChange('twitter', v);
-          }}
+          onChangeText={(v) => { handleChange('twitter', v); }}
         />
 
         <Button
           className="h-14 bg-primary-500 rounded-lg mt-4"
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading === true}
           accessibilityLabel={mode === 'create' ? 'Create market' : 'Save changes'}
         >
           {loading === true ? (
@@ -346,7 +310,7 @@ function FormField({
         {required === true && <Text className="text-error-500"> *</Text>}
       </Text>
       <Input
-        className={`rounded-lg border ${error !== undefined && error !== '' ? 'border-error-500' : 'border-outline-200'} bg-background-50`}
+        className={`rounded-lg border ${error != null && error !== '' ? 'border-error-500' : 'border-outline-200'} bg-background-50`}
       >
         <InputField
           className={`px-3 ${multiline === true ? 'h-20 py-2' : 'h-12'} text-typography-900`}
@@ -360,10 +324,10 @@ function FormField({
           accessibilityLabel={label}
         />
       </Input>
-      {hint !== undefined && hint !== '' && (error === undefined || error === '') && (
+      {hint != null && hint !== '' && (error == null || error === '') && (
         <Text className="text-xs text-typography-400">{hint}</Text>
       )}
-      {error !== undefined && error !== '' && (
+      {error != null && error !== '' && (
         <Text className="text-xs text-error-500">{error}</Text>
       )}
     </VStack>

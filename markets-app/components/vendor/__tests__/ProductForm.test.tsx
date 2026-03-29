@@ -1,11 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import ProductForm from '../ProductForm';
 
 const mockOnSubmit = jest.fn();
 
-function renderProductForm(props = {}) {
-  render(<ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />);
+function renderForm(props = {}) {
+  return render(
+    <ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />,
+  );
 }
 
 beforeEach(() => {
@@ -14,30 +16,36 @@ beforeEach(() => {
 
 describe('ProductForm', () => {
   it('renders create mode heading', () => {
-    renderProductForm();
+    const { getAllByText } = renderForm();
     // "Add Product" appears in both heading and submit button
-    expect(screen.getAllByText('Add Product').length).toBeGreaterThan(0);
+    expect(getAllByText('Add Product').length).toBeGreaterThan(0);
   });
 
   it('renders edit mode heading', () => {
-    renderProductForm({ mode: 'edit' });
-    expect(screen.getByText('Edit Product')).toBeTruthy();
+    const { getByText } = renderForm({ mode: 'edit' });
+    expect(getByText('Edit Product')).toBeTruthy();
   });
 
   it('shows validation error for empty product name', async () => {
-    renderProductForm();
-    fireEvent.press(screen.getByLabelText('Add product'));
+    const { getByLabelText, getByText } = renderForm();
+    const submitButton = getByLabelText('Add product');
+    fireEvent.press(submitButton);
     await waitFor(() => {
-      expect(screen.getByText('Product name is required')).toBeTruthy();
+      expect(getByText('Product name is required')).toBeTruthy();
     });
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
   it('submits valid form data', async () => {
-    renderProductForm();
-    fireEvent.changeText(screen.getByLabelText('Product name'), 'Tomatoes');
-    fireEvent.changeText(screen.getByLabelText('Product category'), 'Produce');
-    fireEvent.press(screen.getByLabelText('Add product'));
+    const { getByLabelText } = renderForm();
+    const nameInput = getByLabelText('Product name');
+    fireEvent.changeText(nameInput, 'Tomatoes');
+
+    const categoryInput = getByLabelText('Product category');
+    fireEvent.changeText(categoryInput, 'Produce');
+
+    const submitButton = getByLabelText('Add product');
+    fireEvent.press(submitButton);
 
     await waitFor(() => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
@@ -50,14 +58,14 @@ describe('ProductForm', () => {
   });
 
   it('populates initial data in edit mode', () => {
-    renderProductForm({
+    const { getByDisplayValue } = renderForm({
       mode: 'edit',
       initialData: {
         name: 'Existing Product',
         category: 'Dairy',
       },
     });
-    expect(screen.getByDisplayValue('Existing Product')).toBeTruthy();
-    expect(screen.getByDisplayValue('Dairy')).toBeTruthy();
+    expect(getByDisplayValue('Existing Product')).toBeTruthy();
+    expect(getByDisplayValue('Dairy')).toBeTruthy();
   });
 });

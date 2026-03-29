@@ -15,10 +15,12 @@ import { SearchMarketsToJoinDocument } from '@/graphql/generated/graphql';
 export default function SearchMarketsScreen() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
-  const [search, { data, loading }] = useLazyQuery(SearchMarketsToJoinDocument);
+  const [search, { data, loading }] = useLazyQuery(
+    SearchMarketsToJoinDocument,
+  );
 
   const handleSearch = useCallback(() => {
-    void search({
+    search({
       variables: {
         input: {
           searchTerm: searchTerm || undefined,
@@ -57,7 +59,9 @@ export default function SearchMarketsScreen() {
             {loading ? (
               <Spinner className="text-white" />
             ) : (
-              <ButtonText className="text-white font-semibold">Search</ButtonText>
+              <ButtonText className="text-white font-semibold">
+                Search
+              </ButtonText>
             )}
           </Button>
         </Box>
@@ -75,9 +79,7 @@ export default function SearchMarketsScreen() {
             distanceKm={item.distanceKm}
             vendorCount={item.vendorCount}
             vendorStatus={item.vendorStatus}
-            onPress={(id) => {
-              router.push(`/(vendor)/markets/${id}/detail`);
-            }}
+            onPress={(id) => router.push(`/(vendor)/markets/${id}/detail`)}
           />
         )}
         ListEmptyComponent={

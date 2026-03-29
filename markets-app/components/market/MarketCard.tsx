@@ -14,7 +14,9 @@ type MarketCardProps = {
 export function MarketCard({ id, name, address, description, onPress }: MarketCardProps) {
   return (
     <Pressable
-      onPress={() => { onPress(id); }}
+      onPress={() => {
+        onPress(id);
+      }}
       className="bg-background-0 rounded-xl border border-outline-100 p-4 mb-3"
       accessibilityRole="button"
       accessibilityLabel={`View ${name}`}

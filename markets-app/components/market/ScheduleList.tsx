@@ -37,7 +37,13 @@ export function ScheduleList({ schedules, onAdd, onEdit, onDelete }: ScheduleLis
   const confirmDelete = (id: string) => {
     Alert.alert('Delete Schedule', 'Are you sure you want to remove this schedule?', [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => { onDelete(id); } },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          onDelete(id);
+        },
+      },
     ]);
   };
 
@@ -84,14 +90,18 @@ export function ScheduleList({ schedules, onAdd, onEdit, onDelete }: ScheduleLis
       <Box className="flex-row gap-3">
         <Button
           className="flex-1 h-12 bg-primary-50 border border-primary-500 rounded-lg"
-          onPress={() => { onAdd('RECURRING'); }}
+          onPress={() => {
+            onAdd('RECURRING');
+          }}
           accessibilityLabel="Add recurring schedule"
         >
           <ButtonText className="text-primary-500 font-medium text-sm">+ Recurring</ButtonText>
         </Button>
         <Button
           className="flex-1 h-12 bg-warning-50 border border-warning-500 rounded-lg"
-          onPress={() => { onAdd('ONE_TIME'); }}
+          onPress={() => {
+            onAdd('ONE_TIME');
+          }}
           accessibilityLabel="Add one-time event"
         >
           <ButtonText className="text-warning-600 font-medium text-sm">+ One-Time</ButtonText>
@@ -124,7 +134,9 @@ function ScheduleCard({ schedule, onEdit, onDelete, isRecurring }: ScheduleCardP
               </Text>
               <Text className="text-xs text-typography-500">
                 {schedule.startTime} - {schedule.endTime}
-                {schedule.frequency != null && schedule.frequency !== '' ? ` (${schedule.frequency})` : ''}
+                {schedule.frequency != null && schedule.frequency !== ''
+                  ? ` (${schedule.frequency})`
+                  : ''}
               </Text>
               {schedule.label != null && schedule.label !== '' && (
                 <Text className="text-xs text-typography-400 mt-1">{schedule.label}</Text>
@@ -138,7 +150,9 @@ function ScheduleCard({ schedule, onEdit, onDelete, isRecurring }: ScheduleCardP
           ) : (
             <>
               <Text className="text-sm font-semibold text-typography-900">
-                {(schedule.eventName != null && schedule.eventName !== '') ? schedule.eventName : 'Event'}
+                {schedule.eventName != null && schedule.eventName !== ''
+                  ? schedule.eventName
+                  : 'Event'}
               </Text>
               <Text className="text-xs text-typography-500">
                 {schedule.eventDate} {schedule.startTime} - {schedule.endTime}
@@ -149,14 +163,18 @@ function ScheduleCard({ schedule, onEdit, onDelete, isRecurring }: ScheduleCardP
         <Box className="flex-row gap-2">
           <Button
             className="h-8 px-2 bg-transparent"
-            onPress={() => { onEdit(schedule); }}
+            onPress={() => {
+              onEdit(schedule);
+            }}
             accessibilityLabel={`Edit ${isRecurring ? 'recurring' : 'one-time'} schedule`}
           >
             <ButtonText className="text-xs text-primary-500">Edit</ButtonText>
           </Button>
           <Button
             className="h-8 px-2 bg-transparent"
-            onPress={() => { onDelete(schedule.id); }}
+            onPress={() => {
+              onDelete(schedule.id);
+            }}
             accessibilityLabel={`Delete ${isRecurring ? 'recurring' : 'one-time'} schedule`}
           >
             <ButtonText className="text-xs text-error-500">Delete</ButtonText>

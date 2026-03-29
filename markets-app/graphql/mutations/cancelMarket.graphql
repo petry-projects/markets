@@ -1,5 +1,10 @@
-mutation CancelMarket($marketID: ID!, $reason: CancellationReason!, $message: String) {
-  cancelMarket(marketID: $marketID, reason: $reason, message: $message) {
+mutation CancelMarket(
+  $marketID: ID!
+  $reason: CancellationReason!
+  $message: String
+  $endEarly: Boolean
+) {
+  cancelMarket(marketID: $marketID, reason: $reason, message: $message, endEarly: $endEarly) {
     id
     status
     cancellationReason

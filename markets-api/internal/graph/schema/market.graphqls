@@ -233,8 +233,8 @@ extend type Mutation {
   """Send a notification to all rostered vendors (Manager only)."""
   sendVendorNotification(marketID: ID!, message: String!): VendorNotification!
 
-  """Cancel a market day or end it early (Manager only)."""
-  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String): Market!
+  """Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled."""
+  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String, endEarly: Boolean): Market!
 
   """Reactivate a cancelled market (Manager only)."""
   reactivateMarket(marketID: ID!): Market!

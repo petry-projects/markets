@@ -3,6 +3,7 @@ package graph
 import (
 	"context"
 	"log/slog"
+	"strings"
 
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/domain"
@@ -10,6 +11,86 @@ import (
 	"github.com/petry-projects/markets-api/internal/graph/model"
 	"github.com/petry-projects/markets-api/internal/market"
 )
+
+// --- Enum mapping helpers (DB lowercase ↔ GraphQL uppercase) ---
+
+// scheduleTypeToModel maps a DB schedule type (lowercase) to the GraphQL enum.
+func scheduleTypeToModel(dbVal string) model.ScheduleType {
+	switch strings.ToLower(dbVal) {
+	case "recurring":
+		return model.ScheduleTypeRecurring
+	case "one_time":
+		return model.ScheduleTypeOneTime
+	default:
+		return model.ScheduleType(dbVal)
+	}
+}
+
+// scheduleTypeToDB maps a GraphQL ScheduleType enum to the DB lowercase value.
+func scheduleTypeToDB(gqlVal model.ScheduleType) string {
+	switch gqlVal {
+	case model.ScheduleTypeRecurring:
+		return "recurring"
+	case model.ScheduleTypeOneTime:
+		return "one_time"
+	default:
+		return strings.ToLower(string(gqlVal))
+	}
+}
+
+// rosterStatusToModel maps a DB roster status (lowercase) to the GraphQL enum.
+func rosterStatusToModel(dbVal string) model.VendorRosterStatus {
+	switch strings.ToLower(dbVal) {
+	case "pending":
+		return model.VendorRosterStatusPending
+	case "approved":
+		return model.VendorRosterStatusApproved
+	case "rejected":
+		return model.VendorRosterStatusRejected
+	case "invited":
+		return model.VendorRosterStatusInvited
+	case "committed":
+		return model.VendorRosterStatusCommitted
+	case "not_attending":
+		return model.VendorRosterStatusNotAttending
+	default:
+		return model.VendorRosterStatus(dbVal)
+	}
+}
+
+// rosterStatusToDB maps a GraphQL VendorRosterStatus enum to the DB lowercase value.
+func rosterStatusToDB(gqlVal model.VendorRosterStatus) string {
+	switch gqlVal {
+	case model.VendorRosterStatusPending:
+		return "pending"
+	case model.VendorRosterStatusApproved:
+		return "approved"
+	case model.VendorRosterStatusRejected:
+		return "rejected"
+	case model.VendorRosterStatusInvited:
+		return "invited"
+	case model.VendorRosterStatusCommitted:
+		return "committed"
+	case model.VendorRosterStatusNotAttending:
+		return "not_attending"
+	default:
+		return strings.ToLower(string(gqlVal))
+	}
+}
+
+// invitationStatusToModel maps a DB invitation status (lowercase) to the GraphQL enum.
+func invitationStatusToModel(dbVal string) model.InvitationStatus {
+	switch strings.ToLower(dbVal) {
+	case "pending":
+		return model.InvitationStatusPending
+	case "accepted":
+		return model.InvitationStatusAccepted
+	case "declined":
+		return model.InvitationStatusDeclined
+	default:
+		return model.InvitationStatus(dbVal)
+	}
+}
 
 // checkManagerScope verifies that the current user (if role == "manager") is assigned
 // to the specified market. Returns a GraphQL error if not authorized, or nil if OK.
@@ -143,7 +224,7 @@ func scheduleToModel(s *market.ScheduleRecord) *model.MarketSchedule {
 	return &model.MarketSchedule{
 		ID:           s.ID.String(),
 		MarketID:     s.MarketID.String(),
-		ScheduleType: model.ScheduleType(s.ScheduleType),
+		ScheduleType: scheduleTypeToModel(s.ScheduleType),
 		DayOfWeek:    s.DayOfWeek,
 		Frequency:    stringToPtr(s.Frequency),
 		SeasonStart:  stringToPtr(s.SeasonStart),
@@ -165,7 +246,7 @@ func rosterEntryToModel(e *market.RosterEntry) *model.VendorRosterEntry {
 		MarketID:           e.MarketID.String(),
 		VendorID:           e.VendorID.String(),
 		Vendor:             &model.Vendor{ID: e.VendorID.String()},
-		Status:             model.VendorRosterStatus(e.Status),
+		Status:             rosterStatusToModel(e.Status),
 		Date:               e.Date,
 		InvitedBy:          stringToPtr(e.InvitedBy),
 		RejectionReason:    stringToPtr(e.RejectionReason),
@@ -182,7 +263,7 @@ func invitationToModel(inv *market.InvitationRecord) *model.VendorInvitation {
 		MarketID:    inv.MarketID.String(),
 		VendorID:    inv.VendorID.String(),
 		InvitedBy:   inv.InvitedBy.String(),
-		Status:      model.InvitationStatus(inv.Status),
+		Status:      invitationStatusToModel(inv.Status),
 		TargetDates: inv.TargetDates,
 		Message:     stringToPtr(inv.Message),
 		CreatedAt:   inv.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),

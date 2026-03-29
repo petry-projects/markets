@@ -16,8 +16,12 @@ export default function EditMarketScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data, loading: queryLoading, error } = useQuery(GetMarketDocument, {
-    variables: { id: id! },
+  const {
+    data,
+    loading: queryLoading,
+    error,
+  } = useQuery(GetMarketDocument, {
+    variables: { id: id },
     skip: !id,
   });
 
@@ -30,7 +34,7 @@ export default function EditMarketScreen() {
       try {
         await updateMarket({
           variables: {
-            id: id!,
+            id: id,
             input: {
               name: formData.name,
               description: formData.description || undefined,
@@ -94,7 +98,9 @@ export default function EditMarketScreen() {
     <MarketForm
       mode="edit"
       initialData={initialData}
-      onSubmit={handleSubmit}
+      onSubmit={(data) => {
+        void handleSubmit(data);
+      }}
       loading={mutationLoading}
     />
   );

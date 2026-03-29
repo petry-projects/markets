@@ -74,7 +74,7 @@ type Repository interface {
 	GetInvitationsByVendor(ctx context.Context, vendorID domain.UserID) ([]*InvitationRecord, error)
 
 	// CreateRosterEntries creates roster entries for a vendor on given dates.
-	CreateRosterEntries(ctx context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string) ([]*RosterEntry, error)
+	CreateRosterEntries(ctx context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string, rulesAcknowledged bool) ([]*RosterEntry, error)
 
 	// UpdateRosterEntryStatus updates a roster entry's status.
 	UpdateRosterEntryStatus(ctx context.Context, id string, status string) (*RosterEntry, error)

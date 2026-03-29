@@ -230,10 +230,10 @@ func (m *mockMarketRepo) GetInvitationsByVendor(_ context.Context, _ domain.User
 	return []*market.InvitationRecord{}, nil
 }
 
-func (m *mockMarketRepo) CreateRosterEntries(_ context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string) ([]*market.RosterEntry, error) {
+func (m *mockMarketRepo) CreateRosterEntries(_ context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string, rulesAcknowledged bool) ([]*market.RosterEntry, error) {
 	var entries []*market.RosterEntry
 	for _, d := range dates {
-		entries = append(entries, &market.RosterEntry{ID: "re-id", MarketID: marketID, VendorID: vendorID, Date: d, Status: status, CreatedAt: time.Now(), UpdatedAt: time.Now()})
+		entries = append(entries, &market.RosterEntry{ID: "re-id", MarketID: marketID, VendorID: vendorID, Date: d, Status: status, RulesAcknowledged: rulesAcknowledged, CreatedAt: time.Now(), UpdatedAt: time.Now()})
 	}
 	return entries, nil
 }

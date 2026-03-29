@@ -9,60 +9,94 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
 // CreateVendorProfile is the resolver for the createVendorProfile field.
 func (r *mutationResolver) CreateVendorProfile(ctx context.Context, input model.CreateVendorProfileInput) (*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: CreateVendorProfile - createVendorProfile"))
 }
 
 // UpdateVendorProfile is the resolver for the updateVendorProfile field.
 func (r *mutationResolver) UpdateVendorProfile(ctx context.Context, input model.UpdateVendorProfileInput) (*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: UpdateVendorProfile - updateVendorProfile"))
 }
 
 // CreateProduct is the resolver for the createProduct field.
 func (r *mutationResolver) CreateProduct(ctx context.Context, input model.CreateProductInput) (*model.Product, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: CreateProduct - createProduct"))
 }
 
 // UpdateProduct is the resolver for the updateProduct field.
 func (r *mutationResolver) UpdateProduct(ctx context.Context, id string, input model.UpdateProductInput) (*model.Product, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: UpdateProduct - updateProduct"))
 }
 
 // DeleteProduct is the resolver for the deleteProduct field.
 func (r *mutationResolver) DeleteProduct(ctx context.Context, id string) (bool, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return false, err
+	}
 	panic(fmt.Errorf("not implemented: DeleteProduct - deleteProduct"))
 }
 
 // CheckIn is the resolver for the checkIn field.
 func (r *mutationResolver) CheckIn(ctx context.Context, input model.CheckInInput) (*model.CheckIn, error) {
+	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: CheckIn - checkIn"))
 }
 
 // CheckOut is the resolver for the checkOut field.
 func (r *mutationResolver) CheckOut(ctx context.Context, checkInID string) (*model.CheckIn, error) {
+	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: CheckOut - checkOut"))
 }
 
 // ReportException is the resolver for the reportException field.
 func (r *mutationResolver) ReportException(ctx context.Context, input model.ExceptionStatusInput) (*model.CheckIn, error) {
+	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: ReportException - reportException"))
 }
 
 // Vendor is the resolver for the vendor field.
 func (r *queryResolver) Vendor(ctx context.Context, id string) (*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: Vendor - vendor"))
 }
 
 // MyVendorProfile is the resolver for the myVendorProfile field.
 func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: MyVendorProfile - myVendorProfile"))
 }
 
 // VendorProducts is the resolver for the vendorProducts field.
 func (r *queryResolver) VendorProducts(ctx context.Context, vendorID string) ([]*model.Product, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: VendorProducts - vendorProducts"))
 }

@@ -254,6 +254,97 @@ func TestMiddleware_EmptyBearerToken(t *testing.T) {
 	assertUnauthenticatedErrorCode(t, rec)
 }
 
+// Test 1.5.9: Tampered JWT (modified role claim after signing) returns UNAUTHENTICATED.
+// Firebase JWT middleware validates signature — tampered tokens fail signature verification.
+func TestMiddleware_TamperedJWTReturnsUnauthenticated(t *testing.T) {
+	verifier := &mockVerifier{
+		err: errors.New("token has been tampered with: signature is invalid"),
+	}
+
+	handler := NewMiddleware(verifier)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("handler should not be called for tampered token")
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/query", nil)
+	req.Header.Set("Authorization", "Bearer tampered-jwt-with-modified-role")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Errorf("expected status 401, got %d", rec.Code)
+	}
+	assertUnauthenticatedErrorCode(t, rec)
+}
+
+// Test 1.5.10: JWT with role="" passes middleware but RequireRole rejects it.
+// The middleware allows it through (since the token is valid), but role-based
+// checks at the resolver level will reject it. This test verifies the middleware
+// side: empty role is set in context as "".
+func TestMiddleware_EmptyRolePassesThroughMiddleware(t *testing.T) {
+	verifier := &mockVerifier{
+		token: &firebaseauth.Token{
+			UID: "user-empty-role",
+			Claims: map[string]interface{}{
+				"role": "",
+			},
+		},
+	}
+
+	var capturedRole string
+	handler := NewMiddleware(verifier)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedRole = RoleFromContext(r.Context())
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/query", nil)
+	req.Header.Set("Authorization", "Bearer valid-token-empty-role")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+	// Empty role is not in validRoles, so ExtractUser returns ""
+	if capturedRole != "" {
+		t.Errorf("expected empty role, got '%s'", capturedRole)
+	}
+}
+
+// Test 1.5.11: JWT with compound role "customer,vendor" passes middleware
+// but ExtractUser rejects it (not in validRoles map) and sets role="".
+func TestMiddleware_CompoundRoleRejectedByExtractUser(t *testing.T) {
+	verifier := &mockVerifier{
+		token: &firebaseauth.Token{
+			UID: "user-compound-role",
+			Claims: map[string]interface{}{
+				"role": "customer,vendor",
+			},
+		},
+	}
+
+	var capturedRole string
+	handler := NewMiddleware(verifier)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		capturedRole = RoleFromContext(r.Context())
+		w.WriteHeader(http.StatusOK)
+	}))
+
+	req := httptest.NewRequest(http.MethodPost, "/query", nil)
+	req.Header.Set("Authorization", "Bearer valid-token-compound-role")
+	rec := httptest.NewRecorder()
+
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected status 200, got %d", rec.Code)
+	}
+	// "customer,vendor" is not in validRoles, so ExtractUser returns ""
+	if capturedRole != "" {
+		t.Errorf("expected empty role for compound role, got '%s'", capturedRole)
+	}
+}
+
 // assertUnauthenticatedErrorCode validates the response contains an UNAUTHENTICATED GraphQL error.
 func assertUnauthenticatedErrorCode(t *testing.T, rec *httptest.ResponseRecorder) {
 	t.Helper()

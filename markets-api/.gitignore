@@ -1,0 +1,26 @@
+# Compiled binary
+api
+*.exe
+*.test
+
+# Coverage
+coverage.out
+coverage.html
+coverage-clean.tmp
+coverage.tmp
+coverage-filtered.out
+coverage-clean.out
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+
+# Vendor (if used)
+vendor/
+
+# Environment
+.env
+.env.local

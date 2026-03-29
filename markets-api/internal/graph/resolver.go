@@ -21,7 +21,6 @@ type Resolver struct {
 	MarketRepo   market.Repository
 	VendorRepo   vendor.Repository
 	CustomerRepo customer.Repository
-	NotifyRepo   notify.Repository
 	ClaimsSetter auth.ClaimsSetter
 }
 

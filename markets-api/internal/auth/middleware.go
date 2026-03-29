@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	firebaseauth "firebase.google.com/go/v4/auth"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 )
 
 // TokenVerifier abstracts Firebase token verification for testability.
@@ -14,33 +15,29 @@ type TokenVerifier interface {
 }
 
 // NewMiddleware creates an HTTP middleware that validates Firebase JWT tokens.
-// It extracts the bearer token from the Authorization header, validates it,
-// and stores the user's UID and role in the request context.
+// It extracts the bearer token from the Authorization header, validates it
+// via the Firebase Admin SDK, and stores the user's UID and role in the
+// request context for downstream resolver access.
+//
+// Returns a structured UNAUTHENTICATED GraphQL error for invalid, expired,
+// malformed, missing, or wrong-issuer JWTs.
 func NewMiddleware(verifier TokenVerifier) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := extractBearerToken(r)
 			if token == "" {
-				http.Error(w,
-					`{"errors":[{"message":"missing authorization","extensions":{"code":"UNAUTHENTICATED"}}]}`,
-					http.StatusUnauthorized,
-				)
+				gqlerr.Unauthenticated(w, "missing authorization")
 				return
 			}
 
 			verified, err := verifier.VerifyIDToken(r.Context(), token)
 			if err != nil {
-				http.Error(w,
-					`{"errors":[{"message":"invalid token","extensions":{"code":"UNAUTHENTICATED"}}]}`,
-					http.StatusUnauthorized,
-				)
+				gqlerr.Unauthenticated(w, "invalid token")
 				return
 			}
 
-			uid := verified.UID
-			role, _ := verified.Claims["role"].(string)
-
-			ctx := WithUser(r.Context(), uid, role)
+			uid, role := ExtractUser(verified)
+			ctx := WithUser(r.Context(), uid.String(), role)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
@@ -58,5 +55,5 @@ func extractBearerToken(r *http.Request) string {
 		return ""
 	}
 
-	return parts[1]
+	return strings.TrimSpace(parts[1])
 }

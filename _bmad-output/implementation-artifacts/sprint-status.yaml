@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-28  # Stories 1.1a and 1.1b done
+last_updated: 2026-03-28  # Story 1.2 ready for review
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -46,7 +46,7 @@ development_status:
   epic-1: in-progress
   1-1a-frontend-project-scaffolding: done
   1-1b-backend-project-scaffolding-audit-infrastructure: done
-  1-2-google-apple-sign-in-authentication: backlog
+  1-2-google-apple-sign-in-authentication: review
   1-3-role-selection-user-record-creation: backlog
   1-4-market-scoped-manager-permissions: backlog
   1-5-role-based-access-enforcement-middleware: backlog

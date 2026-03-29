@@ -507,10 +507,12 @@ func NewMiddleware(firebaseAuth *auth.Client) func(http.Handler) http.Handler {
 ```go
 // internal/auth/session.go
 func SetSessionVars(ctx context.Context, tx pgx.Tx, uid string, role string) error {
-    _, err := tx.Exec(ctx, fmt.Sprintf(
-        "SET LOCAL app.actor_id = '%s'; SET LOCAL app.actor_role = '%s';",
-        sanitize(uid), sanitize(role),
-    ))
+    _, err := tx.Exec(
+        ctx,
+        "select set_config('app.actor_id', $1, true), set_config('app.actor_role', $2, true)",
+        uid,
+        role,
+    )
     return err
 }
 ```

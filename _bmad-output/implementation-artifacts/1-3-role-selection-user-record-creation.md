@@ -19,14 +19,14 @@ so that the app presents the correct experience for my needs.
 ## Tasks / Subtasks
 
 - [ ] Task 1: Users table migration (AC: #2)
-  - [ ] 1.1 Create `migrations/001_create_users.up.sql` with columns: `id` (UUID PK), `firebase_uid` (TEXT UNIQUE NOT NULL), `role` (TEXT NOT NULL CHECK role IN customer/vendor/manager), `name` (TEXT NOT NULL), `email` (TEXT NOT NULL), `created_at` (TIMESTAMPTZ NOT NULL DEFAULT NOW()), `deleted_at` (TIMESTAMPTZ NULL)
-  - [ ] 1.2 Create `migrations/001_create_users.down.sql` (DROP TABLE users)
+  - [ ] 1.1 Create `migrations/000003_create_users.up.sql` with columns: `id` (UUID PK), `firebase_uid` (TEXT UNIQUE NOT NULL), `role` (TEXT NOT NULL CHECK (role IN ('customer', 'vendor', 'manager'))), `name` (TEXT NOT NULL), `email` (TEXT NOT NULL), `created_at` (TIMESTAMPTZ NOT NULL DEFAULT NOW()), `deleted_at` (TIMESTAMPTZ NULL)
+  - [ ] 1.2 Create `migrations/000003_create_users.down.sql` (DROP TABLE users)
   - [ ] 1.3 Attach reusable audit trigger function to users table in the up migration
   - [ ] 1.4 Add index on `firebase_uid` for fast lookup
 
 - [ ] Task 2: createUser GraphQL mutation (AC: #2)
-  - [ ] 2.1 Define `createUser` mutation in `schema/auth.graphqls` accepting role input
-  - [ ] 2.2 Implement `createUser` resolver in `api/internal/graph/auth.resolvers.go`
+  - [ ] 2.1 Define `createUser` mutation in `markets-api/internal/graph/schema/auth.graphqls` accepting role input
+  - [ ] 2.2 Implement `createUser` resolver in `markets-api/internal/graph/auth.resolvers.go`
   - [ ] 2.3 Validate role input (must be one of: customer, vendor, manager) - return VALIDATION_ERROR for invalid roles
   - [ ] 2.4 Check for duplicate user (existing firebase_uid) - return CONFLICT error if user record already exists
   - [ ] 2.5 Insert user record into Cloud SQL users table via `internal/db/` repository
@@ -254,12 +254,12 @@ The `createUser` mutation must publish `UserCreated{userId, role}` after success
 ### Project Structure Notes
 
 **Backend files to create/modify:**
-- `migrations/001_create_users.up.sql` - Users table DDL with audit trigger
-- `migrations/001_create_users.down.sql` - Drop users table
-- `api/internal/graph/auth.resolvers.go` - `createUser` mutation resolver
-- `api/internal/graph/auth.resolvers_test.go` - Resolver tests
-- `api/internal/db/user_repo.go` - `PgUserRepository` implementation
-- `schema/auth.graphqls` - `createUser` mutation definition
+- `migrations/000003_create_users.up.sql` - Users table DDL with audit trigger
+- `migrations/000003_create_users.down.sql` - Drop users table
+- `markets-api/internal/graph/auth.resolvers.go` - `createUser` mutation resolver
+- `markets-api/internal/graph/auth.resolvers_test.go` - Resolver tests
+- `markets-api/internal/db/user_repo.go` - `PgUserRepository` implementation
+- `markets-api/internal/graph/schema/auth.graphqls` - `createUser` mutation definition
 
 **Frontend files to create/modify:**
 - `app/(auth)/role-selection.tsx` - Role selection screen

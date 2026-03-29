@@ -135,7 +135,7 @@ All user-facing queries must include `WHERE deleted_at IS NULL`. Verified in Sto
 | Go lint | golangci-lint | Zero issues |
 | Go unit tests | go test -short | All pass |
 | Go integration tests | go test -tags=integration | All pass |
-| Go coverage | go tool cover | >= 80% line, >= 75% branch |
+| Go coverage | go test -coverprofile=coverage.out | >= 80% statement |
 | TS type check | tsc --noEmit | Zero errors |
 | TS lint | eslint --max-warnings 0 | Zero warnings |
 | TS format | prettier --check | All pass |
@@ -176,13 +176,11 @@ All user-facing queries must include `WHERE deleted_at IS NULL`. Verified in Sto
 | FR1: Google Sign-In | 1.2 | 1.2.1, 1.2.8, 1.2.10 | AC-1 |
 | FR2: Apple Sign-In | 1.2 | 1.2.2, 1.2.9, 1.2.10 | AC-2 |
 | FR3: JWT Authentication | 1.2 | 1.2.3-1.2.6, 1.2.11 | AC-3 |
-| FR4: Role Selection | 1.3 | 1.3.1-1.3.3, 1.3.8-1.3.11 | AC-1, AC-2 |
-| FR5: User Record Creation | 1.3 | 1.3.4-1.3.7 | AC-3, AC-4 |
-| FR6: Returning User Routing | 1.3 | 1.3.12 | AC-5 |
-| FR40: Market-Scoped Permissions | 1.4 | 1.4.1-1.4.3, 1.4.6-1.4.7 | AC-1, AC-2 |
-| FR41a: 2-Manager Minimum | 1.4 | 1.4.4-1.4.5 | AC-3 |
-| FR42: Role-Based Access | 1.5 | 1.5.1-1.5.8 | AC-1, AC-2 |
-| FR43: Soft-Delete Filtering | 1.5 | 1.5.7 | AC-3 |
+| FR5: Market Manager Assigned to Markets | 1.4 | 1.4.1-1.4.3, 1.4.6-1.4.7 | AC-1, AC-2 |
+| FR6: Multiple Managers per Market | 1.4 | 1.4.4-1.4.5 | AC-3 |
+| FR7: Restrict Manager Actions to Assigned Markets | 1.4 | 1.4.1-1.4.3 | AC-1 |
+| FR4: Role-Specific Permissions | 1.5 | 1.5.1-1.5.8 | AC-1, AC-2 |
+| FR42: Role-Based Visibility & Soft-Delete Filtering | 1.5 | 1.5.7 | AC-3 |
 | NFR-SEC: JWT Tampering | 1.5 | 1.5.9-1.5.12 | Security |
 | NFR7: Event Handler Isolation | 1.3, 1.4 | Domain event tests | Resilience |
 | NFR-AUDIT: Audit Logging | 1.1b, 1.3, 1.4 | 1.3.6, 1.4.6 | Compliance |

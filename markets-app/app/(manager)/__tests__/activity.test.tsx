@@ -62,8 +62,13 @@ jest.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args) as unknown,
 }));
 
+jest.mock('expo-router', () => ({
+  useLocalSearchParams: () => ({ marketID: 'm1' }),
+}));
+
 jest.mock('@/graphql/generated/graphql', () => ({
   MarketActivityFeedDocument: { kind: 'Document' },
+  MyMarketsDocument: { kind: 'Document' },
 }));
 
 describe('ManagerActivityScreen', () => {

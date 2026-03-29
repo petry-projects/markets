@@ -1,26 +1,31 @@
 import React from 'react';
 import { FlatList } from 'react-native';
 import { useQuery } from '@apollo/client/react';
+import { useLocalSearchParams } from 'expo-router';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
 import { Text } from '@/components/ui/text';
 import { Heading } from '@/components/ui/heading';
 import { Spinner } from '@/components/ui/spinner';
 import ActivityFeedItem from '@/components/activity/ActivityFeedItem';
-import { MarketActivityFeedDocument } from '@/graphql/generated/graphql';
+import { MarketActivityFeedDocument, MyMarketsDocument } from '@/graphql/generated/graphql';
 
 const PAGE_SIZE = 20;
 
-/** Returns the active market ID. In a real app this would come from context or navigation params. */
-function getMarketID(): string {
-  return '';
-}
-
 export default function ManagerActivityScreen() {
-  const marketID = getMarketID();
+  const params = useLocalSearchParams();
+  const paramMarketID = typeof params.marketID === 'string' ? params.marketID : '';
+
+  // If no marketID in params, load the manager's first market as default
+  const { data: marketsData } = useQuery(MyMarketsDocument, {
+    skip: paramMarketID !== '',
+  });
+
+  const marketID = paramMarketID !== '' ? paramMarketID : (marketsData?.myMarkets[0]?.id ?? '');
+
   const { data, loading, refetch } = useQuery(MarketActivityFeedDocument, {
     variables: { marketID, limit: PAGE_SIZE, offset: 0 },
-    skip: marketID.length === 0,
+    skip: marketID === '',
   });
 
   const items = data?.marketActivityFeed ?? [];

@@ -254,4 +254,3 @@ func (r *queryResolver) FollowingFeed(ctx context.Context, limit *int32, offset 
 
 	return result, nil
 }
-

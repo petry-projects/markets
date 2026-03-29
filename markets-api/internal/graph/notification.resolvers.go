@@ -9,7 +9,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"strings"
 
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/domain"
@@ -54,6 +53,9 @@ func (r *mutationResolver) UpdateNotificationPreferences(ctx context.Context, in
 	// Apply partial updates
 	if input.VendorCheckInAlerts != nil {
 		prefs.CheckInAlerts = *input.VendorCheckInAlerts
+	}
+	if input.VendorCheckoutAlerts != nil {
+		prefs.CheckoutAlerts = *input.VendorCheckoutAlerts
 	}
 	if input.ExceptionAlerts != nil {
 		prefs.ExceptionAlerts = *input.ExceptionAlerts
@@ -234,38 +236,3 @@ func (r *queryResolver) MarketActivityFeed(ctx context.Context, marketID string,
 	return result, nil
 }
 
-// --- helper functions ---
-
-// notificationPrefsToModel converts a domain NotificationPrefsRecord to a GraphQL model.
-func notificationPrefsToModel(p *notify.NotificationPrefsRecord) *model.NotificationPreferences {
-	return &model.NotificationPreferences{
-		ID:                  p.ID,
-		UserID:              p.UserID.String(),
-		PushEnabled:         true, // Always true when prefs exist
-		VendorCheckInAlerts: p.CheckInAlerts,
-		MarketUpdateAlerts:  p.MarketUpdates,
-		ExceptionAlerts:     p.ExceptionAlerts,
-		CreatedAt:           p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:           p.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-}
-
-// activityFeedItemToModel converts a domain ActivityFeedItem to a GraphQL model.
-func activityFeedItemToModel(item *notify.ActivityFeedItem) *model.ActivityFeedItem {
-	result := &model.ActivityFeedItem{
-		ID:         item.ID,
-		ActorID:    item.ActorID,
-		ActionType: item.ActionType,
-		TargetType: item.TargetType,
-		TargetID:   item.TargetID,
-		MarketID:   item.MarketID,
-		Message:    item.Message,
-		CreatedAt:  item.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-	return result
-}
-
-// platformToDB maps a GraphQL Platform enum to the DB lowercase value.
-func platformToDB(p model.Platform) string {
-	return strings.ToLower(string(p))
-}

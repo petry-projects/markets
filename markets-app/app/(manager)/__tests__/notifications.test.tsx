@@ -46,7 +46,7 @@ jest.mock('lucide-react-native', () => {
 
 const mockUseQuery = jest.fn();
 const mockMutate = jest.fn();
-const mockUseMutation = jest.fn(() => [mockMutate]);
+const mockUseMutation = jest.fn(() => [mockMutate, { loading: false }]);
 jest.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args) as unknown,
   useMutation: () => mockUseMutation() as unknown,
@@ -75,6 +75,7 @@ describe('ManagerNotificationsScreen', () => {
           id: 'np1',
           pushEnabled: true,
           vendorCheckInAlerts: true,
+          vendorCheckoutAlerts: true,
           marketUpdateAlerts: true,
           exceptionAlerts: true,
         },

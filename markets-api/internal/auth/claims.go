@@ -23,3 +23,10 @@ func ExtractUser(token *firebaseauth.Token) (domain.UserID, string) {
 	}
 	return uid, role
 }
+
+// ExtractEmail extracts the email from Firebase JWT claims.
+// Returns empty string if no email claim is present.
+func ExtractEmail(token *firebaseauth.Token) string {
+	email, _ := token.Claims["email"].(string)
+	return email
+}

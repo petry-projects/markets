@@ -1,0 +1,12 @@
+mutation CreateUser($input: CreateUserInput!) {
+  createUser(input: $input) {
+    user {
+      id
+      firebaseUID
+      email
+      displayName
+      role
+      createdAt
+    }
+  }
+}

@@ -34,6 +34,15 @@ input SignUpInput {
   role: Role!
 }
 
+input CreateUserInput {
+  role: Role!
+  name: String!
+}
+
+type CreateUserPayload {
+  user: User!
+}
+
 extend type Query {
   """Returns the currently authenticated user."""
   me: User!
@@ -45,4 +54,7 @@ extend type Mutation {
 
   """Sign up a new user with a Firebase ID token and role selection."""
   signUp(input: SignUpInput!): AuthPayload!
+
+  """Create user record after role selection. Requires authentication."""
+  createUser(input: CreateUserInput!): CreateUserPayload!
 }

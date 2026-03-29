@@ -7,10 +7,25 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
+	"strings"
 
+	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/db"
+	"github.com/petry-projects/markets-api/internal/events"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/model"
+	"github.com/petry-projects/markets-api/internal/user"
 )
+
+// validRoles maps GraphQL Role enum values to lowercase domain role strings.
+var validRoles = map[model.Role]string{
+	model.RoleCustomer: "customer",
+	model.RoleVendor:   "vendor",
+	model.RoleManager:  "manager",
+}
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
@@ -20,6 +35,78 @@ func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*
 // SignUp is the resolver for the signUp field.
 func (r *mutationResolver) SignUp(ctx context.Context, input model.SignUpInput) (*model.AuthPayload, error) {
 	panic(fmt.Errorf("not implemented: SignUp - signUp"))
+}
+
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error) {
+	// Extract authenticated user from context (set by auth middleware)
+	firebaseUID := auth.UserIDFromContext(ctx)
+	if firebaseUID == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	// Validate role input
+	roleLower, ok := validRoles[input.Role]
+	if !ok {
+		return nil, gqlerr.ValidationError(fmt.Sprintf("invalid role: %s", input.Role))
+	}
+
+	// Validate name input
+	name := strings.TrimSpace(input.Name)
+	if name == "" {
+		return nil, gqlerr.ValidationError("name is required")
+	}
+	if len(name) > 200 {
+		return nil, gqlerr.ValidationError("name must be 200 characters or fewer")
+	}
+
+	// Extract email from auth context
+	email := auth.EmailFromContext(ctx)
+
+	// Create domain user
+	u := &user.User{
+		FirebaseUID: firebaseUID,
+		Role:        roleLower,
+		Name:        name,
+		Email:       email,
+	}
+
+	// Insert into database
+	if err := r.UserRepo.Create(ctx, u); err != nil {
+		if errors.Is(err, db.ErrDuplicateUser) {
+			return nil, gqlerr.Conflict("user record already exists")
+		}
+		slog.Error("failed to create user", "error", err, "firebaseUID", firebaseUID)
+		return nil, gqlerr.Internal("failed to create user")
+	}
+
+	// Set Firebase custom claim
+	claims := map[string]interface{}{
+		"role": roleLower,
+	}
+	if err := r.ClaimsSetter.SetCustomUserClaims(ctx, firebaseUID, claims); err != nil {
+		slog.Error("failed to set custom claims", "error", err, "firebaseUID", firebaseUID)
+		// User was created in DB but claims failed - still return success
+		// The client can retry token refresh
+	}
+
+	// Publish domain event after successful DB write
+	r.EventBus.Publish(ctx, events.UserCreated{
+		UserID: u.ID.String(),
+		Role:   roleLower,
+	})
+
+	return &model.CreateUserPayload{
+		User: &model.User{
+			ID:          u.ID.String(),
+			FirebaseUID: u.FirebaseUID,
+			Email:       u.Email,
+			DisplayName: u.Name,
+			Role:        input.Role,
+			CreatedAt:   u.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+			UpdatedAt:   u.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		},
+	}, nil
 }
 
 // Me is the resolver for the me field.

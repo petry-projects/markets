@@ -52,8 +52,13 @@ function RootLayoutNav() {
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
+      // Not authenticated -> go to login
       router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
+    } else if (isAuthenticated && role == null && !inAuthGroup) {
+      // Authenticated but no role -> go to role selection (first-time user)
+      router.replace('/(auth)/role-selection');
+    } else if (isAuthenticated && role != null && inAuthGroup) {
+      // Authenticated with role but still in auth group -> go to role-specific tabs
       redirectToRoleScreen(router, role);
     }
   }, [isAuthenticated, isLoading, role, segments, router]);
@@ -71,10 +76,7 @@ function RootLayoutNav() {
   );
 }
 
-function redirectToRoleScreen(
-  routerInstance: ReturnType<typeof useRouter>,
-  role: UserRole,
-): void {
+function redirectToRoleScreen(routerInstance: ReturnType<typeof useRouter>, role: UserRole): void {
   if (role === 'vendor') {
     routerInstance.replace('/(vendor)/markets');
   } else if (role === 'manager') {

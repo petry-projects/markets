@@ -615,6 +615,10 @@ type Vendor {
   userID: ID!
   businessName: String!
   description: String
+  contactInfo: String
+  instagramHandle: String
+  facebookURL: String
+  websiteURL: String
   imageURL: String
   products: [Product!]!
   checkIns: [CheckIn!]!
@@ -649,15 +653,54 @@ enum CheckInStatus {
   EXCEPTION
 }
 
+"""A market association for a vendor, showing status and committed dates."""
+type VendorMarketAssociation {
+  market: Market!
+  status: VendorMarketJoinStatus!
+  dates: [VendorMarketDate!]!
+  nextUpcomingDate: String
+}
+
+"""A single date commitment for a vendor at a market."""
+type VendorMarketDate {
+  id: ID!
+  date: String!
+  status: VendorRosterStatus!
+}
+
+enum VendorMarketJoinStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  MIXED
+}
+
+"""Search result for market browsing."""
+type MarketSearchResult {
+  market: Market!
+  distanceKm: Float
+  vendorCount: Int!
+  """The vendor's current status at this market, if any."""
+  vendorStatus: VendorMarketJoinStatus
+}
+
 input CreateVendorProfileInput {
   businessName: String!
   description: String
+  contactInfo: String
+  instagramHandle: String
+  facebookURL: String
+  websiteURL: String
   imageURL: String
 }
 
 input UpdateVendorProfileInput {
   businessName: String
   description: String
+  contactInfo: String
+  instagramHandle: String
+  facebookURL: String
+  websiteURL: String
   imageURL: String
 }
 
@@ -685,6 +728,16 @@ input ExceptionStatusInput {
   reason: String!
 }
 
+input SearchMarketsInput {
+  """Search term for market name, city, or category."""
+  searchTerm: String
+  latitude: Float
+  longitude: Float
+  radiusKm: Float
+  limit: Int
+  offset: Int
+}
+
 extend type Query {
   """
   Get a vendor by ID.
@@ -700,6 +753,12 @@ extend type Query {
   List products for a vendor.
   """
   vendorProducts(vendorID: ID!): [Product!]!
+
+  """Search available markets for a vendor to join."""
+  searchMarketsToJoin(input: SearchMarketsInput!): [MarketSearchResult!]!
+
+  """List markets the current vendor is associated with."""
+  vendorMarkets: [VendorMarketAssociation!]!
 }
 
 extend type Mutation {

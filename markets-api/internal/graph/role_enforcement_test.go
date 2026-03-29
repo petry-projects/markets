@@ -106,10 +106,10 @@ func TestRoleEnforcement_VendorCallingMyVendorProfile_PassesRoleCheck(t *testing
 	r, _, _, _ := newTestResolver()
 	ctx := contextWithRole("vendor")
 
-	callResolverExpectingPanic(t, "myVendorProfile", func() error {
-		_, err := r.Query().MyVendorProfile(ctx)
-		return err
-	})
+	// MyVendorProfile is implemented; with nil VendorRepo it returns nil (no profile).
+	// The key assertion is that it does NOT return FORBIDDEN.
+	_, err := r.Query().MyVendorProfile(ctx)
+	assertNotForbidden(t, err)
 }
 
 // --- Test case 1.5.5: Manager JWT calling auditLog returns data (passes role check) ---

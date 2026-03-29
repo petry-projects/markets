@@ -15,6 +15,21 @@ query GetMarket($id: ID!) {
       twitter
     }
     imageURL
+    rulesText
+    rulesUpdatedAt
+    status
+    schedule {
+      id
+      scheduleType
+      dayOfWeek
+      startTime
+      endTime
+      seasonStart
+      seasonEnd
+      eventName
+      eventDate
+      label
+    }
     createdAt
     updatedAt
   }

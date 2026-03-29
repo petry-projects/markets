@@ -147,6 +147,39 @@ func (m *mockVendorRepo) FindCheckInsByVendor(_ context.Context, vendorID domain
 	return result, nil
 }
 
+func (m *mockVendorRepo) FindCheckInsByMarketAndDate(_ context.Context, marketID domain.MarketID, date string) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockVendorRepo) FindActiveCheckInsByMarket(_ context.Context, marketID domain.MarketID) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID && ci.Status == vendor.StatusCheckedIn {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockVendorRepo) BatchCheckOut(_ context.Context, marketID domain.MarketID) (int, error) {
+	count := 0
+	now := time.Now()
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID && ci.Status == vendor.StatusCheckedIn {
+			ci.Status = vendor.StatusCheckedOut
+			ci.CheckedOutAt = &now
+			count++
+		}
+	}
+	return count, nil
+}
+
 // --- Tests ---
 
 func vendorCtx(uid, role string) context.Context {

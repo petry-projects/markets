@@ -113,6 +113,8 @@ input UpdateProductInput {
 
 input CheckInInput {
   marketID: ID!
+  """Optional vendor ID for manager check-in on behalf (Story 5.3)."""
+  vendorID: ID
 }
 
 input ExceptionStatusInput {

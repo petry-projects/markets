@@ -121,6 +121,34 @@ enum InvitationStatus {
   DECLINED
 }
 
+"""Live attendance view for a market on a given day (Story 5.1)."""
+type MarketAttendance {
+  marketID: ID!
+  date: String!
+  totalRostered: Int!
+  checkedInCount: Int!
+  pendingCount: Int!
+  exceptionCount: Int!
+  vendors: [VendorAttendanceEntry!]!
+}
+
+"""A vendor's attendance status for the attendance dashboard."""
+type VendorAttendanceEntry {
+  vendorID: ID!
+  vendor: Vendor!
+  rosterStatus: VendorRosterStatus!
+  checkIn: CheckIn
+}
+
+"""A market-wide operational update (Story 5.4)."""
+type MarketUpdate {
+  id: ID!
+  marketID: ID!
+  senderID: ID!
+  message: String!
+  createdAt: String!
+}
+
 """Planning view for a future market date."""
 type MarketDayPlan {
   date: String!
@@ -209,6 +237,12 @@ extend type Query {
 
   """Search vendors by name or category (Manager only)."""
   searchVendors(query: String!, category: String, limit: Int): [Vendor!]!
+
+  """Get live attendance for a market on a given date (Manager only, Story 5.1)."""
+  marketAttendance(marketID: ID!, date: String!): MarketAttendance!
+
+  """List market updates for a market (any authenticated role)."""
+  marketUpdates(marketID: ID!, limit: Int, offset: Int): [MarketUpdate!]!
 }
 
 extend type Mutation {
@@ -268,4 +302,13 @@ extend type Mutation {
 
   """Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers."""
   removeManager(managerID: ID!, marketID: ID!): Boolean!
+
+  """Publish a market-wide operational update (Manager only, Story 5.4)."""
+  publishMarketUpdate(marketID: ID!, message: String!): MarketUpdate!
+
+  """Request attendance confirmation from unconfirmed vendors (Manager only, Story 5.2)."""
+  requestVendorConfirmation(marketID: ID!, vendorIDs: [ID!]!): Boolean!
+
+  """Batch auto-checkout for all checked-in vendors at a market (internal/scheduler, Story 5.5)."""
+  autoCheckoutMarket(marketID: ID!): Int!
 }

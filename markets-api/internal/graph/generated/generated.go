@@ -130,6 +130,16 @@ type ComplexityRoot struct {
 		Vendors             func(childComplexity int) int
 	}
 
+	MarketAttendance struct {
+		CheckedInCount func(childComplexity int) int
+		Date           func(childComplexity int) int
+		ExceptionCount func(childComplexity int) int
+		MarketID       func(childComplexity int) int
+		PendingCount   func(childComplexity int) int
+		TotalRostered  func(childComplexity int) int
+		Vendors        func(childComplexity int) int
+	}
+
 	MarketDayPlan struct {
 		CommittedVendors func(childComplexity int) int
 		Date             func(childComplexity int) int
@@ -161,12 +171,21 @@ type ComplexityRoot struct {
 		VendorStatus func(childComplexity int) int
 	}
 
+	MarketUpdate struct {
+		CreatedAt func(childComplexity int) int
+		ID        func(childComplexity int) int
+		MarketID  func(childComplexity int) int
+		Message   func(childComplexity int) int
+		SenderID  func(childComplexity int) int
+	}
+
 	Mutation struct {
 		AddMarketSchedule             func(childComplexity int, input model.AddScheduleInput) int
 		AddVendorToRoster             func(childComplexity int, marketID string, vendorID string, dates []string) int
 		ApproveRosterRequest          func(childComplexity int, id string) int
 		AssignManager                 func(childComplexity int, managerID string, marketID string) int
-		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string, endEarly *bool) int
+		AutoCheckoutMarket            func(childComplexity int, marketID string) int
+		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string) int
 		CheckIn                       func(childComplexity int, input model.CheckInInput) int
 		CheckOut                      func(childComplexity int, checkInID string) int
 		CreateMarket                  func(childComplexity int, input model.CreateMarketInput) int
@@ -179,6 +198,7 @@ type ComplexityRoot struct {
 		Follow                        func(childComplexity int, targetType model.FollowTargetType, targetID string) int
 		InviteVendor                  func(childComplexity int, marketID string, vendorID string, targetDates []string, message *string) int
 		Login                         func(childComplexity int, input model.LoginInput) int
+		PublishMarketUpdate           func(childComplexity int, marketID string, message string) int
 		ReactivateMarket              func(childComplexity int, marketID string) int
 		RegisterDeviceToken           func(childComplexity int, input model.RegisterDeviceTokenInput) int
 		RejectRosterRequest           func(childComplexity int, id string, reason *string) int
@@ -187,6 +207,7 @@ type ComplexityRoot struct {
 		RemoveVendorFromRoster        func(childComplexity int, id string) int
 		ReportException               func(childComplexity int, input model.ExceptionStatusInput) int
 		RequestToJoinMarket           func(childComplexity int, marketID string, dates []string, acknowledgeRules bool) int
+		RequestVendorConfirmation     func(childComplexity int, marketID string, vendorIDs []string) int
 		RespondToInvitation           func(childComplexity int, invitationID string, accept bool) int
 		SendVendorNotification        func(childComplexity int, marketID string, message string) int
 		SignUp                        func(childComplexity int, input model.SignUpInput) int
@@ -229,8 +250,10 @@ type ComplexityRoot struct {
 		DiscoverVendors           func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		FollowingFeed             func(childComplexity int, limit *int32, offset *int32) int
 		Market                    func(childComplexity int, id string) int
+		MarketAttendance          func(childComplexity int, marketID string, date string) int
 		MarketDayPlans            func(childComplexity int, marketID string, startDate string, endDate string) int
 		MarketRoster              func(childComplexity int, marketID string, date string) int
+		MarketUpdates             func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		Markets                   func(childComplexity int, latitude *float64, longitude *float64, radiusMiles *float64, limit *int32, offset *int32) int
 		Me                        func(childComplexity int) int
 		MyCustomerProfile         func(childComplexity int) int
@@ -276,6 +299,13 @@ type ComplexityRoot struct {
 		UpdatedAt       func(childComplexity int) int
 		UserID          func(childComplexity int) int
 		WebsiteURL      func(childComplexity int) int
+	}
+
+	VendorAttendanceEntry struct {
+		CheckIn      func(childComplexity int) int
+		RosterStatus func(childComplexity int) int
+		Vendor       func(childComplexity int) int
+		VendorID     func(childComplexity int) int
 	}
 
 	VendorInvitation struct {
@@ -352,6 +382,9 @@ type MutationResolver interface {
 	UpdateRosterStatus(ctx context.Context, id string, status model.VendorRosterStatus) (*model.VendorRosterEntry, error)
 	AssignManager(ctx context.Context, managerID string, marketID string) (bool, error)
 	RemoveManager(ctx context.Context, managerID string, marketID string) (bool, error)
+	PublishMarketUpdate(ctx context.Context, marketID string, message string) (*model.MarketUpdate, error)
+	RequestVendorConfirmation(ctx context.Context, marketID string, vendorIDs []string) (bool, error)
+	AutoCheckoutMarket(ctx context.Context, marketID string) (int32, error)
 	UpdateNotificationPreferences(ctx context.Context, input model.UpdateNotificationPreferencesInput) (*model.NotificationPreferences, error)
 	RegisterDeviceToken(ctx context.Context, input model.RegisterDeviceTokenInput) (*model.DeviceToken, error)
 	RemoveDeviceToken(ctx context.Context, tokenID string) (bool, error)
@@ -378,6 +411,8 @@ type QueryResolver interface {
 	MarketDayPlans(ctx context.Context, marketID string, startDate string, endDate string) ([]*model.MarketDayPlan, error)
 	MyInvitations(ctx context.Context) ([]*model.VendorInvitation, error)
 	SearchVendors(ctx context.Context, query string, category *string, limit *int32) ([]*model.Vendor, error)
+	MarketAttendance(ctx context.Context, marketID string, date string) (*model.MarketAttendance, error)
+	MarketUpdates(ctx context.Context, marketID string, limit *int32, offset *int32) ([]*model.MarketUpdate, error)
 	MyNotificationPreferences(ctx context.Context) (*model.NotificationPreferences, error)
 	Vendor(ctx context.Context, id string) (*model.Vendor, error)
 	MyVendorProfile(ctx context.Context) (*model.Vendor, error)
@@ -800,6 +835,49 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Market.Vendors(childComplexity), true
 
+	case "MarketAttendance.checkedInCount":
+		if e.ComplexityRoot.MarketAttendance.CheckedInCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.CheckedInCount(childComplexity), true
+	case "MarketAttendance.date":
+		if e.ComplexityRoot.MarketAttendance.Date == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.Date(childComplexity), true
+	case "MarketAttendance.exceptionCount":
+		if e.ComplexityRoot.MarketAttendance.ExceptionCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.ExceptionCount(childComplexity), true
+	case "MarketAttendance.marketID":
+		if e.ComplexityRoot.MarketAttendance.MarketID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.MarketID(childComplexity), true
+	case "MarketAttendance.pendingCount":
+		if e.ComplexityRoot.MarketAttendance.PendingCount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.PendingCount(childComplexity), true
+	case "MarketAttendance.totalRostered":
+		if e.ComplexityRoot.MarketAttendance.TotalRostered == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.TotalRostered(childComplexity), true
+	case "MarketAttendance.vendors":
+		if e.ComplexityRoot.MarketAttendance.Vendors == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketAttendance.Vendors(childComplexity), true
+
 	case "MarketDayPlan.committedVendors":
 		if e.ComplexityRoot.MarketDayPlan.CommittedVendors == nil {
 			break
@@ -935,6 +1013,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.MarketSearchResult.VendorStatus(childComplexity), true
 
+	case "MarketUpdate.createdAt":
+		if e.ComplexityRoot.MarketUpdate.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketUpdate.CreatedAt(childComplexity), true
+	case "MarketUpdate.id":
+		if e.ComplexityRoot.MarketUpdate.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketUpdate.ID(childComplexity), true
+	case "MarketUpdate.marketID":
+		if e.ComplexityRoot.MarketUpdate.MarketID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketUpdate.MarketID(childComplexity), true
+	case "MarketUpdate.message":
+		if e.ComplexityRoot.MarketUpdate.Message == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketUpdate.Message(childComplexity), true
+	case "MarketUpdate.senderID":
+		if e.ComplexityRoot.MarketUpdate.SenderID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.MarketUpdate.SenderID(childComplexity), true
+
 	case "Mutation.addMarketSchedule":
 		if e.ComplexityRoot.Mutation.AddMarketSchedule == nil {
 			break
@@ -979,6 +1088,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.AssignManager(childComplexity, args["managerID"].(string), args["marketID"].(string)), true
+	case "Mutation.autoCheckoutMarket":
+		if e.ComplexityRoot.Mutation.AutoCheckoutMarket == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_autoCheckoutMarket_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AutoCheckoutMarket(childComplexity, args["marketID"].(string)), true
 	case "Mutation.cancelMarket":
 		if e.ComplexityRoot.Mutation.CancelMarket == nil {
 			break
@@ -1117,6 +1237,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.Login(childComplexity, args["input"].(model.LoginInput)), true
+	case "Mutation.publishMarketUpdate":
+		if e.ComplexityRoot.Mutation.PublishMarketUpdate == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_publishMarketUpdate_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.PublishMarketUpdate(childComplexity, args["marketID"].(string), args["message"].(string)), true
 	case "Mutation.reactivateMarket":
 		if e.ComplexityRoot.Mutation.ReactivateMarket == nil {
 			break
@@ -1205,6 +1336,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RequestToJoinMarket(childComplexity, args["marketID"].(string), args["dates"].([]string), args["acknowledgeRules"].(bool)), true
+	case "Mutation.requestVendorConfirmation":
+		if e.ComplexityRoot.Mutation.RequestVendorConfirmation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_requestVendorConfirmation_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RequestVendorConfirmation(childComplexity, args["marketID"].(string), args["vendorIDs"].([]string)), true
 	case "Mutation.respondToInvitation":
 		if e.ComplexityRoot.Mutation.RespondToInvitation == nil {
 			break
@@ -1487,6 +1629,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Market(childComplexity, args["id"].(string)), true
+	case "Query.marketAttendance":
+		if e.ComplexityRoot.Query.MarketAttendance == nil {
+			break
+		}
+
+		args, err := ec.field_Query_marketAttendance_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MarketAttendance(childComplexity, args["marketID"].(string), args["date"].(string)), true
 	case "Query.marketDayPlans":
 		if e.ComplexityRoot.Query.MarketDayPlans == nil {
 			break
@@ -1509,6 +1662,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.MarketRoster(childComplexity, args["marketID"].(string), args["date"].(string)), true
+	case "Query.marketUpdates":
+		if e.ComplexityRoot.Query.MarketUpdates == nil {
+			break
+		}
+
+		args, err := ec.field_Query_marketUpdates_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MarketUpdates(childComplexity, args["marketID"].(string), args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.markets":
 		if e.ComplexityRoot.Query.Markets == nil {
 			break
@@ -1753,6 +1917,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Vendor.WebsiteURL(childComplexity), true
+
+	case "VendorAttendanceEntry.checkIn":
+		if e.ComplexityRoot.VendorAttendanceEntry.CheckIn == nil {
+			break
+		}
+
+		return e.ComplexityRoot.VendorAttendanceEntry.CheckIn(childComplexity), true
+	case "VendorAttendanceEntry.rosterStatus":
+		if e.ComplexityRoot.VendorAttendanceEntry.RosterStatus == nil {
+			break
+		}
+
+		return e.ComplexityRoot.VendorAttendanceEntry.RosterStatus(childComplexity), true
+	case "VendorAttendanceEntry.vendor":
+		if e.ComplexityRoot.VendorAttendanceEntry.Vendor == nil {
+			break
+		}
+
+		return e.ComplexityRoot.VendorAttendanceEntry.Vendor(childComplexity), true
+	case "VendorAttendanceEntry.vendorID":
+		if e.ComplexityRoot.VendorAttendanceEntry.VendorID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.VendorAttendanceEntry.VendorID(childComplexity), true
 
 	case "VendorInvitation.createdAt":
 		if e.ComplexityRoot.VendorInvitation.CreatedAt == nil {
@@ -2344,6 +2533,34 @@ enum InvitationStatus {
   DECLINED
 }
 
+"""Live attendance view for a market on a given day (Story 5.1)."""
+type MarketAttendance {
+  marketID: ID!
+  date: String!
+  totalRostered: Int!
+  checkedInCount: Int!
+  pendingCount: Int!
+  exceptionCount: Int!
+  vendors: [VendorAttendanceEntry!]!
+}
+
+"""A vendor's attendance status for the attendance dashboard."""
+type VendorAttendanceEntry {
+  vendorID: ID!
+  vendor: Vendor!
+  rosterStatus: VendorRosterStatus!
+  checkIn: CheckIn
+}
+
+"""A market-wide operational update (Story 5.4)."""
+type MarketUpdate {
+  id: ID!
+  marketID: ID!
+  senderID: ID!
+  message: String!
+  createdAt: String!
+}
+
 """Planning view for a future market date."""
 type MarketDayPlan {
   date: String!
@@ -2432,6 +2649,12 @@ extend type Query {
 
   """Search vendors by name or category (Manager only)."""
   searchVendors(query: String!, category: String, limit: Int): [Vendor!]!
+
+  """Get live attendance for a market on a given date (Manager only, Story 5.1)."""
+  marketAttendance(marketID: ID!, date: String!): MarketAttendance!
+
+  """List market updates for a market (any authenticated role)."""
+  marketUpdates(marketID: ID!, limit: Int, offset: Int): [MarketUpdate!]!
 }
 
 extend type Mutation {
@@ -2491,6 +2714,15 @@ extend type Mutation {
 
   """Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers."""
   removeManager(managerID: ID!, marketID: ID!): Boolean!
+
+  """Publish a market-wide operational update (Manager only, Story 5.4)."""
+  publishMarketUpdate(marketID: ID!, message: String!): MarketUpdate!
+
+  """Request attendance confirmation from unconfirmed vendors (Manager only, Story 5.2)."""
+  requestVendorConfirmation(marketID: ID!, vendorIDs: [ID!]!): Boolean!
+
+  """Batch auto-checkout for all checked-in vendors at a market (internal/scheduler, Story 5.5)."""
+  autoCheckoutMarket(marketID: ID!): Int!
 }
 `, BuiltIn: false},
 	{Name: "../schema/notification.graphqls", Input: `"""
@@ -2664,6 +2896,8 @@ input UpdateProductInput {
 
 input CheckInInput {
   marketID: ID!
+  """Optional vendor ID for manager check-in on behalf (Story 5.3)."""
+  vendorID: ID
 }
 
 input ExceptionStatusInput {
@@ -2787,6 +3021,17 @@ func (ec *executionContext) field_Mutation_assignManager_args(ctx context.Contex
 		return nil, err
 	}
 	args["marketID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_autoCheckoutMarket_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
 	return args, nil
 }
 
@@ -2957,6 +3202,22 @@ func (ec *executionContext) field_Mutation_login_args(ctx context.Context, rawAr
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_publishMarketUpdate_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "message", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["message"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_reactivateMarket_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3062,6 +3323,22 @@ func (ec *executionContext) field_Mutation_requestToJoinMarket_args(ctx context.
 		return nil, err
 	}
 	args["acknowledgeRules"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_requestVendorConfirmation_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "vendorIDs", ec.unmarshalNID2ᚕstringᚄ)
+	if err != nil {
+		return nil, err
+	}
+	args["vendorIDs"] = arg1
 	return args, nil
 }
 
@@ -3326,6 +3603,22 @@ func (ec *executionContext) field_Query_followingFeed_args(ctx context.Context, 
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_marketAttendance_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "date", ec.unmarshalNString2string)
+	if err != nil {
+		return nil, err
+	}
+	args["date"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_marketDayPlans_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3360,6 +3653,27 @@ func (ec *executionContext) field_Query_marketRoster_args(ctx context.Context, r
 		return nil, err
 	}
 	args["date"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_marketUpdates_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
 	return args, nil
 }
 
@@ -5672,6 +5986,219 @@ func (ec *executionContext) fieldContext_Market_updatedAt(_ context.Context, fie
 	return fc, nil
 }
 
+func (ec *executionContext) _MarketAttendance_marketID(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_marketID,
+		func(ctx context.Context) (any, error) {
+			return obj.MarketID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_marketID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_date(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_date,
+		func(ctx context.Context) (any, error) {
+			return obj.Date, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_date(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_totalRostered(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_totalRostered,
+		func(ctx context.Context) (any, error) {
+			return obj.TotalRostered, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_totalRostered(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_checkedInCount(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_checkedInCount,
+		func(ctx context.Context) (any, error) {
+			return obj.CheckedInCount, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_checkedInCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_pendingCount(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_pendingCount,
+		func(ctx context.Context) (any, error) {
+			return obj.PendingCount, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_pendingCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_exceptionCount(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_exceptionCount,
+		func(ctx context.Context) (any, error) {
+			return obj.ExceptionCount, nil
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_exceptionCount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketAttendance_vendors(ctx context.Context, field graphql.CollectedField, obj *model.MarketAttendance) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketAttendance_vendors,
+		func(ctx context.Context) (any, error) {
+			return obj.Vendors, nil
+		},
+		nil,
+		ec.marshalNVendorAttendanceEntry2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorAttendanceEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketAttendance_vendors(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketAttendance",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "vendorID":
+				return ec.fieldContext_VendorAttendanceEntry_vendorID(ctx, field)
+			case "vendor":
+				return ec.fieldContext_VendorAttendanceEntry_vendor(ctx, field)
+			case "rosterStatus":
+				return ec.fieldContext_VendorAttendanceEntry_rosterStatus(ctx, field)
+			case "checkIn":
+				return ec.fieldContext_VendorAttendanceEntry_checkIn(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type VendorAttendanceEntry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _MarketDayPlan_date(ctx context.Context, field graphql.CollectedField, obj *model.MarketDayPlan) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -6397,6 +6924,151 @@ func (ec *executionContext) fieldContext_MarketSearchResult_vendorStatus(_ conte
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type VendorMarketJoinStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketUpdate_id(ctx context.Context, field graphql.CollectedField, obj *model.MarketUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketUpdate_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketUpdate_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketUpdate_marketID(ctx context.Context, field graphql.CollectedField, obj *model.MarketUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketUpdate_marketID,
+		func(ctx context.Context) (any, error) {
+			return obj.MarketID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketUpdate_marketID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketUpdate_senderID(ctx context.Context, field graphql.CollectedField, obj *model.MarketUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketUpdate_senderID,
+		func(ctx context.Context) (any, error) {
+			return obj.SenderID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketUpdate_senderID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketUpdate_message(ctx context.Context, field graphql.CollectedField, obj *model.MarketUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketUpdate_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketUpdate_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _MarketUpdate_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.MarketUpdate) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_MarketUpdate_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_MarketUpdate_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "MarketUpdate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7889,6 +8561,141 @@ func (ec *executionContext) fieldContext_Mutation_removeManager(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_removeManager_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_publishMarketUpdate(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_publishMarketUpdate,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().PublishMarketUpdate(ctx, fc.Args["marketID"].(string), fc.Args["message"].(string))
+		},
+		nil,
+		ec.marshalNMarketUpdate2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdate,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_publishMarketUpdate(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MarketUpdate_id(ctx, field)
+			case "marketID":
+				return ec.fieldContext_MarketUpdate_marketID(ctx, field)
+			case "senderID":
+				return ec.fieldContext_MarketUpdate_senderID(ctx, field)
+			case "message":
+				return ec.fieldContext_MarketUpdate_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MarketUpdate_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MarketUpdate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_publishMarketUpdate_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_requestVendorConfirmation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_requestVendorConfirmation,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RequestVendorConfirmation(ctx, fc.Args["marketID"].(string), fc.Args["vendorIDs"].([]string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_requestVendorConfirmation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_requestVendorConfirmation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_autoCheckoutMarket(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_autoCheckoutMarket,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AutoCheckoutMarket(ctx, fc.Args["marketID"].(string))
+		},
+		nil,
+		ec.marshalNInt2int32,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_autoCheckoutMarket(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_autoCheckoutMarket_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -9832,6 +10639,116 @@ func (ec *executionContext) fieldContext_Query_searchVendors(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_marketAttendance(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_marketAttendance,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MarketAttendance(ctx, fc.Args["marketID"].(string), fc.Args["date"].(string))
+		},
+		nil,
+		ec.marshalNMarketAttendance2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketAttendance,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_marketAttendance(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "marketID":
+				return ec.fieldContext_MarketAttendance_marketID(ctx, field)
+			case "date":
+				return ec.fieldContext_MarketAttendance_date(ctx, field)
+			case "totalRostered":
+				return ec.fieldContext_MarketAttendance_totalRostered(ctx, field)
+			case "checkedInCount":
+				return ec.fieldContext_MarketAttendance_checkedInCount(ctx, field)
+			case "pendingCount":
+				return ec.fieldContext_MarketAttendance_pendingCount(ctx, field)
+			case "exceptionCount":
+				return ec.fieldContext_MarketAttendance_exceptionCount(ctx, field)
+			case "vendors":
+				return ec.fieldContext_MarketAttendance_vendors(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MarketAttendance", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_marketAttendance_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_marketUpdates(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_marketUpdates,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MarketUpdates(ctx, fc.Args["marketID"].(string), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		},
+		nil,
+		ec.marshalNMarketUpdate2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdateᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_marketUpdates(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_MarketUpdate_id(ctx, field)
+			case "marketID":
+				return ec.fieldContext_MarketUpdate_marketID(ctx, field)
+			case "senderID":
+				return ec.fieldContext_MarketUpdate_senderID(ctx, field)
+			case "message":
+				return ec.fieldContext_MarketUpdate_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_MarketUpdate_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type MarketUpdate", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_marketUpdates_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_myNotificationPreferences(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10989,6 +11906,164 @@ func (ec *executionContext) fieldContext_Vendor_updatedAt(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VendorAttendanceEntry_vendorID(ctx context.Context, field graphql.CollectedField, obj *model.VendorAttendanceEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_VendorAttendanceEntry_vendorID,
+		func(ctx context.Context) (any, error) {
+			return obj.VendorID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_VendorAttendanceEntry_vendorID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VendorAttendanceEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VendorAttendanceEntry_vendor(ctx context.Context, field graphql.CollectedField, obj *model.VendorAttendanceEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_VendorAttendanceEntry_vendor,
+		func(ctx context.Context) (any, error) {
+			return obj.Vendor, nil
+		},
+		nil,
+		ec.marshalNVendor2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendor,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_VendorAttendanceEntry_vendor(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VendorAttendanceEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Vendor_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_Vendor_userID(ctx, field)
+			case "businessName":
+				return ec.fieldContext_Vendor_businessName(ctx, field)
+			case "description":
+				return ec.fieldContext_Vendor_description(ctx, field)
+			case "contactInfo":
+				return ec.fieldContext_Vendor_contactInfo(ctx, field)
+			case "instagramHandle":
+				return ec.fieldContext_Vendor_instagramHandle(ctx, field)
+			case "facebookURL":
+				return ec.fieldContext_Vendor_facebookURL(ctx, field)
+			case "websiteURL":
+				return ec.fieldContext_Vendor_websiteURL(ctx, field)
+			case "imageURL":
+				return ec.fieldContext_Vendor_imageURL(ctx, field)
+			case "products":
+				return ec.fieldContext_Vendor_products(ctx, field)
+			case "checkIns":
+				return ec.fieldContext_Vendor_checkIns(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Vendor_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Vendor_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Vendor", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VendorAttendanceEntry_rosterStatus(ctx context.Context, field graphql.CollectedField, obj *model.VendorAttendanceEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_VendorAttendanceEntry_rosterStatus,
+		func(ctx context.Context) (any, error) {
+			return obj.RosterStatus, nil
+		},
+		nil,
+		ec.marshalNVendorRosterStatus2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorRosterStatus,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_VendorAttendanceEntry_rosterStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VendorAttendanceEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type VendorRosterStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _VendorAttendanceEntry_checkIn(ctx context.Context, field graphql.CollectedField, obj *model.VendorAttendanceEntry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_VendorAttendanceEntry_checkIn,
+		func(ctx context.Context) (any, error) {
+			return obj.CheckIn, nil
+		},
+		nil,
+		ec.marshalOCheckIn2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCheckIn,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_VendorAttendanceEntry_checkIn(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "VendorAttendanceEntry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_CheckIn_id(ctx, field)
+			case "vendorID":
+				return ec.fieldContext_CheckIn_vendorID(ctx, field)
+			case "marketID":
+				return ec.fieldContext_CheckIn_marketID(ctx, field)
+			case "status":
+				return ec.fieldContext_CheckIn_status(ctx, field)
+			case "checkedInAt":
+				return ec.fieldContext_CheckIn_checkedInAt(ctx, field)
+			case "checkedOutAt":
+				return ec.fieldContext_CheckIn_checkedOutAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CheckIn", field.Name)
 		},
 	}
 	return fc, nil
@@ -13631,7 +14706,7 @@ func (ec *executionContext) unmarshalInputCheckInInput(ctx context.Context, obj 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"marketID"}
+	fieldsInOrder := [...]string{"marketID", "vendorID"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -13645,6 +14720,13 @@ func (ec *executionContext) unmarshalInputCheckInInput(ctx context.Context, obj 
 				return it, err
 			}
 			it.MarketID = data
+		case "vendorID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vendorID"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VendorID = data
 		}
 	}
 	return it, nil
@@ -15151,6 +16233,75 @@ func (ec *executionContext) _Market(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var marketAttendanceImplementors = []string{"MarketAttendance"}
+
+func (ec *executionContext) _MarketAttendance(ctx context.Context, sel ast.SelectionSet, obj *model.MarketAttendance) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketAttendanceImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketAttendance")
+		case "marketID":
+			out.Values[i] = ec._MarketAttendance_marketID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "date":
+			out.Values[i] = ec._MarketAttendance_date(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalRostered":
+			out.Values[i] = ec._MarketAttendance_totalRostered(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "checkedInCount":
+			out.Values[i] = ec._MarketAttendance_checkedInCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pendingCount":
+			out.Values[i] = ec._MarketAttendance_pendingCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "exceptionCount":
+			out.Values[i] = ec._MarketAttendance_exceptionCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "vendors":
+			out.Values[i] = ec._MarketAttendance_vendors(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var marketDayPlanImplementors = []string{"MarketDayPlan"}
 
 func (ec *executionContext) _MarketDayPlan(ctx context.Context, sel ast.SelectionSet, obj *model.MarketDayPlan) graphql.Marshaler {
@@ -15313,6 +16464,65 @@ func (ec *executionContext) _MarketSearchResult(ctx context.Context, sel ast.Sel
 			}
 		case "vendorStatus":
 			out.Values[i] = ec._MarketSearchResult_vendorStatus(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var marketUpdateImplementors = []string{"MarketUpdate"}
+
+func (ec *executionContext) _MarketUpdate(ctx context.Context, sel ast.SelectionSet, obj *model.MarketUpdate) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, marketUpdateImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("MarketUpdate")
+		case "id":
+			out.Values[i] = ec._MarketUpdate_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "marketID":
+			out.Values[i] = ec._MarketUpdate_marketID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "senderID":
+			out.Values[i] = ec._MarketUpdate_senderID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "message":
+			out.Values[i] = ec._MarketUpdate_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._MarketUpdate_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -15523,6 +16733,27 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "removeManager":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_removeManager(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "publishMarketUpdate":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_publishMarketUpdate(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "requestVendorConfirmation":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_requestVendorConfirmation(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "autoCheckoutMarket":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_autoCheckoutMarket(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -16070,6 +17301,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "marketAttendance":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_marketAttendance(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "marketUpdates":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_marketUpdates(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "myNotificationPreferences":
 			field := field
 
@@ -16393,6 +17668,57 @@ func (ec *executionContext) _Vendor(ctx context.Context, sel ast.SelectionSet, o
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vendorAttendanceEntryImplementors = []string{"VendorAttendanceEntry"}
+
+func (ec *executionContext) _VendorAttendanceEntry(ctx context.Context, sel ast.SelectionSet, obj *model.VendorAttendanceEntry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vendorAttendanceEntryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("VendorAttendanceEntry")
+		case "vendorID":
+			out.Values[i] = ec._VendorAttendanceEntry_vendorID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "vendor":
+			out.Values[i] = ec._VendorAttendanceEntry_vendor(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "rosterStatus":
+			out.Values[i] = ec._VendorAttendanceEntry_rosterStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "checkIn":
+			out.Values[i] = ec._VendorAttendanceEntry_checkIn(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -17331,6 +18657,36 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNID2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNID2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNID2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalNInt2int32(ctx context.Context, v any) (int32, error) {
 	res, err := graphql.UnmarshalInt32(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -17390,6 +18746,20 @@ func (ec *executionContext) marshalNMarket2ᚖgithubᚗcomᚋpetryᚑprojectsᚋ
 		return graphql.Null
 	}
 	return ec._Market(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNMarketAttendance2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketAttendance(ctx context.Context, sel ast.SelectionSet, v model.MarketAttendance) graphql.Marshaler {
+	return ec._MarketAttendance(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketAttendance2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketAttendance(ctx context.Context, sel ast.SelectionSet, v *model.MarketAttendance) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MarketAttendance(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNMarketDayPlan2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketDayPlanᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MarketDayPlan) graphql.Marshaler {
@@ -17482,6 +18852,36 @@ func (ec *executionContext) unmarshalNMarketStatus2githubᚗcomᚋpetryᚑprojec
 
 func (ec *executionContext) marshalNMarketStatus2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketStatus(ctx context.Context, sel ast.SelectionSet, v model.MarketStatus) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNMarketUpdate2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdate(ctx context.Context, sel ast.SelectionSet, v model.MarketUpdate) graphql.Marshaler {
+	return ec._MarketUpdate(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNMarketUpdate2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdateᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.MarketUpdate) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNMarketUpdate2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdate(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNMarketUpdate2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarketUpdate(ctx context.Context, sel ast.SelectionSet, v *model.MarketUpdate) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._MarketUpdate(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNNotificationPreferences2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐNotificationPreferences(ctx context.Context, sel ast.SelectionSet, v model.NotificationPreferences) graphql.Marshaler {
@@ -17702,6 +19102,32 @@ func (ec *executionContext) marshalNVendor2ᚖgithubᚗcomᚋpetryᚑprojectsᚋ
 		return graphql.Null
 	}
 	return ec._Vendor(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVendorAttendanceEntry2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorAttendanceEntryᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.VendorAttendanceEntry) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNVendorAttendanceEntry2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorAttendanceEntry(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNVendorAttendanceEntry2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorAttendanceEntry(ctx context.Context, sel ast.SelectionSet, v *model.VendorAttendanceEntry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._VendorAttendanceEntry(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNVendorInvitation2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐVendorInvitation(ctx context.Context, sel ast.SelectionSet, v model.VendorInvitation) graphql.Marshaler {
@@ -18027,6 +19453,13 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOCheckIn2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCheckIn(ctx context.Context, sel ast.SelectionSet, v *model.CheckIn) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._CheckIn(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOCustomerProfile2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCustomerProfile(ctx context.Context, sel ast.SelectionSet, v *model.CustomerProfile) graphql.Marshaler {

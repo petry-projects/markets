@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-29  # Epic 4 done
+last_updated: 2026-03-29  # Epic 5 done
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -80,12 +80,12 @@ development_status:
   epic-4-retrospective: optional
 
   # ── Epic 5: Manager Dashboard & Market-Day Oversight ──
-  epic-5: backlog
-  5-1-live-attendance-dashboard: backlog
-  5-2-request-vendor-confirmation: backlog
-  5-3-manager-check-in-on-behalf-of-vendor: backlog
-  5-4-market-level-operational-updates: backlog
-  5-5-automatic-vendor-checkout-at-market-close: backlog
+  epic-5: done
+  5-1-live-attendance-dashboard: done
+  5-2-request-vendor-confirmation: done
+  5-3-manager-check-in-on-behalf-of-vendor: done
+  5-4-market-level-operational-updates: done
+  5-5-automatic-vendor-checkout-at-market-close: done
   epic-5-retrospective: optional
 
   # ── Epic 6: Customer Discovery, Search & Follow ──

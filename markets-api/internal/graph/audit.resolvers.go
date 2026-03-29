@@ -7,20 +7,24 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/generated"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
 // Empty is the resolver for the _empty field.
 func (r *mutationResolver) Empty(ctx context.Context) (*bool, error) {
-	panic(fmt.Errorf("not implemented: Empty - _empty"))
+	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
 }
 
 // AuditLog is the resolver for the auditLog field.
 func (r *queryResolver) AuditLog(ctx context.Context, filter *model.AuditLogFilter, limit *int32, offset *int32) (*model.AuditLogConnection, error) {
-	panic(fmt.Errorf("not implemented: AuditLog - auditLog"))
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
 }
 
 // Mutation returns generated.MutationResolver implementation.

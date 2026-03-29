@@ -9,35 +9,54 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
 // Follow is the resolver for the follow field.
 func (r *mutationResolver) Follow(ctx context.Context, targetType model.FollowTargetType, targetID string) (*model.Follow, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: Follow - follow"))
 }
 
 // Unfollow is the resolver for the unfollow field.
 func (r *mutationResolver) Unfollow(ctx context.Context, targetType model.FollowTargetType, targetID string) (bool, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return false, err
+	}
 	panic(fmt.Errorf("not implemented: Unfollow - unfollow"))
 }
 
 // MyCustomerProfile is the resolver for the myCustomerProfile field.
 func (r *queryResolver) MyCustomerProfile(ctx context.Context) (*model.CustomerProfile, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: MyCustomerProfile - myCustomerProfile"))
 }
 
 // DiscoverMarkets is the resolver for the discoverMarkets field.
 func (r *queryResolver) DiscoverMarkets(ctx context.Context, latitude float64, longitude float64, radiusMiles float64, limit *int32, offset *int32) ([]*model.Market, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: DiscoverMarkets - discoverMarkets"))
 }
 
 // DiscoverVendors is the resolver for the discoverVendors field.
 func (r *queryResolver) DiscoverVendors(ctx context.Context, marketID string, limit *int32, offset *int32) ([]*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: DiscoverVendors - discoverVendors"))
 }
 
 // FollowingFeed is the resolver for the followingFeed field.
 func (r *queryResolver) FollowingFeed(ctx context.Context, limit *int32, offset *int32) ([]*model.FollowingFeedItem, error) {
+	if err := auth.RequireRole(ctx, "customer"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: FollowingFeed - followingFeed"))
 }

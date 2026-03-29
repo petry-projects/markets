@@ -24,6 +24,12 @@ func Conflict(message string) *gqlerror.Error {
 	return NewError(CodeConflict, message)
 }
 
+// ForbiddenError creates a FORBIDDEN GraphQL error.
+// The message must be generic and must NOT reveal required roles or permissions.
+func ForbiddenError(message string) *gqlerror.Error {
+	return NewError(CodeForbidden, message)
+}
+
 // Internal creates an INTERNAL GraphQL error.
 func Internal(message string) *gqlerror.Error {
 	return NewError(CodeInternal, message)

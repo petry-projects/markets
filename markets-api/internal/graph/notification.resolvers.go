@@ -9,25 +9,38 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
 // UpdateNotificationPreferences is the resolver for the updateNotificationPreferences field.
 func (r *mutationResolver) UpdateNotificationPreferences(ctx context.Context, input model.UpdateNotificationPreferencesInput) (*model.NotificationPreferences, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: UpdateNotificationPreferences - updateNotificationPreferences"))
 }
 
 // RegisterDeviceToken is the resolver for the registerDeviceToken field.
 func (r *mutationResolver) RegisterDeviceToken(ctx context.Context, input model.RegisterDeviceTokenInput) (*model.DeviceToken, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: RegisterDeviceToken - registerDeviceToken"))
 }
 
 // RemoveDeviceToken is the resolver for the removeDeviceToken field.
 func (r *mutationResolver) RemoveDeviceToken(ctx context.Context, tokenID string) (bool, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return false, err
+	}
 	panic(fmt.Errorf("not implemented: RemoveDeviceToken - removeDeviceToken"))
 }
 
 // MyNotificationPreferences is the resolver for the myNotificationPreferences field.
 func (r *queryResolver) MyNotificationPreferences(ctx context.Context) (*model.NotificationPreferences, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: MyNotificationPreferences - myNotificationPreferences"))
 }

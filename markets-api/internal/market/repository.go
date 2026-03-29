@@ -96,4 +96,10 @@ type Repository interface {
 
 	// SearchVendors searches vendors by name or category.
 	SearchVendors(ctx context.Context, query, category string, limit *int32) ([]VendorSummary, error)
+
+	// CreateMarketUpdate inserts a market-wide operational update.
+	CreateMarketUpdate(ctx context.Context, u *MarketUpdateRecord) (*MarketUpdateRecord, error)
+
+	// FindMarketUpdates returns market updates, newest first.
+	FindMarketUpdates(ctx context.Context, marketID domain.MarketID, limit, offset int32) ([]*MarketUpdateRecord, error)
 }

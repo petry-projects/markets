@@ -55,6 +55,15 @@ type Repository interface {
 
 	// FindCheckInsByVendor returns all check-ins for a vendor (for the Vendor.checkIns field).
 	FindCheckInsByVendor(ctx context.Context, vendorID domain.VendorID) ([]*CheckInRecord, error)
+
+	// FindCheckInsByMarketAndDate returns all check-ins for a market on a specific date.
+	FindCheckInsByMarketAndDate(ctx context.Context, marketID domain.MarketID, date string) ([]*CheckInRecord, error)
+
+	// FindActiveCheckInsByMarket returns all active (checked_in) check-ins for a market.
+	FindActiveCheckInsByMarket(ctx context.Context, marketID domain.MarketID) ([]*CheckInRecord, error)
+
+	// BatchCheckOut checks out all active check-ins for a market. Returns the count.
+	BatchCheckOut(ctx context.Context, marketID domain.MarketID) (int, error)
 }
 
 // MarketSearchRow is a database result for market search queries.

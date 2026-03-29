@@ -24,20 +24,18 @@ export default function VendorProfileScreen() {
   const profile = data?.myVendorProfile;
 
   const handleDeleteProduct = useCallback(
-    async (id: string) => {
+    (id: string) => {
       Alert.alert('Delete Product', 'Are you sure?', [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await deleteProduct({ variables: { id } });
-            } catch (err) {
+          onPress: () => {
+            void deleteProduct({ variables: { id } }).catch((err: unknown) => {
               const message =
                 err instanceof Error ? err.message : 'Failed to delete product';
               Alert.alert('Error', message);
-            }
+            });
           },
         },
       ]);
@@ -65,7 +63,7 @@ export default function VendorProfileScreen() {
           </Text>
           <Button
             className="h-12 bg-primary-500 rounded-lg px-6"
-            onPress={() => router.push('/(vendor)/profile/create')}
+            onPress={() => { router.push('/(vendor)/profile/create'); }}
             accessibilityLabel="Create vendor profile"
           >
             <ButtonText className="text-white font-semibold">
@@ -91,7 +89,7 @@ export default function VendorProfileScreen() {
               </Heading>
               <Button
                 className="bg-transparent border border-outline-300 rounded-lg px-4 h-10"
-                onPress={() => router.push('/(vendor)/profile/edit')}
+                onPress={() => { router.push('/(vendor)/profile/edit'); }}
                 accessibilityLabel="Edit profile"
               >
                 <ButtonText className="text-typography-700 text-sm">
@@ -99,21 +97,21 @@ export default function VendorProfileScreen() {
                 </ButtonText>
               </Button>
             </Box>
-            {profile.description && (
+            {profile.description != null && profile.description !== '' && (
               <Text className="text-typography-600">{profile.description}</Text>
             )}
-            {profile.contactInfo && (
+            {profile.contactInfo != null && profile.contactInfo !== '' && (
               <Text className="text-sm text-typography-500">
                 Contact: {profile.contactInfo}
               </Text>
             )}
             <Box className="flex-row gap-4 flex-wrap">
-              {profile.instagramHandle && (
+              {profile.instagramHandle != null && profile.instagramHandle !== '' && (
                 <Text className="text-sm text-primary-600">
                   @{profile.instagramHandle}
                 </Text>
               )}
-              {profile.websiteURL && (
+              {profile.websiteURL != null && profile.websiteURL !== '' && (
                 <Text className="text-sm text-primary-600">
                   {profile.websiteURL}
                 </Text>
@@ -124,7 +122,7 @@ export default function VendorProfileScreen() {
               <Heading className="text-lg text-typography-900">Products</Heading>
               <Button
                 className="bg-primary-500 rounded-lg px-4 h-10"
-                onPress={() => router.push('/(vendor)/products/create')}
+                onPress={() => { router.push('/(vendor)/products/create'); }}
                 accessibilityLabel="Add product"
               >
                 <ButtonText className="text-white text-sm font-semibold">
@@ -141,7 +139,7 @@ export default function VendorProfileScreen() {
             category={item.category}
             description={item.description}
             isAvailable={item.isAvailable}
-            onEdit={(id) => router.push(`/(vendor)/products/${id}/edit`)}
+            onEdit={(id) => { router.push(`/(vendor)/products/${id}/edit`); }}
             onDelete={handleDeleteProduct}
           />
         )}
@@ -152,7 +150,7 @@ export default function VendorProfileScreen() {
             </Text>
           </Box>
         }
-        onRefresh={refetch}
+        onRefresh={() => { void refetch(); }}
         refreshing={loading}
       />
     </Box>

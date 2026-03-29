@@ -1,0 +1,14 @@
+#!/bin/sh
+# Pre-commit hook for markets-api
+# Setup: git config core.hooksPath markets-api/.githooks
+
+set -e
+
+echo "Running golangci-lint..."
+cd markets-api
+golangci-lint run ./...
+
+echo "Running short tests..."
+go test ./... -short -count=1
+
+echo "Pre-commit checks passed."

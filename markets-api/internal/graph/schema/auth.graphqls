@@ -1,0 +1,48 @@
+"""
+Authentication types and mutations.
+Handles Firebase Auth login/signup flows and role management.
+"""
+
+enum Role {
+  CUSTOMER
+  VENDOR
+  MANAGER
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type User {
+  id: ID!
+  firebaseUID: String!
+  email: String!
+  displayName: String!
+  role: Role!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input LoginInput {
+  firebaseToken: String!
+}
+
+input SignUpInput {
+  firebaseToken: String!
+  displayName: String!
+  role: Role!
+}
+
+extend type Query {
+  """Returns the currently authenticated user."""
+  me: User!
+}
+
+extend type Mutation {
+  """Login with a Firebase ID token."""
+  login(input: LoginInput!): AuthPayload!
+
+  """Sign up a new user with a Firebase ID token and role selection."""
+  signUp(input: SignUpInput!): AuthPayload!
+}

@@ -1,0 +1,89 @@
+"""
+Market profile, schedule, and roster types.
+Managed by Market Managers.
+"""
+
+type Market {
+  id: ID!
+  name: String!
+  description: String
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  imageURL: String
+  managers: [User!]!
+  schedule: [MarketSchedule!]!
+  vendors: [VendorRosterEntry!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type MarketSchedule {
+  id: ID!
+  marketID: ID!
+  dayOfWeek: Int!
+  startTime: String!
+  endTime: String!
+}
+
+type VendorRosterEntry {
+  id: ID!
+  marketID: ID!
+  vendorID: ID!
+  vendor: Vendor!
+  status: RosterStatus!
+  date: String!
+}
+
+enum RosterStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+input CreateMarketInput {
+  name: String!
+  description: String
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  imageURL: String
+}
+
+input UpdateMarketInput {
+  name: String
+  description: String
+  address: String
+  latitude: Float
+  longitude: Float
+  imageURL: String
+}
+
+input AddScheduleInput {
+  marketID: ID!
+  dayOfWeek: Int!
+  startTime: String!
+  endTime: String!
+}
+
+extend type Query {
+  """Get a market by ID."""
+  market(id: ID!): Market
+
+  """List all markets, optionally filtered by proximity."""
+  markets(latitude: Float, longitude: Float, radiusMiles: Float, limit: Int, offset: Int): [Market!]!
+}
+
+extend type Mutation {
+  """Create a new market (Manager only)."""
+  createMarket(input: CreateMarketInput!): Market!
+
+  """Update an existing market (Manager only)."""
+  updateMarket(id: ID!, input: UpdateMarketInput!): Market!
+
+  """Add a schedule entry to a market (Manager only)."""
+  addMarketSchedule(input: AddScheduleInput!): MarketSchedule!
+
+  """Approve or reject a vendor roster request (Manager only)."""
+  updateRosterStatus(id: ID!, status: RosterStatus!): VendorRosterEntry!
+}

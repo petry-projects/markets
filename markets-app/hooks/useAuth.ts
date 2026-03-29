@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import auth, { type FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
-import { storeToken, getToken, deleteToken } from '@/lib/tokenStorage';
+import { storeToken, deleteToken } from '@/lib/tokenStorage';
 import { setAuthToken } from '@/lib/apollo';
 
 export type UserRole = 'customer' | 'vendor' | 'manager' | null;
@@ -63,35 +63,41 @@ export function useAuth(): AuthState & AuthActions {
 
   // Listen for Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged(async (user) => {
-      if (user) {
-        try {
-          const idTokenResult = await user.getIdTokenResult();
-          const role = (idTokenResult.claims['role'] as UserRole) ?? null;
-          const idToken = await user.getIdToken();
-          await storeToken(idToken);
-          setAuthToken(idToken);
+    const unsubscribe = auth().onAuthStateChanged((user) => {
+      void (async () => {
+        if (user) {
+          try {
+            const idTokenResult = await user.getIdTokenResult();
+            const rawRole = idTokenResult.claims['role'] as string | undefined;
+            const role: UserRole =
+              rawRole === 'customer' || rawRole === 'vendor' || rawRole === 'manager'
+                ? rawRole
+                : null;
+            const idToken = await user.getIdToken();
+            await storeToken(idToken);
+            setAuthToken(idToken);
+            setState({
+              isAuthenticated: true,
+              isLoading: false,
+              error: null,
+              role,
+              uid: user.uid,
+            });
+          } catch {
+            setState((prev) => ({ ...prev, isLoading: false }));
+          }
+        } else {
+          await deleteToken();
+          setAuthToken(null);
           setState({
-            isAuthenticated: true,
+            isAuthenticated: false,
             isLoading: false,
             error: null,
-            role,
-            uid: user.uid,
+            role: null,
+            uid: null,
           });
-        } catch {
-          setState((prev) => ({ ...prev, isLoading: false }));
         }
-      } else {
-        await deleteToken();
-        setAuthToken(null);
-        setState({
-          isAuthenticated: false,
-          isLoading: false,
-          error: null,
-          role: null,
-          uid: null,
-        });
-      }
+      })();
     });
 
     return unsubscribe;
@@ -103,7 +109,7 @@ export function useAuth(): AuthState & AuthActions {
       await GoogleSignin.hasPlayServices();
       const signInResult = await GoogleSignin.signIn();
       const idToken = signInResult.data?.idToken;
-      if (!idToken) {
+      if (idToken == null || idToken === '') {
         throw new Error('No ID token returned from Google Sign-In');
       }
       const credential = auth.GoogleAuthProvider.credential(idToken);
@@ -129,7 +135,7 @@ export function useAuth(): AuthState & AuthActions {
       });
 
       const { identityToken } = appleCredential;
-      if (!identityToken) {
+      if (identityToken == null || identityToken === '') {
         throw new Error('No identity token returned from Apple Sign-In');
       }
 

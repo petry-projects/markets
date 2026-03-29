@@ -1,3 +1,4 @@
+/* global jest */
 // Pre-define globals that expo/src/winter tries to lazily install
 // This prevents the lazy getter from trying to use dynamic import() in Jest
 if (typeof globalThis.structuredClone === 'undefined') {
@@ -13,3 +14,17 @@ if (typeof globalThis.__ExpoImportMetaRegistry === 'undefined') {
     writable: true,
   });
 }
+
+// Mock react-native-safe-area-context for NativeWind CSS interop
+jest.mock('react-native-safe-area-context', () => {
+  const SafeAreaProvider = ({ children }) => children;
+  SafeAreaProvider.displayName = 'SafeAreaProvider';
+  const SafeAreaView = ({ children }) => children;
+  SafeAreaView.displayName = 'SafeAreaView';
+  return {
+    SafeAreaProvider,
+    SafeAreaView,
+    useSafeAreaInsets: () => ({ top: 0, right: 0, bottom: 0, left: 0 }),
+  };
+});
+

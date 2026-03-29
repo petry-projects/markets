@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access */
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import LoginScreen from '../login';
 
@@ -11,7 +12,7 @@ const mockClearError = jest.fn();
 const defaultAuthState = {
   isAuthenticated: false,
   isLoading: false,
-  error: null,
+  error: null as string | null,
   role: null,
   uid: null,
   signInWithGoogle: mockSignInWithGoogle,
@@ -117,7 +118,9 @@ describe('LoginScreen', () => {
 
     // Google button should be disabled
     const googleButton = getByLabelText('Sign in with Google');
-    expect(googleButton.props.accessibilityState?.disabled ?? googleButton.props.disabled).toBeTruthy();
+    expect(
+      googleButton.props.accessibilityState?.disabled ?? googleButton.props.disabled,
+    ).toBeTruthy();
   });
 
   it('shows "Signing in..." text on buttons during loading', () => {

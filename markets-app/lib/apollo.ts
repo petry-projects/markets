@@ -1,7 +1,8 @@
-import { ApolloClient, InMemoryCache, from } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache } from '@apollo/client';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { HttpLink } from '@apollo/client/link/http';
 import { SetContextLink } from '@apollo/client/link/context';
-import { onError } from '@apollo/client/link/error';
+import { ErrorLink } from '@apollo/client/link/error';
 import { router } from 'expo-router';
 
 const apiUrl: string =
@@ -37,7 +38,9 @@ const authLink = new SetContextLink((prevContext) => {
   return {
     headers: {
       ...headers,
-      ...(currentAuthToken ? { authorization: `Bearer ${currentAuthToken}` } : {}),
+      ...(currentAuthToken !== null && currentAuthToken !== ''
+        ? { authorization: `Bearer ${currentAuthToken}` }
+        : {}),
     },
   };
 });
@@ -45,9 +48,9 @@ const authLink = new SetContextLink((prevContext) => {
 /**
  * Error link that redirects to login on UNAUTHENTICATED errors.
  */
-const errorLink = onError(({ graphQLErrors }) => {
-  if (graphQLErrors) {
-    for (const err of graphQLErrors) {
+const errorLink = new ErrorLink(({ error }) => {
+  if (CombinedGraphQLErrors.is(error)) {
+    for (const err of error.errors) {
       if (err.extensions?.['code'] === 'UNAUTHENTICATED') {
         // Redirect to login screen on auth failure
         router.replace('/(auth)');
@@ -58,6 +61,6 @@ const errorLink = onError(({ graphQLErrors }) => {
 });
 
 export const apolloClient = new ApolloClient({
-  link: from([errorLink, authLink, httpLink]),
+  link: ApolloLink.from([errorLink, authLink, httpLink]),
   cache: new InMemoryCache(),
 });

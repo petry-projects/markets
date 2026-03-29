@@ -14,6 +14,12 @@ const (
 	CodeUnauthenticated Code = "UNAUTHENTICATED"
 	// CodeForbidden indicates valid auth but insufficient permissions.
 	CodeForbidden Code = "FORBIDDEN"
+	// CodeValidationError indicates invalid input data.
+	CodeValidationError Code = "VALIDATION_ERROR"
+	// CodeConflict indicates a duplicate/conflict with existing data.
+	CodeConflict Code = "CONFLICT"
+	// CodeInternal indicates an unexpected server error.
+	CodeInternal Code = "INTERNAL"
 )
 
 // graphQLErrorResponse is the JSON structure for GraphQL error responses.

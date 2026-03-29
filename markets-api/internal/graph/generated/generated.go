@@ -67,6 +67,10 @@ type ComplexityRoot struct {
 		VendorID     func(childComplexity int) int
 	}
 
+	CreateUserPayload struct {
+		User func(childComplexity int) int
+	}
+
 	CustomerProfile struct {
 		CreatedAt       func(childComplexity int) int
 		DisplayName     func(childComplexity int) int
@@ -131,6 +135,7 @@ type ComplexityRoot struct {
 		CheckOut                      func(childComplexity int, checkInID string) int
 		CreateMarket                  func(childComplexity int, input model.CreateMarketInput) int
 		CreateProduct                 func(childComplexity int, input model.CreateProductInput) int
+		CreateUser                    func(childComplexity int, input model.CreateUserInput) int
 		CreateVendorProfile           func(childComplexity int, input model.CreateVendorProfileInput) int
 		DeleteProduct                 func(childComplexity int, id string) int
 		Empty                         func(childComplexity int) int
@@ -222,6 +227,7 @@ type MutationResolver interface {
 	Empty(ctx context.Context) (*bool, error)
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	SignUp(ctx context.Context, input model.SignUpInput) (*model.AuthPayload, error)
+	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error)
 	Follow(ctx context.Context, targetType model.FollowTargetType, targetID string) (*model.Follow, error)
 	Unfollow(ctx context.Context, targetType model.FollowTargetType, targetID string) (bool, error)
 	CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error)
@@ -392,6 +398,13 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.CheckIn.VendorID(childComplexity), true
+
+	case "CreateUserPayload.user":
+		if e.ComplexityRoot.CreateUserPayload.User == nil {
+			break
+		}
+
+		return e.ComplexityRoot.CreateUserPayload.User(childComplexity), true
 
 	case "CustomerProfile.createdAt":
 		if e.ComplexityRoot.CustomerProfile.CreatedAt == nil {
@@ -694,6 +707,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateProduct(childComplexity, args["input"].(model.CreateProductInput)), true
+	case "Mutation.createUser":
+		if e.ComplexityRoot.Mutation.CreateUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createUser_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.CreateUser(childComplexity, args["input"].(model.CreateUserInput)), true
 	case "Mutation.createVendorProfile":
 		if e.ComplexityRoot.Mutation.CreateVendorProfile == nil {
 			break
@@ -1221,6 +1245,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCheckInInput,
 		ec.unmarshalInputCreateMarketInput,
 		ec.unmarshalInputCreateProductInput,
+		ec.unmarshalInputCreateUserInput,
 		ec.unmarshalInputCreateVendorProfileInput,
 		ec.unmarshalInputExceptionStatusInput,
 		ec.unmarshalInputLoginInput,
@@ -1391,6 +1416,15 @@ input SignUpInput {
   role: Role!
 }
 
+input CreateUserInput {
+  role: Role!
+  name: String!
+}
+
+type CreateUserPayload {
+  user: User!
+}
+
 extend type Query {
   """Returns the currently authenticated user."""
   me: User!
@@ -1402,6 +1436,9 @@ extend type Mutation {
 
   """Sign up a new user with a Firebase ID token and role selection."""
   signUp(input: SignUpInput!): AuthPayload!
+
+  """Create user record after role selection. Requires authentication."""
+  createUser(input: CreateUserInput!): CreateUserPayload!
 }
 `, BuiltIn: false},
 	{Name: "../schema/customer.graphqls", Input: `"""
@@ -1779,6 +1816,17 @@ func (ec *executionContext) field_Mutation_createProduct_args(ctx context.Contex
 	var err error
 	args := map[string]any{}
 	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateProductInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateProductInput)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNCreateUserInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateUserInput)
 	if err != nil {
 		return nil, err
 	}
@@ -2792,6 +2840,51 @@ func (ec *executionContext) fieldContext_CheckIn_checkedOutAt(_ context.Context,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CreateUserPayload_user(ctx context.Context, field graphql.CollectedField, obj *model.CreateUserPayload) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_CreateUserPayload_user,
+		func(ctx context.Context) (any, error) {
+			return obj.User, nil
+		},
+		nil,
+		ec.marshalNUser2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐUser,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_CreateUserPayload_user(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CreateUserPayload",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "firebaseUID":
+				return ec.fieldContext_User_firebaseUID(ctx, field)
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "displayName":
+				return ec.fieldContext_User_displayName(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_User_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_User_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
 		},
 	}
 	return fc, nil
@@ -4208,6 +4301,51 @@ func (ec *executionContext) fieldContext_Mutation_signUp(ctx context.Context, fi
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_signUp_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_createUser,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().CreateUser(ctx, fc.Args["input"].(model.CreateUserInput))
+		},
+		nil,
+		ec.marshalNCreateUserPayload2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateUserPayload,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "user":
+				return ec.fieldContext_CreateUserPayload_user(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type CreateUserPayload", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -8835,6 +8973,43 @@ func (ec *executionContext) unmarshalInputCreateProductInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputCreateUserInput(ctx context.Context, obj any) (model.CreateUserInput, error) {
+	var it model.CreateUserInput
+	if obj == nil {
+		return it, nil
+	}
+
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"role", "name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "role":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			data, err := ec.unmarshalNRole2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐRole(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Role = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		}
+	}
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputCreateVendorProfileInput(ctx context.Context, obj any) (model.CreateVendorProfileInput, error) {
 	var it model.CreateVendorProfileInput
 	if obj == nil {
@@ -9480,6 +9655,45 @@ func (ec *executionContext) _CheckIn(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
+var createUserPayloadImplementors = []string{"CreateUserPayload"}
+
+func (ec *executionContext) _CreateUserPayload(ctx context.Context, sel ast.SelectionSet, obj *model.CreateUserPayload) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, createUserPayloadImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("CreateUserPayload")
+		case "user":
+			out.Values[i] = ec._CreateUserPayload_user(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var customerProfileImplementors = []string{"CustomerProfile"}
 
 func (ec *executionContext) _CustomerProfile(ctx context.Context, sel ast.SelectionSet, obj *model.CustomerProfile) graphql.Marshaler {
@@ -9905,6 +10119,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "signUp":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_signUp(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createUser":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createUser(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -11163,6 +11384,25 @@ func (ec *executionContext) unmarshalNCreateMarketInput2githubᚗcomᚋpetryᚑp
 func (ec *executionContext) unmarshalNCreateProductInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateProductInput(ctx context.Context, v any) (model.CreateProductInput, error) {
 	res, err := ec.unmarshalInputCreateProductInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNCreateUserInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateUserInput(ctx context.Context, v any) (model.CreateUserInput, error) {
+	res, err := ec.unmarshalInputCreateUserInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNCreateUserPayload2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateUserPayload(ctx context.Context, sel ast.SelectionSet, v model.CreateUserPayload) graphql.Marshaler {
+	return ec._CreateUserPayload(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNCreateUserPayload2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateUserPayload(ctx context.Context, sel ast.SelectionSet, v *model.CreateUserPayload) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._CreateUserPayload(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNCreateVendorProfileInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐCreateVendorProfileInput(ctx context.Context, v any) (model.CreateVendorProfileInput, error) {

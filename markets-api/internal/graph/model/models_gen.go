@@ -80,6 +80,15 @@ type CreateProductInput struct {
 	ImageURL    *string `json:"imageURL,omitempty"`
 }
 
+type CreateUserInput struct {
+	Role Role   `json:"role"`
+	Name string `json:"name"`
+}
+
+type CreateUserPayload struct {
+	User *User `json:"user"`
+}
+
 type CreateVendorProfileInput struct {
 	BusinessName string  `json:"businessName"`
 	Description  *string `json:"description,omitempty"`

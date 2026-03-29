@@ -37,7 +37,9 @@ func NewMiddleware(verifier TokenVerifier) func(http.Handler) http.Handler {
 			}
 
 			uid, role := ExtractUser(verified)
+			email := ExtractEmail(verified)
 			ctx := WithUser(r.Context(), uid.String(), role)
+			ctx = WithEmail(ctx, email)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

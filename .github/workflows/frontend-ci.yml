@@ -12,6 +12,7 @@ on:
 jobs:
   quality:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     defaults:
       run:
         working-directory: markets-app
@@ -30,6 +31,25 @@ jobs:
       - name: Format check
         run: npx prettier --check .
       - name: Unit + component tests
-        run: npx jest --ci --coverage
+        run: npx jest --ci --coverage --coverageReporters=text --coverageReporters=json-summary
+      - name: Enforce coverage threshold
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(node -e "const s = require('./coverage/coverage-summary.json'); console.log(s.total.statements.pct)")
+            echo "Statement coverage: ${COVERAGE}%"
+            THRESHOLD=60
+            BELOW=$(node -e "console.log($COVERAGE < $THRESHOLD ? 1 : 0)")
+            if [ "$BELOW" = "1" ]; then
+              echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+              exit 1
+            fi
+          fi
       - name: Codegen check
         run: npm run codegen:check
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: markets-app/coverage/
+          retention-days: 14

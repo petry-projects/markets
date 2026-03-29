@@ -1,0 +1,6 @@
+query MarketDayPlans($marketID: ID!, $startDate: String!, $endDate: String!) {
+  marketDayPlans(marketID: $marketID, startDate: $startDate, endDate: $endDate) {
+    date
+    vendorCount
+  }
+}

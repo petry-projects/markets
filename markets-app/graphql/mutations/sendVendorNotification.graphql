@@ -1,0 +1,9 @@
+mutation SendVendorNotification($marketID: ID!, $message: String!) {
+  sendVendorNotification(marketID: $marketID, message: $message) {
+    id
+    marketID
+    senderID
+    message
+    sentAt
+  }
+}

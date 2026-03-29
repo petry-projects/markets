@@ -1,0 +1,15 @@
+query MyMarkets {
+  myMarkets {
+    id
+    name
+    description
+    address
+    latitude
+    longitude
+    contactEmail
+    contactPhone
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

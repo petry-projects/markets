@@ -93,6 +93,177 @@ func (m *mockMarketRepo) GetManagersByMarket(_ context.Context, marketID domain.
 	return result, nil
 }
 
+func (m *mockMarketRepo) CreateMarket(_ context.Context, rec *market.MarketRecord, managerID domain.UserID, recoveryContact string) (*market.MarketRecord, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	rec.ID = domain.MarketID("generated-market-id")
+	rec.CreatedAt = time.Now()
+	rec.UpdatedAt = time.Now()
+	m.assignments = append(m.assignments, market.ManagerAssignment{
+		ID:              "generated-id",
+		ManagerID:       managerID,
+		MarketID:        rec.ID,
+		RecoveryContact: recoveryContact,
+		CreatedAt:       time.Now(),
+	})
+	return rec, nil
+}
+
+func (m *mockMarketRepo) UpdateMarket(_ context.Context, rec *market.MarketRecord) (*market.MarketRecord, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	rec.UpdatedAt = time.Now()
+	return rec, nil
+}
+
+func (m *mockMarketRepo) FindMarketByID(_ context.Context, id domain.MarketID) (*market.MarketRecord, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if id == domain.MarketID("nonexistent") {
+		return nil, db.ErrMarketNotFound
+	}
+	return &market.MarketRecord{
+		ID:           id,
+		Name:         "Test Market",
+		Address:      "123 St",
+		Latitude:     40.0,
+		Longitude:    -74.0,
+		ContactEmail: "a@b.com",
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}, nil
+}
+
+func (m *mockMarketRepo) FindMarketsByManagerID(_ context.Context, managerID domain.UserID) ([]*market.MarketRecord, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var result []*market.MarketRecord
+	for _, a := range m.assignments {
+		if a.ManagerID == managerID {
+			result = append(result, &market.MarketRecord{
+				ID:           a.MarketID,
+				Name:         "Test Market",
+				Address:      "123 St",
+				Latitude:     40.0,
+				Longitude:    -74.0,
+				ContactEmail: "a@b.com",
+				CreatedAt:    time.Now(),
+				UpdatedAt:    time.Now(),
+			})
+		}
+	}
+	return result, nil
+}
+
+func (m *mockMarketRepo) ListMarkets(_ context.Context, _ *int32, _ *int32) ([]*market.MarketRecord, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return []*market.MarketRecord{}, nil
+}
+
+func (m *mockMarketRepo) CreateSchedule(_ context.Context, s *market.ScheduleRecord) (*market.ScheduleRecord, error) {
+	s.ID = domain.MarketID("generated-schedule-id")
+	s.CreatedAt = time.Now()
+	s.UpdatedAt = time.Now()
+	return s, nil
+}
+
+func (m *mockMarketRepo) UpdateSchedule(_ context.Context, s *market.ScheduleRecord) (*market.ScheduleRecord, error) {
+	s.UpdatedAt = time.Now()
+	return s, nil
+}
+
+func (m *mockMarketRepo) DeleteSchedule(_ context.Context, _ domain.MarketID) error {
+	return nil
+}
+
+func (m *mockMarketRepo) FindScheduleByID(_ context.Context, id domain.MarketID) (*market.ScheduleRecord, error) {
+	if id == domain.MarketID("nonexistent") {
+		return nil, db.ErrScheduleNotFound
+	}
+	return &market.ScheduleRecord{
+		ID:           id,
+		MarketID:     domain.MarketID("market-a"),
+		ScheduleType: "recurring",
+		StartTime:    "08:00",
+		EndTime:      "13:00",
+		CreatedAt:    time.Now(),
+		UpdatedAt:    time.Now(),
+	}, nil
+}
+
+func (m *mockMarketRepo) FindSchedulesByMarketID(_ context.Context, _ domain.MarketID) ([]*market.ScheduleRecord, error) {
+	return []*market.ScheduleRecord{}, nil
+}
+
+func (m *mockMarketRepo) UpdateMarketRules(_ context.Context, marketID domain.MarketID, rulesText string) (*market.MarketRecord, error) {
+	return &market.MarketRecord{ID: marketID, Name: "Test", Address: "St", Latitude: 40, Longitude: -74, ContactEmail: "a@b.com", RulesText: rulesText, Status: "active", CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) CancelMarket(_ context.Context, marketID domain.MarketID, status, reason, message string) (*market.MarketRecord, error) {
+	return &market.MarketRecord{ID: marketID, Name: "Test", Address: "St", Latitude: 40, Longitude: -74, ContactEmail: "a@b.com", Status: status, CancellationReason: reason, CancellationMessage: message, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) ReactivateMarket(_ context.Context, marketID domain.MarketID) (*market.MarketRecord, error) {
+	return &market.MarketRecord{ID: marketID, Name: "Test", Address: "St", Latitude: 40, Longitude: -74, ContactEmail: "a@b.com", Status: "active", CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) CreateNotification(_ context.Context, n *market.NotificationRecord) (*market.NotificationRecord, error) {
+	n.ID = "notif-id"
+	n.SentAt = time.Now()
+	return n, nil
+}
+
+func (m *mockMarketRepo) CreateInvitation(_ context.Context, inv *market.InvitationRecord) (*market.InvitationRecord, error) {
+	inv.ID = "inv-id"
+	inv.Status = "pending"
+	inv.CreatedAt = time.Now()
+	inv.UpdatedAt = time.Now()
+	return inv, nil
+}
+
+func (m *mockMarketRepo) UpdateInvitationStatus(_ context.Context, id string, status string) (*market.InvitationRecord, error) {
+	return &market.InvitationRecord{ID: id, Status: status, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) GetInvitationsByVendor(_ context.Context, _ domain.UserID) ([]*market.InvitationRecord, error) {
+	return []*market.InvitationRecord{}, nil
+}
+
+func (m *mockMarketRepo) CreateRosterEntries(_ context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string) ([]*market.RosterEntry, error) {
+	var entries []*market.RosterEntry
+	for _, d := range dates {
+		entries = append(entries, &market.RosterEntry{ID: "re-id", MarketID: marketID, VendorID: vendorID, Date: d, Status: status, CreatedAt: time.Now(), UpdatedAt: time.Now()})
+	}
+	return entries, nil
+}
+
+func (m *mockMarketRepo) UpdateRosterEntryStatus(_ context.Context, id string, status string) (*market.RosterEntry, error) {
+	return &market.RosterEntry{ID: id, Status: status, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) RejectRosterEntry(_ context.Context, id string, reason string) (*market.RosterEntry, error) {
+	return &market.RosterEntry{ID: id, Status: "rejected", RejectionReason: reason, CreatedAt: time.Now(), UpdatedAt: time.Now()}, nil
+}
+
+func (m *mockMarketRepo) FindRosterEntryByID(_ context.Context, id string) (*market.RosterEntry, error) {
+	return &market.RosterEntry{ID: id, MarketID: "test-market-1"}, nil
+}
+
+func (m *mockMarketRepo) DeleteRosterEntry(_ context.Context, _ string) error { return nil }
+
+func (m *mockMarketRepo) GetRosterByDate(_ context.Context, _ domain.MarketID, _ string) ([]*market.RosterEntry, error) {
+	return []*market.RosterEntry{}, nil
+}
+
+func (m *mockMarketRepo) GetDayPlans(_ context.Context, _ domain.MarketID, _, _ string) ([]*market.DayPlan, error) {
+	return []*market.DayPlan{}, nil
+}
+
+func (m *mockMarketRepo) SearchVendors(_ context.Context, _, _ string, _ *int32) ([]market.VendorSummary, error) {
+	return []market.VendorSummary{}, nil
+}
+
 
 func newMarketTestResolver() (*graph.Resolver, *mockMarketRepo, *testEventHandler) {
 	marketRepo := &mockMarketRepo{}
@@ -120,18 +291,13 @@ func TestScopeCheck_AssignedManager_Passes(t *testing.T) {
 	ctx := managerCtx("mgr-1")
 
 	// Market query should NOT return FORBIDDEN for assigned manager
-	// The resolver will panic with "not implemented" after scope check passes,
-	// so we recover from the panic to verify scope check passed.
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				t.Fatal("expected panic from not-implemented resolver")
-			}
-			// If we got here, scope check passed successfully
-		}()
-		_, _ = r.Query().Market(ctx, "market-a")
-	}()
+	result, err := r.Query().Market(ctx, "market-a")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil market result")
+	}
 }
 
 // --- Test 1.4.2: Unassigned manager receives FORBIDDEN ---
@@ -144,8 +310,8 @@ func TestScopeCheck_UnassignedManager_Forbidden(t *testing.T) {
 
 	ctx := managerCtx("mgr-1")
 
-	// Try to access market-b (not assigned)
-	_, err := r.Query().Market(ctx, "market-b")
+	// Try to update market-b (not assigned) — should be forbidden
+	_, err := r.Mutation().UpdateMarket(ctx, "market-b", model.UpdateMarketInput{})
 	if err == nil {
 		t.Fatal("expected FORBIDDEN error for unassigned market")
 	}
@@ -164,16 +330,14 @@ func TestScopeCheck_AssignedManager_UpdateMarket_Passes(t *testing.T) {
 
 	ctx := managerCtx("mgr-1")
 
-	// UpdateMarket should pass scope check (then panic with not-implemented)
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				t.Fatal("expected panic from not-implemented resolver")
-			}
-		}()
-		_, _ = r.Mutation().UpdateMarket(ctx, "market-a", model.UpdateMarketInput{})
-	}()
+	// UpdateMarket should pass scope check and succeed
+	result, err := r.Mutation().UpdateMarket(ctx, "market-a", model.UpdateMarketInput{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil market result")
+	}
 }
 
 // --- Test: Non-manager role bypasses scope check ---
@@ -185,16 +349,14 @@ func TestScopeCheck_NonManagerRole_Bypasses(t *testing.T) {
 	ctx := context.Background()
 	ctx = auth.WithUser(ctx, "customer-1", "customer")
 
-	// Should panic with not-implemented (scope check passed)
-	func() {
-		defer func() {
-			r := recover()
-			if r == nil {
-				t.Fatal("expected panic from not-implemented resolver")
-			}
-		}()
-		_, _ = r.Query().Market(ctx, "any-market")
-	}()
+	// Should succeed — no scope check for non-manager roles
+	result, err := r.Query().Market(ctx, "any-market")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil market result for customer")
+	}
 }
 
 // --- Test: AssignManager requires manager role ---
@@ -423,16 +585,178 @@ func TestTwoManagers_SameMarket_BothAccessible(t *testing.T) {
 	// Both managers should pass scope check for market-a
 	for _, mgrID := range []string{"mgr-1", "mgr-2"} {
 		ctx := managerCtx(mgrID)
-		func() {
-			defer func() {
-				r := recover()
-				if r == nil {
-					t.Fatalf("expected panic from not-implemented resolver for manager %s", mgrID)
-				}
-				// Scope check passed for this manager
-			}()
-			_, _ = r.Query().Market(ctx, "market-a")
-		}()
+		result, err := r.Query().Market(ctx, "market-a")
+		if err != nil {
+			t.Fatalf("unexpected error for manager %s: %v", mgrID, err)
+		}
+		if result == nil {
+			t.Fatalf("expected non-nil market result for manager %s", mgrID)
+		}
+	}
+}
+
+// --- Story 2.1: CreateMarket tests ---
+
+func TestCreateMarket_Success(t *testing.T) {
+	r, _, handler := newMarketTestResolver()
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Mutation().CreateMarket(ctx, model.CreateMarketInput{
+		Name:            "Riverside Market",
+		Address:         "123 River St",
+		Latitude:        40.7128,
+		Longitude:       -74.0060,
+		ContactEmail:    "info@riverside.com",
+		RecoveryContact: "recovery@example.com",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil market result")
+	}
+	if result.Name != "Riverside Market" {
+		t.Errorf("expected name Riverside Market, got %s", result.Name)
+	}
+	if result.ContactEmail != "info@riverside.com" {
+		t.Errorf("expected email info@riverside.com, got %s", result.ContactEmail)
+	}
+
+	// Verify MarketCreated event was published
+	if len(handler.events) == 0 {
+		t.Fatal("expected MarketCreated event to be published")
+	}
+	if handler.events[0].EventType() != "market.created" {
+		t.Errorf("expected market.created event, got %s", handler.events[0].EventType())
+	}
+}
+
+func TestCreateMarket_NonManager_Forbidden(t *testing.T) {
+	r, _, _ := newMarketTestResolver()
+	ctx := context.Background()
+	ctx = auth.WithUser(ctx, "customer-1", "customer")
+
+	_, err := r.Mutation().CreateMarket(ctx, model.CreateMarketInput{
+		Name:            "Test",
+		Address:         "123 St",
+		Latitude:        40.0,
+		Longitude:       -74.0,
+		ContactEmail:    "a@b.com",
+		RecoveryContact: "r@b.com",
+	})
+	if err == nil {
+		t.Fatal("expected error for non-manager role")
+	}
+	if !hasExtensionCode(err, "FORBIDDEN") {
+		t.Errorf("expected FORBIDDEN, got: %v", err)
+	}
+}
+
+func TestCreateMarket_InvalidInput(t *testing.T) {
+	r, _, _ := newMarketTestResolver()
+	ctx := managerCtx("mgr-1")
+
+	_, err := r.Mutation().CreateMarket(ctx, model.CreateMarketInput{
+		Name:            "", // empty name should fail validation
+		Address:         "123 St",
+		Latitude:        40.0,
+		Longitude:       -74.0,
+		ContactEmail:    "a@b.com",
+		RecoveryContact: "r@b.com",
+	})
+	if err == nil {
+		t.Fatal("expected validation error for empty name")
+	}
+	if !hasExtensionCode(err, "VALIDATION_ERROR") {
+		t.Errorf("expected VALIDATION_ERROR, got: %v", err)
+	}
+}
+
+// --- Story 2.1: UpdateMarket tests ---
+
+func TestUpdateMarket_Success(t *testing.T) {
+	r, repo, handler := newMarketTestResolver()
+	repo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	newName := "Updated Market"
+	result, err := r.Mutation().UpdateMarket(ctx, "market-a", model.UpdateMarketInput{
+		Name: &newName,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.Name != "Updated Market" {
+		t.Errorf("expected Updated Market, got %s", result.Name)
+	}
+
+	// Verify MarketUpdated event
+	found := false
+	for _, e := range handler.events {
+		if e.EventType() == "market.updated" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("expected market.updated event to be published")
+	}
+}
+
+func TestUpdateMarket_NotAssigned_Forbidden(t *testing.T) {
+	r, repo, _ := newMarketTestResolver()
+	repo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	newName := "Hacked"
+	_, err := r.Mutation().UpdateMarket(ctx, "market-b", model.UpdateMarketInput{
+		Name: &newName,
+	})
+	if err == nil {
+		t.Fatal("expected FORBIDDEN for unassigned market")
+	}
+	if !hasExtensionCode(err, "FORBIDDEN") {
+		t.Errorf("expected FORBIDDEN, got: %v", err)
+	}
+}
+
+// --- Story 2.1: MyMarkets tests ---
+
+func TestMyMarkets_ReturnsAssigned(t *testing.T) {
+	r, repo, _ := newMarketTestResolver()
+	repo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-b")},
+		{ManagerID: domain.UserID("mgr-2"), MarketID: domain.MarketID("market-c")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Query().MyMarkets(ctx)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(result) != 2 {
+		t.Errorf("expected 2 markets for mgr-1, got %d", len(result))
+	}
+}
+
+func TestMyMarkets_NonManager_Forbidden(t *testing.T) {
+	r, _, _ := newMarketTestResolver()
+	ctx := context.Background()
+	ctx = auth.WithUser(ctx, "customer-1", "customer")
+
+	_, err := r.Query().MyMarkets(ctx)
+	if err == nil {
+		t.Fatal("expected FORBIDDEN for non-manager")
+	}
+	if !hasExtensionCode(err, "FORBIDDEN") {
+		t.Errorf("expected FORBIDDEN, got: %v", err)
 	}
 }
 

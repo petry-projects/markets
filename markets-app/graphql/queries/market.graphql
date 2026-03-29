@@ -1,0 +1,21 @@
+query GetMarket($id: ID!) {
+  market(id: $id) {
+    id
+    name
+    description
+    address
+    latitude
+    longitude
+    contactEmail
+    contactPhone
+    socialLinks {
+      instagram
+      facebook
+      website
+      twitter
+    }
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

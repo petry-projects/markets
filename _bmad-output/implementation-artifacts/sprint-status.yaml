@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-29  # Stories 1.4 and 1.5 done
+last_updated: 2026-03-29  # Epic 2 done
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -43,7 +43,7 @@ story_location: "{project-root}/_bmad-output/implementation-artifacts"
 
 development_status:
   # ── Epic 1: Authentication & Role-Based Access ──
-  epic-1: in-progress
+  epic-1: done
   1-1a-frontend-project-scaffolding: done
   1-1b-backend-project-scaffolding-audit-infrastructure: done
   1-2-google-apple-sign-in-authentication: done
@@ -53,15 +53,15 @@ development_status:
   epic-1-retrospective: optional
 
   # ── Epic 2: Market Administration ──
-  epic-2: backlog
-  2-1-create-edit-market-profile: backlog
-  2-2-market-schedule-hours-management: backlog
-  2-2a-browse-invite-vendors-to-market: backlog
-  2-2b-future-market-day-planning: backlog
-  2-2c-market-rules-expectations: backlog
-  2-2d-send-vendor-notifications: backlog
-  2-2e-cancel-or-end-market-early: backlog
-  2-3-per-date-vendor-roster-management-join-request-approval: backlog
+  epic-2: done
+  2-1-create-edit-market-profile: done
+  2-2-market-schedule-hours-management: done
+  2-2a-browse-invite-vendors-to-market: done
+  2-2b-future-market-day-planning: done
+  2-2c-market-rules-expectations: done
+  2-2d-send-vendor-notifications: done
+  2-2e-cancel-or-end-market-early: done
+  2-3-per-date-vendor-roster-management-join-request-approval: done
   epic-2-retrospective: optional
 
   # ── Epic 3: Vendor Profile & Product Catalog ──

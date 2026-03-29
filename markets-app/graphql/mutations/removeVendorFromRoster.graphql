@@ -1,0 +1,3 @@
+mutation RemoveVendorFromRoster($id: ID!) {
+  removeVendorFromRoster(id: $id)
+}

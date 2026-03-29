@@ -44,3 +44,49 @@ type ManagerRemoved struct {
 
 // EventType returns the dotted event type string.
 func (e ManagerRemoved) EventType() string { return "manager.removed" }
+
+// MarketCreated is published when a new market is created.
+type MarketCreated struct {
+	MarketID  string
+	ManagerID string
+}
+
+// EventType returns the dotted event type string.
+func (e MarketCreated) EventType() string { return "market.created" }
+
+// MarketUpdated is published when a market profile is updated.
+type MarketUpdated struct {
+	MarketID string
+}
+
+// EventType returns the dotted event type string.
+func (e MarketUpdated) EventType() string { return "market.updated" }
+
+// MarketCancelled is published when a market is cancelled or ended early.
+type MarketCancelled struct {
+	MarketID string
+	Reason   string
+	Message  string
+}
+
+// EventType returns the dotted event type string.
+func (e MarketCancelled) EventType() string { return "market.cancelled" }
+
+// VendorNotificationSent is published when a notification is sent to vendors.
+type VendorNotificationSent struct {
+	MarketID string
+	SenderID string
+	Message  string
+}
+
+// EventType returns the dotted event type string.
+func (e VendorNotificationSent) EventType() string { return "vendor.notification.sent" }
+
+// VendorInvited is published when a manager invites a vendor to a market.
+type VendorInvited struct {
+	MarketID string
+	VendorID string
+}
+
+// EventType returns the dotted event type string.
+func (e VendorInvited) EventType() string { return "vendor.invited" }

@@ -254,3 +254,32 @@ func (r *queryResolver) FollowingFeed(ctx context.Context, limit *int32, offset 
 
 	return result, nil
 }
+
+// getOrCreateCustomer finds or auto-creates a customer profile for the given user.
+func (r *mutationResolver) getOrCreateCustomer(ctx context.Context, userID domain.UserID) (*customer.CustomerRecord, error) {
+	cust, err := r.CustomerRepo.FindCustomerByUserID(ctx, userID)
+	if err == nil {
+		return cust, nil
+	}
+
+	if !errors.Is(err, customer.ErrCustomerNotFound) {
+		slog.Error("failed to find customer", "error", err, "userID", userID)
+		return nil, gqlerr.Internal("failed to find customer profile")
+	}
+
+	// Auto-create customer profile
+	newCust, err := customer.NewCustomer(customer.NewCustomerParams{
+		UserID: userID,
+	})
+	if err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, err.Error())
+	}
+
+	created, err := r.CustomerRepo.CreateCustomer(ctx, newCust)
+	if err != nil {
+		slog.Error("failed to create customer", "error", err, "userID", userID)
+		return nil, gqlerr.Internal("failed to create customer profile")
+	}
+
+	return created, nil
+}

@@ -18,6 +18,7 @@ import (
 type mockVendorRepo struct {
 	vendors  []*vendor.VendorRecord
 	products []*vendor.ProductRecord
+	checkIns []*vendor.CheckInRecord
 }
 
 func (m *mockVendorRepo) CreateVendor(_ context.Context, v *vendor.VendorRecord) (*vendor.VendorRecord, error) {
@@ -99,6 +100,51 @@ func (m *mockVendorRepo) SearchMarkets(_ context.Context, _ string, _, _, _ *flo
 
 func (m *mockVendorRepo) GetVendorMarketDates(_ context.Context, _ domain.VendorID) ([]vendor.VendorMarketDateRow, error) {
 	return []vendor.VendorMarketDateRow{}, nil
+}
+
+func (m *mockVendorRepo) CreateCheckIn(_ context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	c.ID = domain.CheckInID("generated-checkin-id")
+	m.checkIns = append(m.checkIns, c)
+	return c, nil
+}
+
+func (m *mockVendorRepo) UpdateCheckIn(_ context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	for i, ci := range m.checkIns {
+		if ci.ID == c.ID {
+			m.checkIns[i] = c
+			return c, nil
+		}
+	}
+	return nil, vendor.ErrCheckInNotFound
+}
+
+func (m *mockVendorRepo) FindCheckInByID(_ context.Context, id domain.CheckInID) (*vendor.CheckInRecord, error) {
+	for _, ci := range m.checkIns {
+		if ci.ID == id {
+			return ci, nil
+		}
+	}
+	return nil, vendor.ErrCheckInNotFound
+}
+
+func (m *mockVendorRepo) FindActiveCheckInsByVendor(_ context.Context, vendorID domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.VendorID == vendorID && ci.Status == vendor.StatusCheckedIn {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockVendorRepo) FindCheckInsByVendor(_ context.Context, vendorID domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.VendorID == vendorID {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
 }
 
 // --- Tests ---
@@ -296,6 +342,208 @@ func TestVendorProducts_ReturnsList(t *testing.T) {
 	}
 	if len(result) != 2 {
 		t.Errorf("expected 2 products, got %d", len(result))
+	}
+}
+
+// --- Check-In Tests ---
+
+func TestCheckIn_Success(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	result, err := resolver.Mutation().CheckIn(ctx, model.CheckInInput{MarketID: "market-1"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.ID != "generated-checkin-id" {
+		t.Errorf("expected generated ID, got %q", result.ID)
+	}
+	if result.Status != model.CheckInStatusCheckedIn {
+		t.Errorf("expected CHECKED_IN status, got %q", result.Status)
+	}
+	if result.MarketID != "market-1" {
+		t.Errorf("expected market-1, got %q", result.MarketID)
+	}
+}
+
+func TestCheckIn_ConflictAtDifferentMarket(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().CheckIn(ctx, model.CheckInInput{MarketID: "market-2"})
+	if err == nil {
+		t.Fatal("expected conflict error when checked in at another market")
+	}
+}
+
+func TestCheckIn_DuplicateAtSameMarket(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().CheckIn(ctx, model.CheckInInput{MarketID: "market-1"})
+	if err == nil {
+		t.Fatal("expected error when already checked in at same market")
+	}
+}
+
+func TestCheckIn_NonVendorForbidden(t *testing.T) {
+	vendorRepo := &mockVendorRepo{}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "customer")
+
+	_, err := resolver.Mutation().CheckIn(ctx, model.CheckInInput{MarketID: "market-1"})
+	if err == nil {
+		t.Fatal("expected error for non-vendor role")
+	}
+}
+
+func TestCheckOut_Success(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	result, err := resolver.Mutation().CheckOut(ctx, "ci-1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != model.CheckInStatusCheckedOut {
+		t.Errorf("expected CHECKED_OUT status, got %q", result.Status)
+	}
+	if result.CheckedOutAt == nil {
+		t.Error("expected checked_out_at to be set")
+	}
+}
+
+func TestCheckOut_NotOwner(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm 1", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: domain.VendorID("v-2"), UserID: domain.UserID("user-2"), BusinessName: "Farm 2", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-2"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().CheckOut(ctx, "ci-1")
+	if err == nil {
+		t.Fatal("expected error when checking out another vendor's check-in")
+	}
+}
+
+func TestCheckOut_AlreadyCheckedOut(t *testing.T) {
+	now := time.Now()
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: now, UpdatedAt: now},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedOut, CheckedInAt: now, CheckedOutAt: &now},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().CheckOut(ctx, "ci-1")
+	if err == nil {
+		t.Fatal("expected error when already checked out")
+	}
+}
+
+func TestReportException_Success(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	result, err := resolver.Mutation().ReportException(ctx, model.ExceptionStatusInput{
+		CheckInID: "ci-1",
+		Reason:    "Running Late",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result.Status != model.CheckInStatusException {
+		t.Errorf("expected EXCEPTION status, got %q", result.Status)
+	}
+}
+
+func TestReportException_EmptyReason(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().ReportException(ctx, model.ExceptionStatusInput{
+		CheckInID: "ci-1",
+		Reason:    "",
+	})
+	if err == nil {
+		t.Fatal("expected error for empty exception reason")
+	}
+}
+
+func TestReportException_NotOwner(t *testing.T) {
+	vendorRepo := &mockVendorRepo{
+		vendors: []*vendor.VendorRecord{
+			{ID: domain.VendorID("v-1"), UserID: domain.UserID("user-1"), BusinessName: "Farm 1", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+			{ID: domain.VendorID("v-2"), UserID: domain.UserID("user-2"), BusinessName: "Farm 2", CreatedAt: time.Now(), UpdatedAt: time.Now()},
+		},
+		checkIns: []*vendor.CheckInRecord{
+			{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-2"), MarketID: domain.MarketID("market-1"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		},
+	}
+	resolver := newVendorResolver(vendorRepo)
+	ctx := vendorCtx("user-1", "vendor")
+
+	_, err := resolver.Mutation().ReportException(ctx, model.ExceptionStatusInput{
+		CheckInID: "ci-1",
+		Reason:    "Sold Out",
+	})
+	if err == nil {
+		t.Fatal("expected error when reporting exception on another vendor's check-in")
 	}
 }
 

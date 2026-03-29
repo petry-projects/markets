@@ -10,7 +10,6 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 	"time"
 
 	"github.com/petry-projects/markets-api/internal/auth"
@@ -288,7 +287,11 @@ func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, err
 
 	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
 	if err != nil {
-		return nil, nil // no profile yet
+		if errors.Is(err, vendor.ErrVendorNotFound) {
+			return nil, nil // no profile yet
+		}
+		slog.Error("failed to load vendor profile", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load vendor profile")
 	}
 
 	return vendorToModel(v), nil
@@ -486,5 +489,5 @@ func determineJoinStatus(statuses map[string]bool) model.VendorMarketJoinStatus 
 
 // dbStatusToRosterStatus maps lowercase DB status to uppercase GraphQL VendorRosterStatus.
 func dbStatusToRosterStatus(status string) model.VendorRosterStatus {
-	return model.VendorRosterStatus(strings.ToUpper(status))
+	return rosterStatusToModel(status)
 }

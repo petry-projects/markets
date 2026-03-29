@@ -5,9 +5,7 @@ import ProductForm from '../ProductForm';
 const mockOnSubmit = jest.fn();
 
 function renderProductForm(props = {}) {
-  render(
-    <ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />,
-  );
+  render(<ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />);
 }
 
 beforeEach(() => {

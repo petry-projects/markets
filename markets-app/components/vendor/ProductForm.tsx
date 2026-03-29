@@ -22,10 +22,7 @@ type ProductFormProps = {
 
 type FieldErrors = Partial<Record<keyof ProductFormData, string>>;
 
-function validateField(
-  field: keyof ProductFormData,
-  value: string,
-): string | undefined {
+function validateField(field: keyof ProductFormData, value: string): string | undefined {
   switch (field) {
     case 'name':
       if (!value.trim()) return 'Product name is required';
@@ -40,25 +37,17 @@ const emptyForm: ProductFormData = {
   category: '',
 };
 
-export default function ProductForm({
-  initialData,
-  mode,
-  loading,
-  onSubmit,
-}: ProductFormProps) {
+export default function ProductForm({ initialData, mode, loading, onSubmit }: ProductFormProps) {
   const [form, setForm] = useState({
     ...emptyForm,
     ...initialData,
   });
   const [errors, setErrors] = useState<FieldErrors>({});
 
-  const handleChange = useCallback(
-    (field: keyof ProductFormData, value: string) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    },
-    [],
-  );
+  const handleChange = useCallback((field: keyof ProductFormData, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }, []);
 
   const handleBlur = useCallback(
     (field: keyof ProductFormData) => {
@@ -98,8 +87,12 @@ export default function ProductForm({
             <InputField
               className="px-3 h-12 text-typography-900"
               value={form.name}
-              onChangeText={(v) => { handleChange('name', v); }}
-              onBlur={() => { handleBlur('name'); }}
+              onChangeText={(v) => {
+                handleChange('name', v);
+              }}
+              onBlur={() => {
+                handleBlur('name');
+              }}
               placeholder="Product name"
               accessibilityLabel="Product name"
             />
@@ -110,14 +103,14 @@ export default function ProductForm({
         </VStack>
 
         <VStack className="gap-1">
-          <Text className="text-sm font-medium text-typography-600">
-            Category
-          </Text>
+          <Text className="text-sm font-medium text-typography-600">Category</Text>
           <Input className="rounded-lg border border-outline-200 bg-background-50">
             <InputField
               className="px-3 h-12 text-typography-900"
               value={form.category}
-              onChangeText={(v) => { handleChange('category', v); }}
+              onChangeText={(v) => {
+                handleChange('category', v);
+              }}
               placeholder="e.g., Produce, Dairy, Baked Goods"
               accessibilityLabel="Product category"
             />
@@ -125,14 +118,14 @@ export default function ProductForm({
         </VStack>
 
         <VStack className="gap-1">
-          <Text className="text-sm font-medium text-typography-600">
-            Description
-          </Text>
+          <Text className="text-sm font-medium text-typography-600">Description</Text>
           <Input className="rounded-lg border border-outline-200 bg-background-50">
             <InputField
               className="px-3 h-20 py-2 text-typography-900"
               value={form.description}
-              onChangeText={(v) => { handleChange('description', v); }}
+              onChangeText={(v) => {
+                handleChange('description', v);
+              }}
               placeholder="Describe your product"
               accessibilityLabel="Product description"
               multiline
@@ -144,9 +137,7 @@ export default function ProductForm({
           className="h-14 bg-primary-500 rounded-lg mt-4"
           onPress={handleSubmit}
           disabled={loading}
-          accessibilityLabel={
-            mode === 'create' ? 'Add product' : 'Save product changes'
-          }
+          accessibilityLabel={mode === 'create' ? 'Add product' : 'Save product changes'}
         >
           {loading === true ? (
             <Spinner className="text-white" />

@@ -25,10 +25,7 @@ type VendorProfileFormProps = {
 
 type FieldErrors = Partial<Record<keyof VendorProfileFormData, string>>;
 
-function validateField(
-  field: keyof VendorProfileFormData,
-  value: string,
-): string | undefined {
+function validateField(field: keyof VendorProfileFormData, value: string): string | undefined {
   switch (field) {
     case 'businessName':
       if (!value.trim()) return 'Business name is required';
@@ -58,13 +55,10 @@ export default function VendorProfileForm({
   });
   const [errors, setErrors] = useState<FieldErrors>({});
 
-  const handleChange = useCallback(
-    (field: keyof VendorProfileFormData, value: string) => {
-      setForm((prev) => ({ ...prev, [field]: value }));
-      setErrors((prev) => ({ ...prev, [field]: undefined }));
-    },
-    [],
-  );
+  const handleChange = useCallback((field: keyof VendorProfileFormData, value: string) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+  }, []);
 
   const handleBlur = useCallback(
     (field: keyof VendorProfileFormData) => {
@@ -100,8 +94,12 @@ export default function VendorProfileForm({
           value={form.businessName}
           error={errors.businessName}
           required
-          onChangeText={(v) => { handleChange('businessName', v); }}
-          onBlur={() => { handleBlur('businessName'); }}
+          onChangeText={(v) => {
+            handleChange('businessName', v);
+          }}
+          onBlur={() => {
+            handleBlur('businessName');
+          }}
         />
 
         <FormField
@@ -109,26 +107,30 @@ export default function VendorProfileForm({
           placeholder="Tell customers about your business"
           value={form.description}
           multiline
-          onChangeText={(v) => { handleChange('description', v); }}
+          onChangeText={(v) => {
+            handleChange('description', v);
+          }}
         />
 
         <FormField
           label="Contact Info"
           placeholder="Phone or email"
           value={form.contactInfo}
-          onChangeText={(v) => { handleChange('contactInfo', v); }}
+          onChangeText={(v) => {
+            handleChange('contactInfo', v);
+          }}
         />
 
-        <Heading className="text-lg text-typography-900 mt-2">
-          Social Links (optional)
-        </Heading>
+        <Heading className="text-lg text-typography-900 mt-2">Social Links (optional)</Heading>
 
         <FormField
           label="Instagram Handle"
           placeholder="@yourbusiness"
           value={form.instagramHandle}
           autoCapitalize="none"
-          onChangeText={(v) => { handleChange('instagramHandle', v); }}
+          onChangeText={(v) => {
+            handleChange('instagramHandle', v);
+          }}
         />
 
         <FormField
@@ -136,7 +138,9 @@ export default function VendorProfileForm({
           placeholder="facebook.com/yourbusiness"
           value={form.facebookURL}
           autoCapitalize="none"
-          onChangeText={(v) => { handleChange('facebookURL', v); }}
+          onChangeText={(v) => {
+            handleChange('facebookURL', v);
+          }}
         />
 
         <FormField
@@ -144,16 +148,16 @@ export default function VendorProfileForm({
           placeholder="yourbusiness.com"
           value={form.websiteURL}
           autoCapitalize="none"
-          onChangeText={(v) => { handleChange('websiteURL', v); }}
+          onChangeText={(v) => {
+            handleChange('websiteURL', v);
+          }}
         />
 
         <Button
           className="h-14 bg-primary-500 rounded-lg mt-4"
           onPress={handleSubmit}
           disabled={loading}
-          accessibilityLabel={
-            mode === 'create' ? 'Create profile' : 'Save changes'
-          }
+          accessibilityLabel={mode === 'create' ? 'Create profile' : 'Save changes'}
         >
           {loading === true ? (
             <Spinner className="text-white" />

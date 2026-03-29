@@ -390,19 +390,23 @@ func (r *PgVendorRepository) SearchMarkets(ctx context.Context, searchTerm strin
 		off = *offset
 	}
 
-	query += fmt.Sprintf(" LIMIT %d OFFSET %d", lim, off)
-
+	// Build args list and add parameterized LIMIT/OFFSET
+	var args []any
 	var rows pgx.Rows
 	var qerr error
 	if hasCoords {
 		if radiusKm != nil {
-			rows, qerr = r.pool.Query(ctx, query, searchTerm, nil, nil, *lat, *lng, *radiusKm)
+			query += " LIMIT $7 OFFSET $8"
+			args = []any{searchTerm, nil, nil, *lat, *lng, *radiusKm, lim, off}
 		} else {
-			rows, qerr = r.pool.Query(ctx, query, searchTerm, nil, nil, *lat, *lng)
+			query += " LIMIT $6 OFFSET $7"
+			args = []any{searchTerm, nil, nil, *lat, *lng, lim, off}
 		}
 	} else {
-		rows, qerr = r.pool.Query(ctx, query, searchTerm)
+		query += " LIMIT $2 OFFSET $3"
+		args = []any{searchTerm, lim, off}
 	}
+	rows, qerr = r.pool.Query(ctx, query, args...)
 	if qerr != nil {
 		return nil, fmt.Errorf("search markets: %w", qerr)
 	}

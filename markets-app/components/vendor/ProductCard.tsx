@@ -35,9 +35,7 @@ export default function ProductCard({
         <Box className="flex-row items-start justify-between">
           <VStack className="flex-1 gap-1">
             <Box className="flex-row items-center gap-2">
-              <Heading className="text-base text-typography-900">
-                {name}
-              </Heading>
+              <Heading className="text-base text-typography-900">{name}</Heading>
               {!isAvailable && (
                 <Box className="rounded-full bg-warning-100 px-2 py-0.5">
                   <Text className="text-xs text-warning-700">Unavailable</Text>
@@ -56,7 +54,9 @@ export default function ProductCard({
           {onDelete && (
             <Button
               className="bg-transparent"
-              onPress={() => { onDelete(id); }}
+              onPress={() => {
+                onDelete(id);
+              }}
               accessibilityLabel={`Delete ${name}`}
             >
               <ButtonText className="text-error-600 text-sm">Delete</ButtonText>

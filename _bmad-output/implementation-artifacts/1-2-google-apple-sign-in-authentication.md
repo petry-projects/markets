@@ -1,6 +1,6 @@
 # Story 1.2: Google & Apple Sign-In Authentication
 
-Status: ready-for-dev
+Status: review
 
 ## Story
 
@@ -20,55 +20,55 @@ so that I can access the app without managing a password.
 
 ## Tasks / Subtasks
 
-- [ ] Task 1: Firebase Auth configuration (AC: #1, #2)
-  - [ ] 1.1 Configure Firebase project with Google Sign-In provider
-  - [ ] 1.2 Configure Firebase project with Apple Sign-In provider
-  - [ ] 1.3 Add `@react-native-firebase/auth` and `expo-auth-session` dependencies
-  - [ ] 1.4 Create `lib/firebase.ts` with Firebase Auth initialization
+- [x] Task 1: Firebase Auth configuration (AC: #1, #2)
+  - [x] 1.1 Configure Firebase project with Google Sign-In provider
+  - [x] 1.2 Configure Firebase project with Apple Sign-In provider
+  - [x] 1.3 Add `@react-native-firebase/auth` and `expo-auth-session` dependencies
+  - [x] 1.4 Create `lib/firebase.ts` with Firebase Auth initialization
 
-- [ ] Task 2: Login screen UI (AC: #1, #2)
-  - [ ] 2.1 Create `app/(auth)/login.tsx` login screen
-  - [ ] 2.2 Add "Sign in with Google" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Google"`
-  - [ ] 2.3 Add "Sign in with Apple" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Apple"`
-  - [ ] 2.4 Add loading state indicator during OAuth flow (skeleton/loading, button disabled)
-  - [ ] 2.5 Add user-friendly error message display on auth failure (not raw errors)
+- [x] Task 2: Login screen UI (AC: #1, #2)
+  - [x] 2.1 Create `app/(auth)/login.tsx` login screen
+  - [x] 2.2 Add "Sign in with Google" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Google"`
+  - [x] 2.3 Add "Sign in with Apple" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Apple"`
+  - [x] 2.4 Add loading state indicator during OAuth flow (skeleton/loading, button disabled)
+  - [x] 2.5 Add user-friendly error message display on auth failure (not raw errors)
 
-- [ ] Task 3: Firebase OAuth flow implementation (AC: #1, #2)
-  - [ ] 3.1 Create `hooks/useAuth.ts` hook encapsulating sign-in logic
-  - [ ] 3.2 Implement Google OAuth flow via Firebase Auth SDK
-  - [ ] 3.3 Implement Apple OAuth flow via Firebase Auth SDK
-  - [ ] 3.4 Extract Firebase JWT from successful authentication result
+- [x] Task 3: Firebase OAuth flow implementation (AC: #1, #2)
+  - [x] 3.1 Create `hooks/useAuth.ts` hook encapsulating sign-in logic
+  - [x] 3.2 Implement Google OAuth flow via Firebase Auth SDK
+  - [x] 3.3 Implement Apple OAuth flow via Firebase Auth SDK
+  - [x] 3.4 Extract Firebase JWT from successful authentication result
 
-- [ ] Task 4: JWT storage in expo-secure-store (AC: #1, #2)
-  - [ ] 4.1 Add `expo-secure-store` dependency
-  - [ ] 4.2 Store Firebase JWT in expo-secure-store on successful sign-in (iOS Keychain / Android Keystore backed)
-  - [ ] 4.3 Implement token retrieval for app launch (returning user flow)
-  - [ ] 4.4 Implement token deletion for sign-out
+- [x] Task 4: JWT storage in expo-secure-store (AC: #1, #2)
+  - [x] 4.1 Add `expo-secure-store` dependency
+  - [x] 4.2 Store Firebase JWT in expo-secure-store on successful sign-in (iOS Keychain / Android Keystore backed)
+  - [x] 4.3 Implement token retrieval for app launch (returning user flow)
+  - [x] 4.4 Implement token deletion for sign-out
 
-- [ ] Task 5: Apollo Client auth header configuration (AC: #1)
-  - [ ] 5.1 Update `lib/apollo.ts` to read JWT from expo-secure-store
-  - [ ] 5.2 Configure Apollo Client `authLink` to attach `Authorization: Bearer <JWT>` header on all requests
-  - [ ] 5.3 Handle token refresh / re-authentication when token expires
+- [x] Task 5: Apollo Client auth header configuration (AC: #1)
+  - [x] 5.1 Update `lib/apollo.ts` to read JWT from expo-secure-store
+  - [x] 5.2 Configure Apollo Client `authLink` to attach `Authorization: Bearer <JWT>` header on all requests
+  - [x] 5.3 Handle token refresh / re-authentication when token expires
 
-- [ ] Task 6: Go auth middleware - JWT validation (AC: #3, #4)
-  - [ ] 6.1 Add `firebase.google.com/go/v4` dependency to Go module
-  - [ ] 6.2 Create `internal/auth/middleware.go` with HTTP middleware that validates Firebase JWT via Firebase Admin SDK
-  - [ ] 6.3 Create `internal/auth/claims.go` for custom claim parsing (uid, role extraction)
-  - [ ] 6.4 Populate request context with extracted uid and role for downstream resolver access
-  - [ ] 6.5 Set PostgreSQL session variables (`SET LOCAL app.actor_id`, `SET LOCAL app.actor_role`) per request for audit trigger consumption
-  - [ ] 6.6 Return UNAUTHENTICATED GraphQL error code for invalid, expired, malformed, missing, or wrong-issuer JWTs
+- [x] Task 6: Go auth middleware - JWT validation (AC: #3, #4)
+  - [x] 6.1 Add `firebase.google.com/go/v4` dependency to Go module
+  - [x] 6.2 Create `internal/auth/middleware.go` with HTTP middleware that validates Firebase JWT via Firebase Admin SDK
+  - [x] 6.3 Create `internal/auth/claims.go` for custom claim parsing (uid, role extraction)
+  - [x] 6.4 Populate request context with extracted uid and role for downstream resolver access
+  - [x] 6.5 Set PostgreSQL session variables (`SET LOCAL app.actor_id`, `SET LOCAL app.actor_role`) per request for audit trigger consumption
+  - [x] 6.6 Return UNAUTHENTICATED GraphQL error code for invalid, expired, malformed, missing, or wrong-issuer JWTs
 
-- [ ] Task 7: Error handling (AC: #4)
-  - [ ] 7.1 Implement `gqlError()` helper in Go for structured GraphQL error responses with UNAUTHENTICATED code
-  - [ ] 7.2 Frontend: handle Apollo `onError` for UNAUTHENTICATED responses (redirect to login)
-  - [ ] 7.3 Frontend: display short, action-oriented error messages to users (never raw errors)
+- [x] Task 7: Error handling (AC: #4)
+  - [x] 7.1 Implement `gqlError()` helper in Go for structured GraphQL error responses with UNAUTHENTICATED code
+  - [x] 7.2 Frontend: handle Apollo `onError` for UNAUTHENTICATED responses (redirect to login)
+  - [x] 7.3 Frontend: display short, action-oriented error messages to users (never raw errors)
 
-- [ ] Task 8: Tests (AC: #1, #2, #3, #4)
-  - [ ] 8.1 Write Go unit tests for auth middleware (test cases 1.2.1 - 1.2.6)
-  - [ ] 8.2 Write Go integration test for session variable population (test case 1.2.7)
-  - [ ] 8.3 Write React Native component tests for login screen rendering (test cases 1.2.8, 1.2.9)
-  - [ ] 8.4 Write React Native hook unit tests for token storage and Apollo config (test cases 1.2.10, 1.2.11)
-  - [ ] 8.5 Write React Native component tests for error and loading states (test cases 1.2.12, 1.2.13)
+- [x] Task 8: Tests (AC: #1, #2, #3, #4)
+  - [x] 8.1 Write Go unit tests for auth middleware (test cases 1.2.1 - 1.2.6)
+  - [x] 8.2 Write Go integration test for session variable population (test case 1.2.7)
+  - [x] 8.3 Write React Native component tests for login screen rendering (test cases 1.2.8, 1.2.9)
+  - [x] 8.4 Write React Native hook unit tests for token storage and Apollo config (test cases 1.2.10, 1.2.11)
+  - [x] 8.5 Write React Native component tests for error and loading states (test cases 1.2.12, 1.2.13)
 
 ## Dev Notes
 
@@ -217,10 +217,59 @@ func (m *Middleware) extractUser(token *auth.Token) (UserID, string, error) {
 
 ### Agent Model Used
 
-<!-- To be filled by implementing agent -->
+Claude Opus 4.6 (1M context)
 
 ### Debug Log References
 
+- rxjs needed as peer dependency for Apollo Client 4.x in Jest environment
+- @react-native-firebase/auth required --legacy-peer-deps due to canary Expo SDK version
+
 ### Completion Notes List
 
+- Task 1: Installed @react-native-firebase/app, @react-native-firebase/auth, expo-auth-session, expo-crypto, @react-native-google-signin/google-signin, expo-apple-authentication. Updated lib/firebase.ts with Firebase Auth initialization.
+- Task 2: Created login screen at app/(auth)/login.tsx with Google and Apple sign-in buttons using Gluestack UI components. Apple button only shown on iOS (Platform.OS check). Loading state disables buttons and shows "Signing in..." text. Error display with dismissible alert box. All interactive elements have accessibilityLabel.
+- Task 3: Created hooks/useAuth.ts with sign-in logic for Google (via @react-native-google-signin) and Apple (via expo-apple-authentication), Firebase credential exchange, JWT extraction. Error messages are user-friendly (never raw).
+- Task 4: Created lib/tokenStorage.ts wrapping expo-secure-store for JWT persistence. Supports store, get, and delete operations. Used by useAuth hook on sign-in/sign-out and app launch token restoration.
+- Task 5: Updated lib/apollo.ts with setAuthToken/getAuthToken for in-memory token management, authLink injects Bearer header on all requests, errorLink redirects to login on UNAUTHENTICATED errors. Token refresh handled via Firebase Auth onAuthStateChanged listener in useAuth.
+- Task 6: Enhanced middleware.go to use gqlerr package for structured JSON error responses. Created claims.go with ExtractUser anti-corruption layer mapping Firebase claims to domain.UserID. session.go (existing from 1.1b) already handles PostgreSQL session variables.
+- Task 7: Created internal/gqlerr/errors.go with Unauthenticated() and Forbidden() helpers producing structured GraphQL error JSON with extension codes. Frontend errorLink in Apollo handles redirect on UNAUTHENTICATED. useAuth hook maps all errors to user-friendly messages.
+- Task 8: Go: 14 unit tests covering test cases 1.2.1-1.2.6 plus edge cases, 3 gqlerr tests, 5 claims tests, 1 integration test (build-tagged). Frontend: 10 login component tests (1.2.8, 1.2.9, 1.2.12, 1.2.13), 4 tokenStorage tests (1.2.10), 3 apollo auth tests (1.2.11).
+
+### Implementation Plan
+
+- Used @react-native-firebase/auth + @react-native-google-signin for Google OAuth and expo-apple-authentication for Apple OAuth
+- In-memory token pattern in Apollo Client avoids async SecureStore reads per request
+- Firebase onAuthStateChanged listener handles token refresh automatically
+- Anti-corruption layer in claims.go maps Firebase UID to domain.UserID typed ID
+- gqlerr package provides reusable structured GraphQL error responses
+
 ### File List
+
+**New files:**
+- markets-app/app/(auth)/login.tsx
+- markets-app/app/(auth)/__tests__/login.test.tsx
+- markets-app/hooks/useAuth.ts
+- markets-app/lib/tokenStorage.ts
+- markets-app/lib/__tests__/tokenStorage.test.ts
+- markets-app/lib/__tests__/apollo.test.ts
+- markets-app/components/ui/vstack/index.tsx
+- markets-api/internal/auth/claims.go
+- markets-api/internal/auth/claims_test.go
+- markets-api/internal/auth/session_integration_test.go
+- markets-api/internal/gqlerr/errors.go
+- markets-api/internal/gqlerr/errors_test.go
+
+**Modified files:**
+- markets-app/lib/firebase.ts
+- markets-app/lib/apollo.ts
+- markets-app/app/(auth)/index.tsx
+- markets-app/app/(auth)/_layout.tsx
+- markets-app/app/_layout.tsx
+- markets-app/package.json
+- markets-app/package-lock.json
+- markets-api/internal/auth/middleware.go
+- markets-api/internal/auth/middleware_test.go
+
+### Change Log
+
+- 2026-03-28: Implemented Story 1.2 - Google & Apple Sign-In Authentication (all 8 tasks, all ACs satisfied)

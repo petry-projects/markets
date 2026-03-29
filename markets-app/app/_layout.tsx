@@ -9,26 +9,13 @@ import 'react-native-reanimated';
 
 import { GluestackUIProvider } from '@/components/gluestack-ui-provider';
 import { apolloClient } from '@/lib/apollo';
+import { useAuth, type UserRole } from '@/hooks/useAuth';
 import '../global.css';
 
 export { ErrorBoundary } from 'expo-router';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 void SplashScreen.preventAutoHideAsync();
-
-/**
- * Placeholder role type - will be replaced with real auth in Story 1.2.
- */
-type UserRole = 'customer' | 'vendor' | 'manager' | null;
-
-/**
- * Placeholder auth hook - will be replaced with real auth in Story 1.2.
- */
-function useAuth(): { isAuthenticated: boolean; role: UserRole } {
-  // Default to customer for scaffolding verification.
-  // Story 1.2 will implement real Firebase Auth here.
-  return { isAuthenticated: true, role: 'customer' };
-}
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
@@ -55,25 +42,21 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const colorScheme = useColorScheme();
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, isLoading, role } = useAuth();
   const segments = useSegments();
   const router = useRouter();
 
   useEffect(() => {
+    if (isLoading) return;
+
     const inAuthGroup = segments[0] === '(auth)';
 
     if (!isAuthenticated && !inAuthGroup) {
-      router.replace('/(auth)');
+      router.replace('/(auth)/login');
     } else if (isAuthenticated && inAuthGroup) {
-      if (role === 'vendor') {
-        router.replace('/(vendor)/markets');
-      } else if (role === 'manager') {
-        router.replace('/(manager)/dashboard');
-      } else {
-        router.replace('/(customer)/discover');
-      }
+      redirectToRoleScreen(router, role);
     }
-  }, [isAuthenticated, role, segments, router]);
+  }, [isAuthenticated, isLoading, role, segments, router]);
 
   return (
     <ApolloProvider client={apolloClient}>
@@ -86,4 +69,17 @@ function RootLayoutNav() {
       </GluestackUIProvider>
     </ApolloProvider>
   );
+}
+
+function redirectToRoleScreen(
+  routerInstance: ReturnType<typeof useRouter>,
+  role: UserRole,
+): void {
+  if (role === 'vendor') {
+    routerInstance.replace('/(vendor)/markets');
+  } else if (role === 'manager') {
+    routerInstance.replace('/(manager)/dashboard');
+  } else {
+    routerInstance.replace('/(customer)/discover');
+  }
 }

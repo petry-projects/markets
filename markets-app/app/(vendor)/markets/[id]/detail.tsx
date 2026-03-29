@@ -205,6 +205,7 @@ export default function MarketDetailScreen() {
               onPress={() => toggleDate(date)}
               accessibilityLabel={`Select ${date}`}
               accessibilityRole="checkbox"
+              accessibilityState={{ checked: selectedDates.has(date) }}
             >
               <Box
                 className={`rounded-lg border p-3 ${
@@ -248,6 +249,7 @@ export default function MarketDetailScreen() {
             onPress={() => setRulesAcknowledged(!rulesAcknowledged)}
             accessibilityLabel="I acknowledge the market rules"
             accessibilityRole="checkbox"
+            accessibilityState={{ checked: rulesAcknowledged }}
           >
             <Box className="flex-row items-center gap-3">
               <Box

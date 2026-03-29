@@ -38,8 +38,8 @@ type Repository interface {
 	// SearchMarkets searches markets with optional distance filtering.
 	SearchMarkets(ctx context.Context, searchTerm string, lat, lng, radiusKm *float64, limit, offset *int32) ([]MarketSearchRow, error)
 
-	// GetVendorMarketDates returns roster entries for a vendor grouped by market.
-	GetVendorMarketDates(ctx context.Context, vendorID domain.VendorID) ([]VendorMarketDateRow, error)
+	// GetVendorMarketDates returns roster entries for a vendor (by user ID, since vendor_roster references users).
+	GetVendorMarketDates(ctx context.Context, userID domain.UserID) ([]VendorMarketDateRow, error)
 }
 
 // MarketSearchRow is a database result for market search queries.

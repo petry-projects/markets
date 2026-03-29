@@ -6,7 +6,6 @@ import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
 import ProductForm, { ProductFormData } from '@/components/vendor/ProductForm';
 import {
-  VendorProductsDocument,
   UpdateProductDocument,
   MyVendorProfileDocument,
 } from '@/graphql/generated/graphql';

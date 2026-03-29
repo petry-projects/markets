@@ -2,6 +2,8 @@ package graph_test
 
 import (
 	"context"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/petry-projects/markets-api/internal/auth"
@@ -13,6 +15,8 @@ import (
 func contextWithRole(role string) context.Context {
 	return auth.WithUser(context.Background(), "test-uid", role)
 }
+
+func int32Ptr(v int32) *int32 { return &v }
 
 // assertForbidden checks that the error is a *gqlerror.Error with FORBIDDEN code.
 func assertForbidden(t *testing.T, err error) {
@@ -48,13 +52,17 @@ func assertNotForbidden(t *testing.T, err error) {
 }
 
 // callResolverExpectingPanic calls a function that should pass the role check
-// but then panic with "not implemented". Returns true if it panicked (meaning
-// it passed the role check).
+// but then panic with "not implemented". Verifies the panic message contains
+// "not implemented" to avoid silently swallowing unrelated panics.
 func callResolverExpectingPanic(t *testing.T, name string, fn func() error) {
 	t.Helper()
 	defer func() {
-		if r := recover(); r != nil {
-			// Expected: resolver passed role check and hit "not implemented" panic
+		r := recover()
+		if r != nil {
+			msg := fmt.Sprintf("%v", r)
+			if !strings.Contains(strings.ToLower(msg), "not implemented") {
+				t.Fatalf("%s: unexpected panic (expected 'not implemented'): %v", name, r)
+			}
 			return
 		}
 	}()
@@ -89,7 +97,7 @@ func TestRoleEnforcement_VendorCallingUpdateRosterStatus_Forbidden(t *testing.T)
 	r, _, _, _ := newTestResolver()
 	ctx := contextWithRole("vendor")
 
-	_, err := r.Mutation().UpdateRosterStatus(ctx, "roster-1", model.RosterStatusApproved)
+	_, err := r.Mutation().UpdateRosterStatus(ctx, "roster-1", model.VendorRosterStatusApproved)
 	assertForbidden(t, err)
 }
 
@@ -205,11 +213,11 @@ func TestRoleEnforcement_AllResolversRequireRole(t *testing.T) {
 			return e
 		}},
 		{"AddMarketSchedule", func() error {
-			_, e := r.Mutation().AddMarketSchedule(emptyCtx, model.AddScheduleInput{MarketID: "m1", DayOfWeek: 1, StartTime: "08:00", EndTime: "14:00"})
+			_, e := r.Mutation().AddMarketSchedule(emptyCtx, model.AddScheduleInput{MarketID: "m1", ScheduleType: model.ScheduleTypeRecurring, DayOfWeek: int32Ptr(1), StartTime: "08:00", EndTime: "14:00"})
 			return e
 		}},
 		{"UpdateRosterStatus", func() error {
-			_, e := r.Mutation().UpdateRosterStatus(emptyCtx, "r1", model.RosterStatusApproved)
+			_, e := r.Mutation().UpdateRosterStatus(emptyCtx, "r1", model.VendorRosterStatusApproved)
 			return e
 		}},
 
@@ -280,7 +288,7 @@ func TestRoleEnforcement_CustomerCallingUpdateRosterStatus_Forbidden(t *testing.
 	r, _, _, _ := newTestResolver()
 	ctx := contextWithRole("customer")
 
-	_, err := r.Mutation().UpdateRosterStatus(ctx, "roster-1", model.RosterStatusApproved)
+	_, err := r.Mutation().UpdateRosterStatus(ctx, "roster-1", model.VendorRosterStatusApproved)
 	assertForbidden(t, err)
 }
 
@@ -300,7 +308,7 @@ func TestRoleEnforcement_CustomerCallingAddMarketSchedule_Forbidden(t *testing.T
 
 	_, err := r.Mutation().AddMarketSchedule(ctx, model.AddScheduleInput{
 		MarketID:  "m1",
-		DayOfWeek: 1,
+		ScheduleType: model.ScheduleTypeRecurring, DayOfWeek: int32Ptr(1),
 		StartTime: "08:00",
 		EndTime:   "14:00",
 	})
@@ -309,11 +317,13 @@ func TestRoleEnforcement_CustomerCallingAddMarketSchedule_Forbidden(t *testing.T
 
 // Vendor can access shared queries (market, vendor detail)
 func TestRoleEnforcement_VendorCanAccessSharedQueries(t *testing.T) {
-	r, _, _, _ := newTestResolver()
+	// Market resolver is implemented — use market-aware resolver to avoid nil pointer
+	r, _, _ := newMarketTestResolver()
 	ctx := contextWithRole("vendor")
 
-	callResolverExpectingPanic(t, "market", func() error {
-		_, err := r.Query().Market(ctx, "m1")
-		return err
-	})
+	result, err := r.Query().Market(ctx, "m1")
+	assertNotForbidden(t, err)
+	if result == nil && err == nil {
+		t.Fatal("expected non-nil result for vendor accessing shared query")
+	}
 }

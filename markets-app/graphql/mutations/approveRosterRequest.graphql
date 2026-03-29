@@ -1,0 +1,7 @@
+mutation ApproveRosterRequest($id: ID!) {
+  approveRosterRequest(id: $id) {
+    id
+    status
+    updatedAt
+  }
+}

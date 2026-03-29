@@ -10,10 +10,17 @@ import (
 )
 
 type AddScheduleInput struct {
-	MarketID  string `json:"marketID"`
-	DayOfWeek int32  `json:"dayOfWeek"`
-	StartTime string `json:"startTime"`
-	EndTime   string `json:"endTime"`
+	MarketID     string       `json:"marketID"`
+	ScheduleType ScheduleType `json:"scheduleType"`
+	DayOfWeek    *int32       `json:"dayOfWeek,omitempty"`
+	Frequency    *string      `json:"frequency,omitempty"`
+	SeasonStart  *string      `json:"seasonStart,omitempty"`
+	SeasonEnd    *string      `json:"seasonEnd,omitempty"`
+	EventName    *string      `json:"eventName,omitempty"`
+	EventDate    *string      `json:"eventDate,omitempty"`
+	StartTime    string       `json:"startTime"`
+	EndTime      string       `json:"endTime"`
+	Label        *string      `json:"label,omitempty"`
 }
 
 type AuditLogConnection struct {
@@ -65,12 +72,17 @@ type CheckInInput struct {
 }
 
 type CreateMarketInput struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
-	Address     string  `json:"address"`
-	Latitude    float64 `json:"latitude"`
-	Longitude   float64 `json:"longitude"`
-	ImageURL    *string `json:"imageURL,omitempty"`
+	Name         string            `json:"name"`
+	Description  *string           `json:"description,omitempty"`
+	Address      string            `json:"address"`
+	Latitude     float64           `json:"latitude"`
+	Longitude    float64           `json:"longitude"`
+	ContactEmail string            `json:"contactEmail"`
+	ContactPhone *string           `json:"contactPhone,omitempty"`
+	SocialLinks  *SocialLinksInput `json:"socialLinks,omitempty"`
+	ImageURL     *string           `json:"imageURL,omitempty"`
+	// Recovery contact for the creating manager (email or phone). Required per FR41b.
+	RecoveryContact string `json:"recoveryContact"`
 }
 
 type CreateProductInput struct {
@@ -143,26 +155,55 @@ type LoginInput struct {
 // Market profile, schedule, and roster types.
 // Managed by Market Managers.
 type Market struct {
-	ID          string               `json:"id"`
-	Name        string               `json:"name"`
-	Description *string              `json:"description,omitempty"`
-	Address     string               `json:"address"`
-	Latitude    float64              `json:"latitude"`
-	Longitude   float64              `json:"longitude"`
-	ImageURL    *string              `json:"imageURL,omitempty"`
-	Managers    []*User              `json:"managers"`
-	Schedule    []*MarketSchedule    `json:"schedule"`
-	Vendors     []*VendorRosterEntry `json:"vendors"`
-	CreatedAt   string               `json:"createdAt"`
-	UpdatedAt   string               `json:"updatedAt"`
+	ID                  string               `json:"id"`
+	Name                string               `json:"name"`
+	Description         *string              `json:"description,omitempty"`
+	Address             string               `json:"address"`
+	Latitude            float64              `json:"latitude"`
+	Longitude           float64              `json:"longitude"`
+	ContactEmail        string               `json:"contactEmail"`
+	ContactPhone        *string              `json:"contactPhone,omitempty"`
+	SocialLinks         *SocialLinks         `json:"socialLinks,omitempty"`
+	ImageURL            *string              `json:"imageURL,omitempty"`
+	RulesText           *string              `json:"rulesText,omitempty"`
+	RulesUpdatedAt      *string              `json:"rulesUpdatedAt,omitempty"`
+	Status              MarketStatus         `json:"status"`
+	CancellationReason  *string              `json:"cancellationReason,omitempty"`
+	CancellationMessage *string              `json:"cancellationMessage,omitempty"`
+	CancelledAt         *string              `json:"cancelledAt,omitempty"`
+	Managers            []*User              `json:"managers"`
+	Schedule            []*MarketSchedule    `json:"schedule"`
+	Vendors             []*VendorRosterEntry `json:"vendors"`
+	CreatedAt           string               `json:"createdAt"`
+	UpdatedAt           string               `json:"updatedAt"`
+}
+
+// Planning view for a future market date.
+type MarketDayPlan struct {
+	Date             string               `json:"date"`
+	VendorCount      int32                `json:"vendorCount"`
+	CommittedVendors []*VendorRosterEntry `json:"committedVendors"`
+	PendingRequests  []*VendorRosterEntry `json:"pendingRequests"`
 }
 
 type MarketSchedule struct {
-	ID        string `json:"id"`
-	MarketID  string `json:"marketID"`
-	DayOfWeek int32  `json:"dayOfWeek"`
-	StartTime string `json:"startTime"`
-	EndTime   string `json:"endTime"`
+	ID           string       `json:"id"`
+	MarketID     string       `json:"marketID"`
+	ScheduleType ScheduleType `json:"scheduleType"`
+	// Day of week (0=Sunday, 6=Saturday). Only for RECURRING.
+	DayOfWeek   *int32  `json:"dayOfWeek,omitempty"`
+	Frequency   *string `json:"frequency,omitempty"`
+	SeasonStart *string `json:"seasonStart,omitempty"`
+	SeasonEnd   *string `json:"seasonEnd,omitempty"`
+	// Event name. Only for ONE_TIME.
+	EventName *string `json:"eventName,omitempty"`
+	// Specific date. Only for ONE_TIME.
+	EventDate *string `json:"eventDate,omitempty"`
+	StartTime string  `json:"startTime"`
+	EndTime   string  `json:"endTime"`
+	Label     *string `json:"label,omitempty"`
+	CreatedAt string  `json:"createdAt"`
+	UpdatedAt string  `json:"updatedAt"`
 }
 
 // Root Mutation type - extended by each domain schema.
@@ -209,13 +250,30 @@ type SignUpInput struct {
 	Role          Role   `json:"role"`
 }
 
+type SocialLinks struct {
+	Instagram *string `json:"instagram,omitempty"`
+	Facebook  *string `json:"facebook,omitempty"`
+	Website   *string `json:"website,omitempty"`
+	Twitter   *string `json:"twitter,omitempty"`
+}
+
+type SocialLinksInput struct {
+	Instagram *string `json:"instagram,omitempty"`
+	Facebook  *string `json:"facebook,omitempty"`
+	Website   *string `json:"website,omitempty"`
+	Twitter   *string `json:"twitter,omitempty"`
+}
+
 type UpdateMarketInput struct {
-	Name        *string  `json:"name,omitempty"`
-	Description *string  `json:"description,omitempty"`
-	Address     *string  `json:"address,omitempty"`
-	Latitude    *float64 `json:"latitude,omitempty"`
-	Longitude   *float64 `json:"longitude,omitempty"`
-	ImageURL    *string  `json:"imageURL,omitempty"`
+	Name         *string           `json:"name,omitempty"`
+	Description  *string           `json:"description,omitempty"`
+	Address      *string           `json:"address,omitempty"`
+	Latitude     *float64          `json:"latitude,omitempty"`
+	Longitude    *float64          `json:"longitude,omitempty"`
+	ContactEmail *string           `json:"contactEmail,omitempty"`
+	ContactPhone *string           `json:"contactPhone,omitempty"`
+	SocialLinks  *SocialLinksInput `json:"socialLinks,omitempty"`
+	ImageURL     *string           `json:"imageURL,omitempty"`
 }
 
 type UpdateNotificationPreferencesInput struct {
@@ -231,6 +289,18 @@ type UpdateProductInput struct {
 	Category    *string `json:"category,omitempty"`
 	ImageURL    *string `json:"imageURL,omitempty"`
 	IsAvailable *bool   `json:"isAvailable,omitempty"`
+}
+
+type UpdateScheduleInput struct {
+	DayOfWeek   *int32  `json:"dayOfWeek,omitempty"`
+	Frequency   *string `json:"frequency,omitempty"`
+	SeasonStart *string `json:"seasonStart,omitempty"`
+	SeasonEnd   *string `json:"seasonEnd,omitempty"`
+	EventName   *string `json:"eventName,omitempty"`
+	EventDate   *string `json:"eventDate,omitempty"`
+	StartTime   *string `json:"startTime,omitempty"`
+	EndTime     *string `json:"endTime,omitempty"`
+	Label       *string `json:"label,omitempty"`
 }
 
 type UpdateVendorProfileInput struct {
@@ -262,13 +332,97 @@ type Vendor struct {
 	UpdatedAt    string     `json:"updatedAt"`
 }
 
+type VendorInvitation struct {
+	ID          string           `json:"id"`
+	MarketID    string           `json:"marketID"`
+	VendorID    string           `json:"vendorID"`
+	InvitedBy   string           `json:"invitedBy"`
+	Status      InvitationStatus `json:"status"`
+	TargetDates []string         `json:"targetDates,omitempty"`
+	Message     *string          `json:"message,omitempty"`
+	CreatedAt   string           `json:"createdAt"`
+	UpdatedAt   string           `json:"updatedAt"`
+}
+
+type VendorNotification struct {
+	ID       string `json:"id"`
+	MarketID string `json:"marketID"`
+	SenderID string `json:"senderID"`
+	Message  string `json:"message"`
+	SentAt   string `json:"sentAt"`
+}
+
 type VendorRosterEntry struct {
-	ID       string       `json:"id"`
-	MarketID string       `json:"marketID"`
-	VendorID string       `json:"vendorID"`
-	Vendor   *Vendor      `json:"vendor"`
-	Status   RosterStatus `json:"status"`
-	Date     string       `json:"date"`
+	ID                string             `json:"id"`
+	MarketID          string             `json:"marketID"`
+	VendorID          string             `json:"vendorID"`
+	Vendor            *Vendor            `json:"vendor"`
+	Status            VendorRosterStatus `json:"status"`
+	Date              string             `json:"date"`
+	InvitedBy         *string            `json:"invitedBy,omitempty"`
+	RejectionReason   *string            `json:"rejectionReason,omitempty"`
+	RulesAcknowledged bool               `json:"rulesAcknowledged"`
+	CreatedAt         string             `json:"createdAt"`
+	UpdatedAt         string             `json:"updatedAt"`
+}
+
+type CancellationReason string
+
+const (
+	CancellationReasonWeather       CancellationReason = "WEATHER"
+	CancellationReasonEmergency     CancellationReason = "EMERGENCY"
+	CancellationReasonLowAttendance CancellationReason = "LOW_ATTENDANCE"
+	CancellationReasonOther         CancellationReason = "OTHER"
+)
+
+var AllCancellationReason = []CancellationReason{
+	CancellationReasonWeather,
+	CancellationReasonEmergency,
+	CancellationReasonLowAttendance,
+	CancellationReasonOther,
+}
+
+func (e CancellationReason) IsValid() bool {
+	switch e {
+	case CancellationReasonWeather, CancellationReasonEmergency, CancellationReasonLowAttendance, CancellationReasonOther:
+		return true
+	}
+	return false
+}
+
+func (e CancellationReason) String() string {
+	return string(e)
+}
+
+func (e *CancellationReason) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = CancellationReason(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid CancellationReason", str)
+	}
+	return nil
+}
+
+func (e CancellationReason) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *CancellationReason) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e CancellationReason) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
 }
 
 type CheckInStatus string
@@ -378,6 +532,120 @@ func (e *FollowTargetType) UnmarshalJSON(b []byte) error {
 }
 
 func (e FollowTargetType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type InvitationStatus string
+
+const (
+	InvitationStatusPending  InvitationStatus = "PENDING"
+	InvitationStatusAccepted InvitationStatus = "ACCEPTED"
+	InvitationStatusDeclined InvitationStatus = "DECLINED"
+)
+
+var AllInvitationStatus = []InvitationStatus{
+	InvitationStatusPending,
+	InvitationStatusAccepted,
+	InvitationStatusDeclined,
+}
+
+func (e InvitationStatus) IsValid() bool {
+	switch e {
+	case InvitationStatusPending, InvitationStatusAccepted, InvitationStatusDeclined:
+		return true
+	}
+	return false
+}
+
+func (e InvitationStatus) String() string {
+	return string(e)
+}
+
+func (e *InvitationStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = InvitationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid InvitationStatus", str)
+	}
+	return nil
+}
+
+func (e InvitationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *InvitationStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e InvitationStatus) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type MarketStatus string
+
+const (
+	MarketStatusActive     MarketStatus = "ACTIVE"
+	MarketStatusCancelled  MarketStatus = "CANCELLED"
+	MarketStatusEndedEarly MarketStatus = "ENDED_EARLY"
+)
+
+var AllMarketStatus = []MarketStatus{
+	MarketStatusActive,
+	MarketStatusCancelled,
+	MarketStatusEndedEarly,
+}
+
+func (e MarketStatus) IsValid() bool {
+	switch e {
+	case MarketStatusActive, MarketStatusCancelled, MarketStatusEndedEarly:
+		return true
+	}
+	return false
+}
+
+func (e MarketStatus) String() string {
+	return string(e)
+}
+
+func (e *MarketStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = MarketStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid MarketStatus", str)
+	}
+	return nil
+}
+
+func (e MarketStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *MarketStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e MarketStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil
@@ -497,50 +765,48 @@ func (e Role) MarshalJSON() ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-type RosterStatus string
+type ScheduleType string
 
 const (
-	RosterStatusPending  RosterStatus = "PENDING"
-	RosterStatusApproved RosterStatus = "APPROVED"
-	RosterStatusRejected RosterStatus = "REJECTED"
+	ScheduleTypeRecurring ScheduleType = "RECURRING"
+	ScheduleTypeOneTime   ScheduleType = "ONE_TIME"
 )
 
-var AllRosterStatus = []RosterStatus{
-	RosterStatusPending,
-	RosterStatusApproved,
-	RosterStatusRejected,
+var AllScheduleType = []ScheduleType{
+	ScheduleTypeRecurring,
+	ScheduleTypeOneTime,
 }
 
-func (e RosterStatus) IsValid() bool {
+func (e ScheduleType) IsValid() bool {
 	switch e {
-	case RosterStatusPending, RosterStatusApproved, RosterStatusRejected:
+	case ScheduleTypeRecurring, ScheduleTypeOneTime:
 		return true
 	}
 	return false
 }
 
-func (e RosterStatus) String() string {
+func (e ScheduleType) String() string {
 	return string(e)
 }
 
-func (e *RosterStatus) UnmarshalGQL(v any) error {
+func (e *ScheduleType) UnmarshalGQL(v any) error {
 	str, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("enums must be strings")
 	}
 
-	*e = RosterStatus(str)
+	*e = ScheduleType(str)
 	if !e.IsValid() {
-		return fmt.Errorf("%s is not a valid RosterStatus", str)
+		return fmt.Errorf("%s is not a valid ScheduleType", str)
 	}
 	return nil
 }
 
-func (e RosterStatus) MarshalGQL(w io.Writer) {
+func (e ScheduleType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
-func (e *RosterStatus) UnmarshalJSON(b []byte) error {
+func (e *ScheduleType) UnmarshalJSON(b []byte) error {
 	s, err := strconv.Unquote(string(b))
 	if err != nil {
 		return err
@@ -548,7 +814,70 @@ func (e *RosterStatus) UnmarshalJSON(b []byte) error {
 	return e.UnmarshalGQL(s)
 }
 
-func (e RosterStatus) MarshalJSON() ([]byte, error) {
+func (e ScheduleType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type VendorRosterStatus string
+
+const (
+	VendorRosterStatusPending      VendorRosterStatus = "PENDING"
+	VendorRosterStatusApproved     VendorRosterStatus = "APPROVED"
+	VendorRosterStatusRejected     VendorRosterStatus = "REJECTED"
+	VendorRosterStatusInvited      VendorRosterStatus = "INVITED"
+	VendorRosterStatusCommitted    VendorRosterStatus = "COMMITTED"
+	VendorRosterStatusNotAttending VendorRosterStatus = "NOT_ATTENDING"
+)
+
+var AllVendorRosterStatus = []VendorRosterStatus{
+	VendorRosterStatusPending,
+	VendorRosterStatusApproved,
+	VendorRosterStatusRejected,
+	VendorRosterStatusInvited,
+	VendorRosterStatusCommitted,
+	VendorRosterStatusNotAttending,
+}
+
+func (e VendorRosterStatus) IsValid() bool {
+	switch e {
+	case VendorRosterStatusPending, VendorRosterStatusApproved, VendorRosterStatusRejected, VendorRosterStatusInvited, VendorRosterStatusCommitted, VendorRosterStatusNotAttending:
+		return true
+	}
+	return false
+}
+
+func (e VendorRosterStatus) String() string {
+	return string(e)
+}
+
+func (e *VendorRosterStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = VendorRosterStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid VendorRosterStatus", str)
+	}
+	return nil
+}
+
+func (e VendorRosterStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *VendorRosterStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e VendorRosterStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

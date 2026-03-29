@@ -1,0 +1,10 @@
+mutation CancelMarket($marketID: ID!, $reason: CancellationReason!, $message: String) {
+  cancelMarket(marketID: $marketID, reason: $reason, message: $message) {
+    id
+    status
+    cancellationReason
+    cancellationMessage
+    cancelledAt
+    updatedAt
+  }
+}

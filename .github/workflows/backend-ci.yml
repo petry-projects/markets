@@ -18,6 +18,7 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -35,6 +36,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
 
@@ -43,26 +45,36 @@ jobs:
           go-version: '1.23'
           cache-dependency-path: markets-api/go.sum
 
-      - name: Run tests
+      - name: Run tests with race detector
         run: |
-          # Test non-generated packages with coverage
-          go test $(go list ./... | grep -v /generated) -short -count=1 -coverprofile=coverage.out
+          go test $(go list ./... | grep -v /generated) \
+            -short -count=1 -race -coverprofile=coverage.out
 
-      - name: Report coverage
+      - name: Enforce coverage threshold
         run: |
           # Exclude generated code from coverage calculation
           grep -v 'internal/graph/generated/' coverage.out > coverage-filtered.out || true
           grep -v 'models_gen.go' coverage-filtered.out > coverage-clean.out || true
           COVERAGE=$(go tool cover -func=coverage-clean.out | grep total | awk '{print $3}' | tr -d '%')
           echo "Total coverage (excluding generated): ${COVERAGE}%"
-          # TODO: Enforce 80% coverage threshold per coding-standards.md once real
-          # business logic exists. During scaffolding phase the coverage is low
-          # because generated resolver stubs and infrastructure wiring dominate the
-          # codebase. Re-enable the gate when domain logic is implemented.
+          THRESHOLD=60
+          if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
+            echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
+            exit 1
+          fi
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: markets-api/coverage-clean.out
+          retention-days: 14
 
   build:
     name: Build
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -77,6 +89,7 @@ jobs:
   schema-validate:
     name: Schema Validation
     runs-on: ubuntu-latest
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 

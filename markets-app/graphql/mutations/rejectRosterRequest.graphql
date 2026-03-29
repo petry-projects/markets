@@ -1,0 +1,8 @@
+mutation RejectRosterRequest($id: ID!, $reason: String) {
+  rejectRosterRequest(id: $id, reason: $reason) {
+    id
+    status
+    rejectionReason
+    updatedAt
+  }
+}

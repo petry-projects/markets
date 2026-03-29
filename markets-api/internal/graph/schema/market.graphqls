@@ -10,7 +10,16 @@ type Market {
   address: String!
   latitude: Float!
   longitude: Float!
+  contactEmail: String!
+  contactPhone: String
+  socialLinks: SocialLinks
   imageURL: String
+  rulesText: String
+  rulesUpdatedAt: String
+  status: MarketStatus!
+  cancellationReason: String
+  cancellationMessage: String
+  cancelledAt: String
   managers: [User!]!
   schedule: [MarketSchedule!]!
   vendors: [VendorRosterEntry!]!
@@ -18,12 +27,57 @@ type Market {
   updatedAt: String!
 }
 
+enum MarketStatus {
+  ACTIVE
+  CANCELLED
+  ENDED_EARLY
+}
+
+enum CancellationReason {
+  WEATHER
+  EMERGENCY
+  LOW_ATTENDANCE
+  OTHER
+}
+
+type VendorNotification {
+  id: ID!
+  marketID: ID!
+  senderID: ID!
+  message: String!
+  sentAt: String!
+}
+
+type SocialLinks {
+  instagram: String
+  facebook: String
+  website: String
+  twitter: String
+}
+
 type MarketSchedule {
   id: ID!
   marketID: ID!
-  dayOfWeek: Int!
+  scheduleType: ScheduleType!
+  """Day of week (0=Sunday, 6=Saturday). Only for RECURRING."""
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  """Event name. Only for ONE_TIME."""
+  eventName: String
+  """Specific date. Only for ONE_TIME."""
+  eventDate: String
   startTime: String!
   endTime: String!
+  label: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum ScheduleType {
+  RECURRING
+  ONE_TIME
 }
 
 type VendorRosterEntry {
@@ -31,14 +85,48 @@ type VendorRosterEntry {
   marketID: ID!
   vendorID: ID!
   vendor: Vendor!
-  status: RosterStatus!
+  status: VendorRosterStatus!
   date: String!
+  invitedBy: ID
+  rejectionReason: String
+  rulesAcknowledged: Boolean!
+  createdAt: String!
+  updatedAt: String!
 }
 
-enum RosterStatus {
+enum VendorRosterStatus {
   PENDING
   APPROVED
   REJECTED
+  INVITED
+  COMMITTED
+  NOT_ATTENDING
+}
+
+type VendorInvitation {
+  id: ID!
+  marketID: ID!
+  vendorID: ID!
+  invitedBy: ID!
+  status: InvitationStatus!
+  targetDates: [String!]
+  message: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+"""Planning view for a future market date."""
+type MarketDayPlan {
+  date: String!
+  vendorCount: Int!
+  committedVendors: [VendorRosterEntry!]!
+  pendingRequests: [VendorRosterEntry!]!
 }
 
 input CreateMarketInput {
@@ -47,7 +135,12 @@ input CreateMarketInput {
   address: String!
   latitude: Float!
   longitude: Float!
+  contactEmail: String!
+  contactPhone: String
+  socialLinks: SocialLinksInput
   imageURL: String
+  """Recovery contact for the creating manager (email or phone). Required per FR41b."""
+  recoveryContact: String!
 }
 
 input UpdateMarketInput {
@@ -56,14 +149,43 @@ input UpdateMarketInput {
   address: String
   latitude: Float
   longitude: Float
+  contactEmail: String
+  contactPhone: String
+  socialLinks: SocialLinksInput
   imageURL: String
+}
+
+input SocialLinksInput {
+  instagram: String
+  facebook: String
+  website: String
+  twitter: String
 }
 
 input AddScheduleInput {
   marketID: ID!
-  dayOfWeek: Int!
+  scheduleType: ScheduleType!
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  eventName: String
+  eventDate: String
   startTime: String!
   endTime: String!
+  label: String
+}
+
+input UpdateScheduleInput {
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  eventName: String
+  eventDate: String
+  startTime: String
+  endTime: String
+  label: String
 }
 
 extend type Query {
@@ -72,6 +194,21 @@ extend type Query {
 
   """List all markets, optionally filtered by proximity."""
   markets(latitude: Float, longitude: Float, radiusMiles: Float, limit: Int, offset: Int): [Market!]!
+
+  """List markets managed by the current user (Manager only)."""
+  myMarkets: [Market!]!
+
+  """Get the vendor roster for a market on a specific date (Manager only)."""
+  marketRoster(marketID: ID!, date: String!): [VendorRosterEntry!]!
+
+  """Get planning view for a range of future market dates (Manager only)."""
+  marketDayPlans(marketID: ID!, startDate: String!, endDate: String!): [MarketDayPlan!]!
+
+  """List invitations for the current vendor."""
+  myInvitations: [VendorInvitation!]!
+
+  """Search vendors by name or category (Manager only)."""
+  searchVendors(query: String!, category: String, limit: Int): [Vendor!]!
 }
 
 extend type Mutation {
@@ -84,8 +221,47 @@ extend type Mutation {
   """Add a schedule entry to a market (Manager only)."""
   addMarketSchedule(input: AddScheduleInput!): MarketSchedule!
 
-  """Approve or reject a vendor roster request (Manager only)."""
-  updateRosterStatus(id: ID!, status: RosterStatus!): VendorRosterEntry!
+  """Update a schedule entry (Manager only)."""
+  updateMarketSchedule(id: ID!, input: UpdateScheduleInput!): MarketSchedule!
+
+  """Delete a schedule entry (Manager only)."""
+  deleteMarketSchedule(id: ID!): Boolean!
+
+  """Update market rules text (Manager only)."""
+  updateMarketRules(marketID: ID!, rulesText: String!): Market!
+
+  """Send a notification to all rostered vendors (Manager only)."""
+  sendVendorNotification(marketID: ID!, message: String!): VendorNotification!
+
+  """Cancel a market day or end it early (Manager only)."""
+  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String): Market!
+
+  """Reactivate a cancelled market (Manager only)."""
+  reactivateMarket(marketID: ID!): Market!
+
+  """Invite a vendor to a market (Manager only)."""
+  inviteVendor(marketID: ID!, vendorID: ID!, targetDates: [String!], message: String): VendorInvitation!
+
+  """Respond to an invitation (Vendor only)."""
+  respondToInvitation(invitationID: ID!, accept: Boolean!): VendorInvitation!
+
+  """Request to join a market roster for specific dates (Vendor only)."""
+  requestToJoinMarket(marketID: ID!, dates: [String!]!, acknowledgeRules: Boolean!): [VendorRosterEntry!]!
+
+  """Approve a vendor roster request (Manager only)."""
+  approveRosterRequest(id: ID!): VendorRosterEntry!
+
+  """Reject a vendor roster request with optional reason (Manager only)."""
+  rejectRosterRequest(id: ID!, reason: String): VendorRosterEntry!
+
+  """Add a vendor directly to the roster (Manager only)."""
+  addVendorToRoster(marketID: ID!, vendorID: ID!, dates: [String!]!): [VendorRosterEntry!]!
+
+  """Remove a vendor from the roster (Manager only)."""
+  removeVendorFromRoster(id: ID!): Boolean!
+
+  """Approve or reject a vendor roster request (Manager only). @deprecated Use approveRosterRequest/rejectRosterRequest instead."""
+  updateRosterStatus(id: ID!, status: VendorRosterStatus!): VendorRosterEntry!
 
   """Assign a manager to a market (Admin only)."""
   assignManager(managerID: ID!, marketID: ID!): Boolean!

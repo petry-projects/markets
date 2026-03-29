@@ -1,0 +1,12 @@
+query MarketRoster($marketID: ID!, $date: String!) {
+  marketRoster(marketID: $marketID, date: $date) {
+    id
+    marketID
+    vendorID
+    status
+    date
+    rulesAcknowledged
+    createdAt
+    updatedAt
+  }
+}

@@ -1,0 +1,7 @@
+mutation ReactivateMarket($marketID: ID!) {
+  reactivateMarket(marketID: $marketID) {
+    id
+    status
+    updatedAt
+  }
+}

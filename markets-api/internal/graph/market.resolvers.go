@@ -8,7 +8,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 
 	"github.com/petry-projects/markets-api/internal/auth"
@@ -20,70 +19,57 @@ import (
 	"github.com/petry-projects/markets-api/internal/market"
 )
 
-// checkManagerScope verifies that the current user (if role == "manager") is assigned
-// to the specified market. Returns a GraphQL error if not authorized, or nil if OK.
-// Non-manager roles pass through (scope enforcement is for managers only).
-func (r *mutationResolver) checkManagerScope(ctx context.Context, marketID domain.MarketID) error {
-	role := auth.RoleFromContext(ctx)
-	if role != "manager" {
-		return nil
-	}
-
-	uid := auth.UserIDFromContext(ctx)
-	if uid == "" {
-		return gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
-	}
-
-	if r.MarketRepo == nil {
-		return gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
-	}
-
-	assigned, err := r.MarketRepo.IsManagerAssigned(ctx, domain.UserID(uid), marketID)
-	if err != nil {
-		slog.Error("failed to verify market access", "error", err, "userID", uid, "marketID", marketID)
-		return gqlerr.NewError(gqlerr.CodeInternal, "failed to verify market access")
-	}
-	if !assigned {
-		return gqlerr.NewError(gqlerr.CodeForbidden, "not authorized for this market")
-	}
-
-	return nil
-}
-
-// checkQueryManagerScope is the query-resolver equivalent of checkManagerScope.
-func (r *queryResolver) checkQueryManagerScope(ctx context.Context, marketID domain.MarketID) error {
-	role := auth.RoleFromContext(ctx)
-	if role != "manager" {
-		return nil
-	}
-
-	uid := auth.UserIDFromContext(ctx)
-	if uid == "" {
-		return gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
-	}
-
-	if r.MarketRepo == nil {
-		return gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
-	}
-
-	assigned, err := r.MarketRepo.IsManagerAssigned(ctx, domain.UserID(uid), marketID)
-	if err != nil {
-		slog.Error("failed to verify market access", "error", err, "userID", uid, "marketID", marketID)
-		return gqlerr.NewError(gqlerr.CodeInternal, "failed to verify market access")
-	}
-	if !assigned {
-		return gqlerr.NewError(gqlerr.CodeForbidden, "not authorized for this market")
-	}
-
-	return nil
-}
-
 // CreateMarket is the resolver for the createMarket field.
 func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error) {
 	if err := auth.RequireRole(ctx, "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: CreateMarket - createMarket"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	// Build domain aggregate with validation
+	socialLinks := market.SocialLinks{}
+	if input.SocialLinks != nil {
+		socialLinks = market.SocialLinks{
+			Instagram: ptrToString(input.SocialLinks.Instagram),
+			Facebook:  ptrToString(input.SocialLinks.Facebook),
+			Website:   ptrToString(input.SocialLinks.Website),
+			Twitter:   ptrToString(input.SocialLinks.Twitter),
+		}
+	}
+
+	m, err := market.NewMarket(market.NewMarketParams{
+		Name:         input.Name,
+		Description:  ptrToString(input.Description),
+		Address:      input.Address,
+		Latitude:     input.Latitude,
+		Longitude:    input.Longitude,
+		ContactEmail: input.ContactEmail,
+		ContactPhone: ptrToString(input.ContactPhone),
+		SocialLinks:  socialLinks,
+		ImageURL:     ptrToString(input.ImageURL),
+	})
+	if err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	// Persist market and assign creating manager atomically
+	created, err := r.MarketRepo.CreateMarket(ctx, m, domain.UserID(uid), input.RecoveryContact)
+	if err != nil {
+		slog.Error("failed to create market", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to create market")
+	}
+
+	// Publish domain event after successful DB write
+	r.EventBus.Publish(ctx, events.MarketCreated{
+		MarketID:  created.ID.String(),
+		ManagerID: uid,
+	})
+
+	return marketToModel(created), nil
 }
 
 // UpdateMarket is the resolver for the updateMarket field.
@@ -95,7 +81,55 @@ func (r *mutationResolver) UpdateMarket(ctx context.Context, id string, input mo
 	if err := r.checkManagerScope(ctx, domain.MarketID(id)); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: UpdateMarket - updateMarket"))
+
+	// Load existing market
+	existing, err := r.MarketRepo.FindMarketByID(ctx, domain.MarketID(id))
+	if err != nil {
+		if errors.Is(err, db.ErrMarketNotFound) {
+			return nil, gqlerr.NewError(gqlerr.CodeValidationError, "market not found")
+		}
+		slog.Error("failed to load market", "error", err, "marketID", id)
+		return nil, gqlerr.Internal("failed to load market")
+	}
+
+	// Apply partial updates
+	var socialLinks *market.SocialLinks
+	if input.SocialLinks != nil {
+		socialLinks = &market.SocialLinks{
+			Instagram: ptrToString(input.SocialLinks.Instagram),
+			Facebook:  ptrToString(input.SocialLinks.Facebook),
+			Website:   ptrToString(input.SocialLinks.Website),
+			Twitter:   ptrToString(input.SocialLinks.Twitter),
+		}
+	}
+
+	if err := existing.Update(market.UpdateParams{
+		Name:         input.Name,
+		Description:  input.Description,
+		Address:      input.Address,
+		Latitude:     input.Latitude,
+		Longitude:    input.Longitude,
+		ContactEmail: input.ContactEmail,
+		ContactPhone: input.ContactPhone,
+		SocialLinks:  socialLinks,
+		ImageURL:     input.ImageURL,
+	}); err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	// Persist updated market
+	updated, err := r.MarketRepo.UpdateMarket(ctx, existing)
+	if err != nil {
+		slog.Error("failed to update market", "error", err, "marketID", id)
+		return nil, gqlerr.Internal("failed to update market")
+	}
+
+	// Publish domain event after successful DB write
+	r.EventBus.Publish(ctx, events.MarketUpdated{
+		MarketID: updated.ID.String(),
+	})
+
+	return marketToModel(updated), nil
 }
 
 // AddMarketSchedule is the resolver for the addMarketSchedule field.
@@ -103,19 +137,373 @@ func (r *mutationResolver) AddMarketSchedule(ctx context.Context, input model.Ad
 	if err := auth.RequireRole(ctx, "manager"); err != nil {
 		return nil, err
 	}
-	// Scope check: manager must be assigned to this market
 	if err := r.checkManagerScope(ctx, domain.MarketID(input.MarketID)); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: AddMarketSchedule - addMarketSchedule"))
+
+	s, err := market.NewSchedule(market.NewScheduleParams{
+		MarketID:     domain.MarketID(input.MarketID),
+		ScheduleType: string(input.ScheduleType),
+		DayOfWeek:    input.DayOfWeek,
+		Frequency:    ptrToString(input.Frequency),
+		SeasonStart:  ptrToString(input.SeasonStart),
+		SeasonEnd:    ptrToString(input.SeasonEnd),
+		EventName:    ptrToString(input.EventName),
+		EventDate:    ptrToString(input.EventDate),
+		StartTime:    input.StartTime,
+		EndTime:      input.EndTime,
+		Label:        ptrToString(input.Label),
+	})
+	if err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	created, err := r.MarketRepo.CreateSchedule(ctx, s)
+	if err != nil {
+		slog.Error("failed to create schedule", "error", err)
+		return nil, gqlerr.Internal("failed to create schedule")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketUpdated{MarketID: input.MarketID})
+	return scheduleToModel(created), nil
 }
 
-// UpdateRosterStatus is the resolver for the updateRosterStatus field.
-func (r *mutationResolver) UpdateRosterStatus(ctx context.Context, id string, status model.RosterStatus) (*model.VendorRosterEntry, error) {
+// UpdateMarketSchedule is the resolver for the updateMarketSchedule field.
+func (r *mutationResolver) UpdateMarketSchedule(ctx context.Context, id string, input model.UpdateScheduleInput) (*model.MarketSchedule, error) {
 	if err := auth.RequireRole(ctx, "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: UpdateRosterStatus - updateRosterStatus"))
+
+	existing, err := r.MarketRepo.FindScheduleByID(ctx, domain.MarketID(id))
+	if err != nil {
+		if errors.Is(err, db.ErrScheduleNotFound) {
+			return nil, gqlerr.NewError(gqlerr.CodeValidationError, "schedule not found")
+		}
+		return nil, gqlerr.Internal("failed to load schedule")
+	}
+
+	if err := r.checkManagerScope(ctx, existing.MarketID); err != nil {
+		return nil, err
+	}
+
+	existing.UpdateSchedule(market.UpdateScheduleParams{
+		DayOfWeek:   input.DayOfWeek,
+		Frequency:   input.Frequency,
+		SeasonStart: input.SeasonStart,
+		SeasonEnd:   input.SeasonEnd,
+		EventName:   input.EventName,
+		EventDate:   input.EventDate,
+		StartTime:   input.StartTime,
+		EndTime:     input.EndTime,
+		Label:       input.Label,
+	})
+
+	updated, err := r.MarketRepo.UpdateSchedule(ctx, existing)
+	if err != nil {
+		slog.Error("failed to update schedule", "error", err)
+		return nil, gqlerr.Internal("failed to update schedule")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketUpdated{MarketID: existing.MarketID.String()})
+	return scheduleToModel(updated), nil
+}
+
+// DeleteMarketSchedule is the resolver for the deleteMarketSchedule field.
+func (r *mutationResolver) DeleteMarketSchedule(ctx context.Context, id string) (bool, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return false, err
+	}
+
+	existing, err := r.MarketRepo.FindScheduleByID(ctx, domain.MarketID(id))
+	if err != nil {
+		if errors.Is(err, db.ErrScheduleNotFound) {
+			return false, gqlerr.NewError(gqlerr.CodeValidationError, "schedule not found")
+		}
+		return false, gqlerr.Internal("failed to load schedule")
+	}
+
+	if err := r.checkManagerScope(ctx, existing.MarketID); err != nil {
+		return false, err
+	}
+
+	if err := r.MarketRepo.DeleteSchedule(ctx, domain.MarketID(id)); err != nil {
+		slog.Error("failed to delete schedule", "error", err)
+		return false, gqlerr.Internal("failed to delete schedule")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketUpdated{MarketID: existing.MarketID.String()})
+	return true, nil
+}
+
+// UpdateMarketRules is the resolver for the updateMarketRules field.
+func (r *mutationResolver) UpdateMarketRules(ctx context.Context, marketID string, rulesText string) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	updated, err := r.MarketRepo.UpdateMarketRules(ctx, domain.MarketID(marketID), rulesText)
+	if err != nil {
+		slog.Error("failed to update market rules", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to update market rules")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketUpdated{MarketID: marketID})
+	return marketToModel(updated), nil
+}
+
+// SendVendorNotification is the resolver for the sendVendorNotification field.
+func (r *mutationResolver) SendVendorNotification(ctx context.Context, marketID string, message string) (*model.VendorNotification, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	n := &market.NotificationRecord{
+		MarketID: domain.MarketID(marketID),
+		SenderID: domain.UserID(uid),
+		Message:  message,
+	}
+
+	created, err := r.MarketRepo.CreateNotification(ctx, n)
+	if err != nil {
+		slog.Error("failed to create notification", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to send notification")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorNotificationSent{
+		MarketID: marketID,
+		SenderID: uid,
+		Message:  message,
+	})
+
+	return &model.VendorNotification{
+		ID:       created.ID,
+		MarketID: marketID,
+		SenderID: uid,
+		Message:  created.Message,
+		SentAt:   created.SentAt.Format("2006-01-02T15:04:05Z07:00"),
+	}, nil
+}
+
+// CancelMarket is the resolver for the cancelMarket field.
+func (r *mutationResolver) CancelMarket(ctx context.Context, marketID string, reason model.CancellationReason, message *string) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	status := "cancelled"
+	if reason == model.CancellationReasonOther {
+		status = "ended_early"
+	}
+
+	msg := ""
+	if message != nil {
+		msg = *message
+	}
+
+	updated, err := r.MarketRepo.CancelMarket(ctx, domain.MarketID(marketID), status, string(reason), msg)
+	if err != nil {
+		slog.Error("failed to cancel market", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to cancel market")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketCancelled{
+		MarketID: marketID,
+		Reason:   string(reason),
+		Message:  msg,
+	})
+
+	return marketToModel(updated), nil
+}
+
+// ReactivateMarket is the resolver for the reactivateMarket field.
+func (r *mutationResolver) ReactivateMarket(ctx context.Context, marketID string) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	updated, err := r.MarketRepo.ReactivateMarket(ctx, domain.MarketID(marketID))
+	if err != nil {
+		slog.Error("failed to reactivate market", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to reactivate market")
+	}
+
+	r.EventBus.Publish(ctx, events.MarketUpdated{MarketID: marketID})
+	return marketToModel(updated), nil
+}
+
+// InviteVendor is the resolver for the inviteVendor field.
+func (r *mutationResolver) InviteVendor(ctx context.Context, marketID string, vendorID string, targetDates []string, message *string) (*model.VendorInvitation, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	inv, err := r.MarketRepo.CreateInvitation(ctx, &market.InvitationRecord{
+		MarketID:    domain.MarketID(marketID),
+		VendorID:    domain.UserID(vendorID),
+		InvitedBy:   domain.UserID(uid),
+		TargetDates: targetDates,
+		Message:     ptrToString(message),
+	})
+	if err != nil {
+		slog.Error("failed to create invitation", "error", err)
+		return nil, gqlerr.Internal("failed to invite vendor")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorInvited{MarketID: marketID, VendorID: vendorID})
+	return invitationToModel(inv), nil
+}
+
+// RespondToInvitation is the resolver for the respondToInvitation field.
+func (r *mutationResolver) RespondToInvitation(ctx context.Context, invitationID string, accept bool) (*model.VendorInvitation, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
+
+	status := "declined"
+	if accept {
+		status = "accepted"
+	}
+
+	inv, err := r.MarketRepo.UpdateInvitationStatus(ctx, invitationID, status)
+	if err != nil {
+		slog.Error("failed to respond to invitation", "error", err)
+		return nil, gqlerr.Internal("failed to respond to invitation")
+	}
+
+	return invitationToModel(inv), nil
+}
+
+// RequestToJoinMarket is the resolver for the requestToJoinMarket field.
+func (r *mutationResolver) RequestToJoinMarket(ctx context.Context, marketID string, dates []string, acknowledgeRules bool) ([]*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
+	if !acknowledgeRules {
+		return nil, gqlerr.ValidationError("you must acknowledge the market rules")
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(uid), dates, "pending")
+	if err != nil {
+		slog.Error("failed to create roster entries", "error", err)
+		return nil, gqlerr.Internal("failed to request to join market")
+	}
+
+	result := make([]*model.VendorRosterEntry, len(entries))
+	for i, e := range entries {
+		result[i] = rosterEntryToModel(e)
+	}
+	return result, nil
+}
+
+// ApproveRosterRequest is the resolver for the approveRosterRequest field.
+func (r *mutationResolver) ApproveRosterRequest(ctx context.Context, id string) (*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if _, err := r.checkRosterScope(ctx, id); err != nil {
+		return nil, err
+	}
+
+	entry, err := r.MarketRepo.UpdateRosterEntryStatus(ctx, id, "approved")
+	if err != nil {
+		slog.Error("failed to approve roster request", "error", err)
+		return nil, gqlerr.Internal("failed to approve request")
+	}
+
+	return rosterEntryToModel(entry), nil
+}
+
+// RejectRosterRequest is the resolver for the rejectRosterRequest field.
+func (r *mutationResolver) RejectRosterRequest(ctx context.Context, id string, reason *string) (*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if _, err := r.checkRosterScope(ctx, id); err != nil {
+		return nil, err
+	}
+
+	entry, err := r.MarketRepo.RejectRosterEntry(ctx, id, ptrToString(reason))
+	if err != nil {
+		slog.Error("failed to reject roster request", "error", err)
+		return nil, gqlerr.Internal("failed to reject request")
+	}
+
+	return rosterEntryToModel(entry), nil
+}
+
+// AddVendorToRoster is the resolver for the addVendorToRoster field.
+func (r *mutationResolver) AddVendorToRoster(ctx context.Context, marketID string, vendorID string, dates []string) ([]*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(vendorID), dates, "approved")
+	if err != nil {
+		slog.Error("failed to add vendor to roster", "error", err)
+		return nil, gqlerr.Internal("failed to add vendor to roster")
+	}
+
+	result := make([]*model.VendorRosterEntry, len(entries))
+	for i, e := range entries {
+		result[i] = rosterEntryToModel(e)
+	}
+	return result, nil
+}
+
+// RemoveVendorFromRoster is the resolver for the removeVendorFromRoster field.
+func (r *mutationResolver) RemoveVendorFromRoster(ctx context.Context, id string) (bool, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return false, err
+	}
+	if _, err := r.checkRosterScope(ctx, id); err != nil {
+		return false, err
+	}
+
+	if err := r.MarketRepo.DeleteRosterEntry(ctx, id); err != nil {
+		slog.Error("failed to remove vendor from roster", "error", err)
+		return false, gqlerr.Internal("failed to remove vendor")
+	}
+
+	return true, nil
+}
+
+// UpdateRosterStatus is the resolver for the updateRosterStatus field.
+func (r *mutationResolver) UpdateRosterStatus(ctx context.Context, id string, status model.VendorRosterStatus) (*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if _, err := r.checkRosterScope(ctx, id); err != nil {
+		return nil, err
+	}
+
+	entry, err := r.MarketRepo.UpdateRosterEntryStatus(ctx, id, string(status))
+	if err != nil {
+		slog.Error("failed to update roster status", "error", err)
+		return nil, gqlerr.Internal("failed to update roster status")
+	}
+
+	return rosterEntryToModel(entry), nil
 }
 
 // AssignManager is the resolver for the assignManager field.
@@ -221,11 +609,17 @@ func (r *queryResolver) Market(ctx context.Context, id string) (*model.Market, e
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	// Scope check: manager must be assigned to this market
-	if err := r.checkQueryManagerScope(ctx, domain.MarketID(id)); err != nil {
-		return nil, err
+
+	m, err := r.MarketRepo.FindMarketByID(ctx, domain.MarketID(id))
+	if err != nil {
+		if errors.Is(err, db.ErrMarketNotFound) {
+			return nil, nil
+		}
+		slog.Error("failed to find market", "error", err, "marketID", id)
+		return nil, gqlerr.Internal("failed to load market")
 	}
-	panic(fmt.Errorf("not implemented: Market - market"))
+
+	return marketToModel(m), nil
 }
 
 // Markets is the resolver for the markets field.
@@ -233,5 +627,144 @@ func (r *queryResolver) Markets(ctx context.Context, latitude *float64, longitud
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: Markets - markets"))
+
+	markets, err := r.MarketRepo.ListMarkets(ctx, limit, offset)
+	if err != nil {
+		slog.Error("failed to list markets", "error", err)
+		return nil, gqlerr.Internal("failed to list markets")
+	}
+
+	result := make([]*model.Market, len(markets))
+	for i, m := range markets {
+		result[i] = marketToModel(m)
+	}
+	return result, nil
+}
+
+// MyMarkets is the resolver for the myMarkets field.
+func (r *queryResolver) MyMarkets(ctx context.Context) ([]*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	markets, err := r.MarketRepo.FindMarketsByManagerID(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to find markets by manager", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load markets")
+	}
+
+	result := make([]*model.Market, len(markets))
+	for i, m := range markets {
+		result[i] = marketToModel(m)
+	}
+	return result, nil
+}
+
+// MarketRoster is the resolver for the marketRoster field.
+func (r *queryResolver) MarketRoster(ctx context.Context, marketID string, date string) ([]*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkQueryManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	entries, err := r.MarketRepo.GetRosterByDate(ctx, domain.MarketID(marketID), date)
+	if err != nil {
+		slog.Error("failed to get roster", "error", err)
+		return nil, gqlerr.Internal("failed to load roster")
+	}
+
+	result := make([]*model.VendorRosterEntry, len(entries))
+	for i, e := range entries {
+		result[i] = rosterEntryToModel(e)
+	}
+	return result, nil
+}
+
+// MarketDayPlans is the resolver for the marketDayPlans field.
+func (r *queryResolver) MarketDayPlans(ctx context.Context, marketID string, startDate string, endDate string) ([]*model.MarketDayPlan, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+	if err := r.checkQueryManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return nil, err
+	}
+
+	plans, err := r.MarketRepo.GetDayPlans(ctx, domain.MarketID(marketID), startDate, endDate)
+	if err != nil {
+		slog.Error("failed to get day plans", "error", err)
+		return nil, gqlerr.Internal("failed to load day plans")
+	}
+
+	result := make([]*model.MarketDayPlan, len(plans))
+	for i, p := range plans {
+		committed := make([]*model.VendorRosterEntry, len(p.CommittedVendors))
+		for j, e := range p.CommittedVendors {
+			committed[j] = rosterEntryToModel(e)
+		}
+		pending := make([]*model.VendorRosterEntry, len(p.PendingRequests))
+		for j, e := range p.PendingRequests {
+			pending[j] = rosterEntryToModel(e)
+		}
+		result[i] = &model.MarketDayPlan{
+			Date:             p.Date,
+			VendorCount:      int32(p.VendorCount),
+			CommittedVendors: committed,
+			PendingRequests:  pending,
+		}
+	}
+	return result, nil
+}
+
+// MyInvitations is the resolver for the myInvitations field.
+func (r *queryResolver) MyInvitations(ctx context.Context) ([]*model.VendorInvitation, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	invitations, err := r.MarketRepo.GetInvitationsByVendor(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to get invitations", "error", err)
+		return nil, gqlerr.Internal("failed to load invitations")
+	}
+
+	result := make([]*model.VendorInvitation, len(invitations))
+	for i, inv := range invitations {
+		result[i] = invitationToModel(inv)
+	}
+	return result, nil
+}
+
+// SearchVendors is the resolver for the searchVendors field.
+func (r *queryResolver) SearchVendors(ctx context.Context, query string, category *string, limit *int32) ([]*model.Vendor, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+
+	vendors, err := r.MarketRepo.SearchVendors(ctx, query, ptrToString(category), limit)
+	if err != nil {
+		slog.Error("failed to search vendors", "error", err)
+		return nil, gqlerr.Internal("failed to search vendors")
+	}
+
+	result := make([]*model.Vendor, len(vendors))
+	for i, v := range vendors {
+		result[i] = &model.Vendor{
+			ID:           v.ID,
+			UserID:       v.UserID,
+			BusinessName: v.BusinessName,
+			Description:  stringToPtr(v.Description),
+			ImageURL:     stringToPtr(v.ImageURL),
+			Products:     []*model.Product{},
+			CheckIns:     []*model.CheckIn{},
+		}
+	}
+	return result, nil
 }

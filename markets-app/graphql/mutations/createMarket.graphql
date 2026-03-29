@@ -1,0 +1,21 @@
+mutation CreateMarket($input: CreateMarketInput!) {
+  createMarket(input: $input) {
+    id
+    name
+    description
+    address
+    latitude
+    longitude
+    contactEmail
+    contactPhone
+    socialLinks {
+      instagram
+      facebook
+      website
+      twitter
+    }
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

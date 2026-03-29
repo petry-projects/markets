@@ -1,0 +1,18 @@
+query FollowingFeed($limit: Int, $offset: Int) {
+  followingFeed(limit: $limit, offset: $offset) {
+    id
+    type
+    vendor {
+      id
+      businessName
+      imageURL
+    }
+    market {
+      id
+      name
+      address
+    }
+    timestamp
+    message
+  }
+}

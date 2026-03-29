@@ -7,6 +7,7 @@ import (
 	"github.com/petry-projects/markets-api/internal/events"
 	"github.com/petry-projects/markets-api/internal/market"
 	"github.com/petry-projects/markets-api/internal/user"
+	"github.com/petry-projects/markets-api/internal/vendor"
 )
 
 // Resolver is the root resolver struct with injected dependencies.
@@ -16,6 +17,7 @@ type Resolver struct {
 	EventBus     *events.Bus
 	UserRepo     user.Repository
 	MarketRepo   market.Repository
+	VendorRepo   vendor.Repository
 	ClaimsSetter auth.ClaimsSetter
 }
 
@@ -36,6 +38,18 @@ func NewResolverWithMarketRepo(pool *pgxpool.Pool, eventBus *events.Bus, userRep
 		EventBus:     eventBus,
 		UserRepo:     userRepo,
 		MarketRepo:   marketRepo,
+		ClaimsSetter: claimsSetter,
+	}
+}
+
+// NewResolverWithVendorRepo creates a new Resolver with all dependencies including vendor repo.
+func NewResolverWithVendorRepo(pool *pgxpool.Pool, eventBus *events.Bus, userRepo user.Repository, claimsSetter auth.ClaimsSetter, marketRepo market.Repository, vendorRepo vendor.Repository) *Resolver {
+	return &Resolver{
+		Pool:         pool,
+		EventBus:     eventBus,
+		UserRepo:     userRepo,
+		MarketRepo:   marketRepo,
+		VendorRepo:   vendorRepo,
 		ClaimsSetter: claimsSetter,
 	}
 }

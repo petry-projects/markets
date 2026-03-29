@@ -90,3 +90,45 @@ type VendorInvited struct {
 
 // EventType returns the dotted event type string.
 func (e VendorInvited) EventType() string { return "vendor.invited" }
+
+// VendorProfileCreated is published when a vendor creates their profile.
+type VendorProfileCreated struct {
+	VendorID string
+	UserID   string
+}
+
+// EventType returns the dotted event type string.
+func (e VendorProfileCreated) EventType() string { return "vendor.profile.created" }
+
+// VendorProfileUpdated is published when a vendor updates their profile.
+type VendorProfileUpdated struct {
+	VendorID string
+}
+
+// EventType returns the dotted event type string.
+func (e VendorProfileUpdated) EventType() string { return "vendor.profile.updated" }
+
+// ProductCreated is published when a vendor adds a product.
+type ProductCreated struct {
+	ProductID string
+	VendorID  string
+}
+
+// EventType returns the dotted event type string.
+func (e ProductCreated) EventType() string { return "product.created" }
+
+// ProductUpdated is published when a vendor updates a product.
+type ProductUpdated struct {
+	ProductID string
+}
+
+// EventType returns the dotted event type string.
+func (e ProductUpdated) EventType() string { return "product.updated" }
+
+// ProductDeleted is published when a vendor deletes a product.
+type ProductDeleted struct {
+	ProductID string
+}
+
+// EventType returns the dotted event type string.
+func (e ProductDeleted) EventType() string { return "product.deleted" }

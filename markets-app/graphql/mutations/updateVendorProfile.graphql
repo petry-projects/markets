@@ -1,0 +1,15 @@
+mutation UpdateVendorProfile($input: UpdateVendorProfileInput!) {
+  updateVendorProfile(input: $input) {
+    id
+    userID
+    businessName
+    description
+    contactInfo
+    instagramHandle
+    facebookURL
+    websiteURL
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

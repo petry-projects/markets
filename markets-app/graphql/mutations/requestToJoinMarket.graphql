@@ -1,0 +1,11 @@
+mutation RequestToJoinMarket($marketID: ID!, $dates: [String!]!, $acknowledgeRules: Boolean!) {
+  requestToJoinMarket(marketID: $marketID, dates: $dates, acknowledgeRules: $acknowledgeRules) {
+    id
+    marketID
+    vendorID
+    status
+    date
+    rulesAcknowledged
+    createdAt
+  }
+}

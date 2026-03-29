@@ -29,17 +29,21 @@ var validRoles = map[model.Role]string{
 
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
-	panic(fmt.Errorf("not implemented: Login - login"))
+	// Login is handled by Firebase Auth on the client side.
+	// This resolver exists for schema completeness but is not used in the current flow.
+	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
 }
 
 // SignUp is the resolver for the signUp field.
 func (r *mutationResolver) SignUp(ctx context.Context, input model.SignUpInput) (*model.AuthPayload, error) {
-	panic(fmt.Errorf("not implemented: SignUp - signUp"))
+	// SignUp is handled by Firebase Auth on the client side.
+	// This resolver exists for schema completeness but is not used in the current flow.
+	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
 }
 
 // CreateUser is the resolver for the createUser field.
 func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error) {
-	// Extract authenticated user from context (set by auth middleware)
+	// CreateUser requires authentication but not a specific role (new users have no role yet)
 	firebaseUID := auth.UserIDFromContext(ctx)
 	if firebaseUID == "" {
 		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
@@ -111,5 +115,8 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
-	panic(fmt.Errorf("not implemented: Me - me"))
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
+	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
 }

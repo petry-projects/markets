@@ -32,6 +32,7 @@ export default function CustomerLayout() {
       <Tabs.Screen name="onboarding" options={{ href: null }} />
       <Tabs.Screen name="market/[id]" options={{ href: null }} />
       <Tabs.Screen name="vendor/[id]" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

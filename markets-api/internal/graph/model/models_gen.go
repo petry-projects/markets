@@ -9,6 +9,18 @@ import (
 	"strconv"
 )
 
+// Activity feed item representing an action in the system.
+type ActivityFeedItem struct {
+	ID         string  `json:"id"`
+	ActorID    string  `json:"actorID"`
+	ActionType string  `json:"actionType"`
+	TargetType string  `json:"targetType"`
+	TargetID   string  `json:"targetID"`
+	MarketID   *string `json:"marketID,omitempty"`
+	Message    string  `json:"message"`
+	CreatedAt  string  `json:"createdAt"`
+}
+
 type AddScheduleInput struct {
 	MarketID     string       `json:"marketID"`
 	ScheduleType ScheduleType `json:"scheduleType"`
@@ -321,6 +333,7 @@ type UpdateMarketInput struct {
 	ImageURL     *string           `json:"imageURL,omitempty"`
 }
 
+// Input for updating notification preferences.
 type UpdateNotificationPreferencesInput struct {
 	PushEnabled         *bool `json:"pushEnabled,omitempty"`
 	VendorCheckInAlerts *bool `json:"vendorCheckInAlerts,omitempty"`
@@ -732,16 +745,18 @@ type Platform string
 const (
 	PlatformIos     Platform = "IOS"
 	PlatformAndroid Platform = "ANDROID"
+	PlatformWeb     Platform = "WEB"
 )
 
 var AllPlatform = []Platform{
 	PlatformIos,
 	PlatformAndroid,
+	PlatformWeb,
 }
 
 func (e Platform) IsValid() bool {
 	switch e {
-	case PlatformIos, PlatformAndroid:
+	case PlatformIos, PlatformAndroid, PlatformWeb:
 		return true
 	}
 	return false

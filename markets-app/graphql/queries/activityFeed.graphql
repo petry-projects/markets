@@ -1,0 +1,12 @@
+query ActivityFeed($limit: Int, $offset: Int) {
+  activityFeed(limit: $limit, offset: $offset) {
+    id
+    actorID
+    actionType
+    targetType
+    targetID
+    marketID
+    message
+    createdAt
+  }
+}

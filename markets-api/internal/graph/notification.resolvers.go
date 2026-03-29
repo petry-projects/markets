@@ -7,10 +7,15 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"log/slog"
+	"strings"
 
 	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/domain"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/model"
+	"github.com/petry-projects/markets-api/internal/notify"
 )
 
 // UpdateNotificationPreferences is the resolver for the updateNotificationPreferences field.
@@ -18,7 +23,52 @@ func (r *mutationResolver) UpdateNotificationPreferences(ctx context.Context, in
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: UpdateNotificationPreferences - updateNotificationPreferences"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return nil, gqlerr.Internal("notification repository not configured")
+	}
+
+	// Fetch existing prefs or start with defaults
+	existing, err := r.NotifyRepo.GetNotificationPrefs(ctx, domain.UserID(uid))
+	if err != nil && !errors.Is(err, notify.ErrPrefsNotFound) {
+		slog.Error("failed to get notification prefs", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load notification preferences")
+	}
+
+	prefs := &notify.NotificationPrefsRecord{
+		UserID:          domain.UserID(uid),
+		CheckInAlerts:   true,
+		CheckoutAlerts:  true,
+		ExceptionAlerts: true,
+		MarketUpdates:   true,
+	}
+	if existing != nil {
+		prefs = existing
+	}
+
+	// Apply partial updates
+	if input.VendorCheckInAlerts != nil {
+		prefs.CheckInAlerts = *input.VendorCheckInAlerts
+	}
+	if input.ExceptionAlerts != nil {
+		prefs.ExceptionAlerts = *input.ExceptionAlerts
+	}
+	if input.MarketUpdateAlerts != nil {
+		prefs.MarketUpdates = *input.MarketUpdateAlerts
+	}
+
+	updated, err := r.NotifyRepo.UpdateNotificationPrefs(ctx, domain.UserID(uid), prefs)
+	if err != nil {
+		slog.Error("failed to update notification prefs", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to update notification preferences")
+	}
+
+	return notificationPrefsToModel(updated), nil
 }
 
 // RegisterDeviceToken is the resolver for the registerDeviceToken field.
@@ -26,7 +76,29 @@ func (r *mutationResolver) RegisterDeviceToken(ctx context.Context, input model.
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: RegisterDeviceToken - registerDeviceToken"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return nil, gqlerr.Internal("notification repository not configured")
+	}
+
+	platform := platformToDB(input.Platform)
+	if err := r.NotifyRepo.RegisterDeviceToken(ctx, domain.UserID(uid), input.Token, platform); err != nil {
+		slog.Error("failed to register device token", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to register device token")
+	}
+
+	return &model.DeviceToken{
+		ID:        "", // Token ID is not returned from upsert
+		UserID:    uid,
+		Token:     input.Token,
+		Platform:  input.Platform,
+		CreatedAt: "",
+	}, nil
 }
 
 // RemoveDeviceToken is the resolver for the removeDeviceToken field.
@@ -34,7 +106,23 @@ func (r *mutationResolver) RemoveDeviceToken(ctx context.Context, tokenID string
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return false, err
 	}
-	panic(fmt.Errorf("not implemented: RemoveDeviceToken - removeDeviceToken"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return false, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return false, gqlerr.Internal("notification repository not configured")
+	}
+
+	// tokenID is used as the actual token string for removal
+	if err := r.NotifyRepo.UnregisterDeviceToken(ctx, domain.UserID(uid), tokenID); err != nil {
+		slog.Error("failed to remove device token", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to remove device token")
+	}
+
+	return true, nil
 }
 
 // MyNotificationPreferences is the resolver for the myNotificationPreferences field.
@@ -42,5 +130,142 @@ func (r *queryResolver) MyNotificationPreferences(ctx context.Context) (*model.N
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: MyNotificationPreferences - myNotificationPreferences"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return nil, gqlerr.Internal("notification repository not configured")
+	}
+
+	prefs, err := r.NotifyRepo.GetNotificationPrefs(ctx, domain.UserID(uid))
+	if err != nil {
+		if errors.Is(err, notify.ErrPrefsNotFound) {
+			return nil, nil // No preferences configured yet
+		}
+		slog.Error("failed to get notification prefs", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load notification preferences")
+	}
+
+	return notificationPrefsToModel(prefs), nil
+}
+
+// ActivityFeed is the resolver for the activityFeed field.
+func (r *queryResolver) ActivityFeed(ctx context.Context, limit *int32, offset *int32) ([]*model.ActivityFeedItem, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return nil, gqlerr.Internal("notification repository not configured")
+	}
+
+	lim := int32(20)
+	if limit != nil {
+		lim = *limit
+	}
+	off := int32(0)
+	if offset != nil {
+		off = *offset
+	}
+
+	items, err := r.NotifyRepo.GetActivityFeed(ctx, domain.UserID(uid), lim, off)
+	if err != nil {
+		slog.Error("failed to get activity feed", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load activity feed")
+	}
+
+	var result []*model.ActivityFeedItem
+	for _, item := range items {
+		result = append(result, activityFeedItemToModel(&item))
+	}
+	if result == nil {
+		result = []*model.ActivityFeedItem{}
+	}
+
+	return result, nil
+}
+
+// MarketActivityFeed is the resolver for the marketActivityFeed field.
+func (r *queryResolver) MarketActivityFeed(ctx context.Context, marketID string, limit *int32, offset *int32) ([]*model.ActivityFeedItem, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.NotifyRepo == nil {
+		return nil, gqlerr.Internal("notification repository not configured")
+	}
+
+	lim := int32(20)
+	if limit != nil {
+		lim = *limit
+	}
+	off := int32(0)
+	if offset != nil {
+		off = *offset
+	}
+
+	items, err := r.NotifyRepo.GetMarketActivityFeed(ctx, domain.MarketID(marketID), lim, off)
+	if err != nil {
+		slog.Error("failed to get market activity feed", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to load market activity feed")
+	}
+
+	var result []*model.ActivityFeedItem
+	for _, item := range items {
+		result = append(result, activityFeedItemToModel(&item))
+	}
+	if result == nil {
+		result = []*model.ActivityFeedItem{}
+	}
+
+	return result, nil
+}
+
+// --- helper functions ---
+
+// notificationPrefsToModel converts a domain NotificationPrefsRecord to a GraphQL model.
+func notificationPrefsToModel(p *notify.NotificationPrefsRecord) *model.NotificationPreferences {
+	return &model.NotificationPreferences{
+		ID:                  p.ID,
+		UserID:              p.UserID.String(),
+		PushEnabled:         true, // Always true when prefs exist
+		VendorCheckInAlerts: p.CheckInAlerts,
+		MarketUpdateAlerts:  p.MarketUpdates,
+		ExceptionAlerts:     p.ExceptionAlerts,
+		CreatedAt:           p.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:           p.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+}
+
+// activityFeedItemToModel converts a domain ActivityFeedItem to a GraphQL model.
+func activityFeedItemToModel(item *notify.ActivityFeedItem) *model.ActivityFeedItem {
+	result := &model.ActivityFeedItem{
+		ID:         item.ID,
+		ActorID:    item.ActorID,
+		ActionType: item.ActionType,
+		TargetType: item.TargetType,
+		TargetID:   item.TargetID,
+		MarketID:   item.MarketID,
+		Message:    item.Message,
+		CreatedAt:  item.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+	}
+	return result
+}
+
+// platformToDB maps a GraphQL Platform enum to the DB lowercase value.
+func platformToDB(p model.Platform) string {
+	return strings.ToLower(string(p))
 }

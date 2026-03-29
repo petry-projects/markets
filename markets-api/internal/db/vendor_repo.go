@@ -360,7 +360,7 @@ func (r *PgVendorRepository) SearchMarkets(ctx context.Context, searchTerm strin
 			  AND ($1 = '' OR m.name ILIKE '%' || $1 || '%' OR m.address ILIKE '%' || $1 || '%')
 		`
 		if radiusKm != nil {
-			query += fmt.Sprintf(" AND (6371 * acos(cos(radians($4)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($5)) + sin(radians($4)) * sin(radians(m.latitude)))) <= %f", *radiusKm)
+			query += " AND (6371 * acos(cos(radians($4)) * cos(radians(m.latitude)) * cos(radians(m.longitude) - radians($5)) + sin(radians($4)) * sin(radians(m.latitude)))) <= $6"
 		}
 		query += " ORDER BY distance_km"
 	} else {
@@ -395,7 +395,11 @@ func (r *PgVendorRepository) SearchMarkets(ctx context.Context, searchTerm strin
 	var rows pgx.Rows
 	var qerr error
 	if hasCoords {
-		rows, qerr = r.pool.Query(ctx, query, searchTerm, nil, nil, *lat, *lng)
+		if radiusKm != nil {
+			rows, qerr = r.pool.Query(ctx, query, searchTerm, nil, nil, *lat, *lng, *radiusKm)
+		} else {
+			rows, qerr = r.pool.Query(ctx, query, searchTerm, nil, nil, *lat, *lng)
+		}
 	} else {
 		rows, qerr = r.pool.Query(ctx, query, searchTerm)
 	}
@@ -415,15 +419,15 @@ func (r *PgVendorRepository) SearchMarkets(ctx context.Context, searchTerm strin
 	return results, nil
 }
 
-// GetVendorMarketDates returns roster entries for a vendor.
-func (r *PgVendorRepository) GetVendorMarketDates(ctx context.Context, vendorID domain.VendorID) ([]vendor.VendorMarketDateRow, error) {
+// GetVendorMarketDates returns roster entries for a vendor (by user ID, since vendor_roster references users).
+func (r *PgVendorRepository) GetVendorMarketDates(ctx context.Context, userID domain.UserID) ([]vendor.VendorMarketDateRow, error) {
 	query := `
 		SELECT vr.id, vr.market_id, vr.date::text, vr.status
 		FROM vendor_roster vr
 		WHERE vr.vendor_id = $1 AND vr.deleted_at IS NULL
 		ORDER BY vr.market_id, vr.date
 	`
-	rows, err := r.pool.Query(ctx, query, vendorID.String())
+	rows, err := r.pool.Query(ctx, query, userID.String())
 	if err != nil {
 		return nil, fmt.Errorf("get vendor market dates: %w", err)
 	}

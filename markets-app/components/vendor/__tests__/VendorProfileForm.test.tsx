@@ -5,9 +5,7 @@ import VendorProfileForm from '../VendorProfileForm';
 const mockOnSubmit = jest.fn();
 
 function renderProfileForm(props = {}) {
-  render(
-    <VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />,
-  );
+  render(<VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />);
 }
 
 beforeEach(() => {

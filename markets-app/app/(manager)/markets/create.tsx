@@ -32,12 +32,14 @@ export default function CreateMarketScreen() {
             },
           },
         },
-      }).then(() => {
-        router.back();
-      }).catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-        Alert.alert('Error', message);
-      });
+      })
+        .then(() => {
+          router.back();
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          Alert.alert('Error', message);
+        });
     },
     [createMarket, router],
   );
@@ -46,7 +48,7 @@ export default function CreateMarketScreen() {
     <MarketForm
       mode="create"
       onSubmit={(data) => {
-        void handleSubmit(data);
+        handleSubmit(data);
       }}
       loading={loading}
     />

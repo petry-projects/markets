@@ -26,16 +26,16 @@ export default function MarketSearchCard({
 }: MarketSearchCardProps) {
   return (
     <Pressable
-      onPress={() => { onPress(id); }}
+      onPress={() => {
+        onPress(id);
+      }}
       accessibilityLabel={`Market: ${name}`}
       accessibilityRole="button"
     >
       <Box className="rounded-lg border border-outline-200 bg-background-0 p-4 mb-3">
         <VStack className="gap-1">
           <Box className="flex-row items-center justify-between">
-            <Heading className="flex-1 text-base text-typography-900">
-              {name}
-            </Heading>
+            <Heading className="flex-1 text-base text-typography-900">{name}</Heading>
             {vendorStatus != null && vendorStatus !== '' && (
               <Box
                 className={`rounded-full px-2 py-0.5 ${
@@ -63,9 +63,7 @@ export default function MarketSearchCard({
           <Text className="text-sm text-typography-500">{address}</Text>
           <Box className="flex-row gap-4">
             {distanceKm != null && (
-              <Text className="text-sm text-typography-400">
-                {distanceKm.toFixed(1)} km
-              </Text>
+              <Text className="text-sm text-typography-400">{distanceKm.toFixed(1)} km</Text>
             )}
             <Text className="text-sm text-typography-400">
               {vendorCount} vendor{vendorCount !== 1 ? 's' : ''}

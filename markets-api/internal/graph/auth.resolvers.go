@@ -20,13 +20,6 @@ import (
 	"github.com/petry-projects/markets-api/internal/user"
 )
 
-// validRoles maps GraphQL Role enum values to lowercase domain role strings.
-var validRoles = map[model.Role]string{
-	model.RoleCustomer: "customer",
-	model.RoleVendor:   "vendor",
-	model.RoleManager:  "manager",
-}
-
 // Login is the resolver for the login field.
 func (r *mutationResolver) Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error) {
 	panic(fmt.Errorf("not implemented: Login - login"))
@@ -113,3 +106,4 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	panic(fmt.Errorf("not implemented: Me - me"))
 }
+

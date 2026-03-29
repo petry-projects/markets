@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-28  # Story 1.3 review
+last_updated: 2026-03-28  # Story 1.4 review
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -48,7 +48,7 @@ development_status:
   1-1b-backend-project-scaffolding-audit-infrastructure: done
   1-2-google-apple-sign-in-authentication: done
   1-3-role-selection-user-record-creation: done
-  1-4-market-scoped-manager-permissions: backlog
+  1-4-market-scoped-manager-permissions: review
   1-5-role-based-access-enforcement-middleware: backlog
   epic-1-retrospective: optional
 

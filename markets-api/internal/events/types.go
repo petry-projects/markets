@@ -35,3 +35,12 @@ type ManagerAssigned struct {
 
 // EventType returns the dotted event type string.
 func (e ManagerAssigned) EventType() string { return "manager.assigned" }
+
+// ManagerRemoved is published when a manager is removed from a market.
+type ManagerRemoved struct {
+	UserID   string
+	MarketID string
+}
+
+// EventType returns the dotted event type string.
+func (e ManagerRemoved) EventType() string { return "manager.removed" }

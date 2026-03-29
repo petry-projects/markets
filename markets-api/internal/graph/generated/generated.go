@@ -131,6 +131,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		AddMarketSchedule             func(childComplexity int, input model.AddScheduleInput) int
+		AssignManager                 func(childComplexity int, managerID string, marketID string) int
 		CheckIn                       func(childComplexity int, input model.CheckInInput) int
 		CheckOut                      func(childComplexity int, checkInID string) int
 		CreateMarket                  func(childComplexity int, input model.CreateMarketInput) int
@@ -143,6 +144,7 @@ type ComplexityRoot struct {
 		Login                         func(childComplexity int, input model.LoginInput) int
 		RegisterDeviceToken           func(childComplexity int, input model.RegisterDeviceTokenInput) int
 		RemoveDeviceToken             func(childComplexity int, tokenID string) int
+		RemoveManager                 func(childComplexity int, managerID string, marketID string) int
 		ReportException               func(childComplexity int, input model.ExceptionStatusInput) int
 		SignUp                        func(childComplexity int, input model.SignUpInput) int
 		Unfollow                      func(childComplexity int, targetType model.FollowTargetType, targetID string) int
@@ -234,6 +236,8 @@ type MutationResolver interface {
 	UpdateMarket(ctx context.Context, id string, input model.UpdateMarketInput) (*model.Market, error)
 	AddMarketSchedule(ctx context.Context, input model.AddScheduleInput) (*model.MarketSchedule, error)
 	UpdateRosterStatus(ctx context.Context, id string, status model.RosterStatus) (*model.VendorRosterEntry, error)
+	AssignManager(ctx context.Context, managerID string, marketID string) (bool, error)
+	RemoveManager(ctx context.Context, managerID string, marketID string) (bool, error)
 	UpdateNotificationPreferences(ctx context.Context, input model.UpdateNotificationPreferencesInput) (*model.NotificationPreferences, error)
 	RegisterDeviceToken(ctx context.Context, input model.RegisterDeviceTokenInput) (*model.DeviceToken, error)
 	RemoveDeviceToken(ctx context.Context, tokenID string) (bool, error)
@@ -663,6 +667,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.AddMarketSchedule(childComplexity, args["input"].(model.AddScheduleInput)), true
+	case "Mutation.assignManager":
+		if e.ComplexityRoot.Mutation.AssignManager == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_assignManager_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.AssignManager(childComplexity, args["managerID"].(string), args["marketID"].(string)), true
 	case "Mutation.checkIn":
 		if e.ComplexityRoot.Mutation.CheckIn == nil {
 			break
@@ -790,6 +805,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.RemoveDeviceToken(childComplexity, args["tokenID"].(string)), true
+	case "Mutation.removeManager":
+		if e.ComplexityRoot.Mutation.RemoveManager == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_removeManager_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Mutation.RemoveManager(childComplexity, args["managerID"].(string), args["marketID"].(string)), true
 	case "Mutation.reportException":
 		if e.ComplexityRoot.Mutation.ReportException == nil {
 			break
@@ -1587,6 +1613,12 @@ extend type Mutation {
 
   """Approve or reject a vendor roster request (Manager only)."""
   updateRosterStatus(id: ID!, status: RosterStatus!): VendorRosterEntry!
+
+  """Assign a manager to a market (Admin only)."""
+  assignManager(managerID: ID!, marketID: ID!): Boolean!
+
+  """Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers."""
+  removeManager(managerID: ID!, marketID: ID!): Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../schema/notification.graphqls", Input: `"""
@@ -1779,6 +1811,22 @@ func (ec *executionContext) field_Mutation_addMarketSchedule_args(ctx context.Co
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_assignManager_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "managerID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["managerID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_checkIn_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -1902,6 +1950,22 @@ func (ec *executionContext) field_Mutation_removeDeviceToken_args(ctx context.Co
 		return nil, err
 	}
 	args["tokenID"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_removeManager_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "managerID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["managerID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg1
 	return args, nil
 }
 
@@ -4682,6 +4746,88 @@ func (ec *executionContext) fieldContext_Mutation_updateRosterStatus(ctx context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_updateRosterStatus_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_assignManager(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_assignManager,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().AssignManager(ctx, fc.Args["managerID"].(string), fc.Args["marketID"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_assignManager(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_assignManager_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_removeManager(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_removeManager,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Mutation().RemoveManager(ctx, fc.Args["managerID"].(string), fc.Args["marketID"].(string))
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_removeManager(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_removeManager_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10168,6 +10314,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "updateRosterStatus":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_updateRosterStatus(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "assignManager":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_assignManager(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "removeManager":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_removeManager(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++

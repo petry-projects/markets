@@ -4,6 +4,7 @@ package graph
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/customer"
 	"github.com/petry-projects/markets-api/internal/events"
 	"github.com/petry-projects/markets-api/internal/market"
 	"github.com/petry-projects/markets-api/internal/user"
@@ -18,6 +19,7 @@ type Resolver struct {
 	UserRepo     user.Repository
 	MarketRepo   market.Repository
 	VendorRepo   vendor.Repository
+	CustomerRepo customer.Repository
 	ClaimsSetter auth.ClaimsSetter
 }
 

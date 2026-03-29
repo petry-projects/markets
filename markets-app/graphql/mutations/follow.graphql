@@ -1,0 +1,9 @@
+mutation Follow($targetType: FollowTargetType!, $targetID: ID!) {
+  follow(targetType: $targetType, targetID: $targetID) {
+    id
+    customerID
+    targetType
+    targetID
+    createdAt
+  }
+}

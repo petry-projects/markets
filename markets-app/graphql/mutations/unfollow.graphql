@@ -1,0 +1,3 @@
+mutation Unfollow($targetType: FollowTargetType!, $targetID: ID!) {
+  unfollow(targetType: $targetType, targetID: $targetID)
+}

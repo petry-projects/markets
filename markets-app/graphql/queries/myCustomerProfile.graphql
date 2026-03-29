@@ -1,0 +1,19 @@
+query MyCustomerProfile {
+  myCustomerProfile {
+    id
+    userID
+    displayName
+    followedVendors {
+      id
+      businessName
+      imageURL
+    }
+    followedMarkets {
+      id
+      name
+      address
+    }
+    createdAt
+    updatedAt
+  }
+}

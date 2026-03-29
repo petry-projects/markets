@@ -199,6 +199,9 @@ func (r *PgCustomerRepository) GetFollows(ctx context.Context, customerID domain
 		}
 		follows = append(follows, &f)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate follows: %w", err)
+	}
 
 	return follows, nil
 }
@@ -220,15 +223,17 @@ func (r *PgCustomerRepository) GetFollowerCount(ctx context.Context, targetType 
 func (r *PgCustomerRepository) DiscoverMarkets(ctx context.Context, lat, lng, radiusMiles float64, limit, offset int32) ([]*customer.DiscoveredMarket, error) {
 	query := `
 		SELECT m.id,
-		       (3959 * acos(cos(radians($1)) * cos(radians(m.latitude))
+		       (3959 * acos(LEAST(1.0, GREATEST(-1.0,
+		        cos(radians($1)) * cos(radians(m.latitude))
 		        * cos(radians(m.longitude) - radians($2))
-		        + sin(radians($1)) * sin(radians(m.latitude)))) AS distance_mi
+		        + sin(radians($1)) * sin(radians(m.latitude)))))) AS distance_mi
 		FROM markets m
 		WHERE m.deleted_at IS NULL
 		  AND m.status = 'active'
-		  AND (3959 * acos(cos(radians($1)) * cos(radians(m.latitude))
+		  AND (3959 * acos(LEAST(1.0, GREATEST(-1.0,
+		       cos(radians($1)) * cos(radians(m.latitude))
 		       * cos(radians(m.longitude) - radians($2))
-		       + sin(radians($1)) * sin(radians(m.latitude)))) <= $3
+		       + sin(radians($1)) * sin(radians(m.latitude)))))) <= $3
 		ORDER BY distance_mi
 		LIMIT $4 OFFSET $5
 	`
@@ -246,6 +251,9 @@ func (r *PgCustomerRepository) DiscoverMarkets(ctx context.Context, lat, lng, ra
 			return nil, fmt.Errorf("scan discovered market: %w", err)
 		}
 		results = append(results, &dm)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate discovered markets: %w", err)
 	}
 
 	return results, nil
@@ -278,6 +286,9 @@ func (r *PgCustomerRepository) DiscoverVendors(ctx context.Context, marketID dom
 			return nil, fmt.Errorf("scan discovered vendor: %w", err)
 		}
 		results = append(results, &dv)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate discovered vendors: %w", err)
 	}
 
 	return results, nil
@@ -349,6 +360,9 @@ func (r *PgCustomerRepository) GetFollowingFeed(ctx context.Context, customerID 
 			return nil, fmt.Errorf("scan feed item: %w", err)
 		}
 		items = append(items, &item)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate feed items: %w", err)
 	}
 
 	return items, nil

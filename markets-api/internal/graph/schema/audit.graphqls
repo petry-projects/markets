@@ -1,0 +1,49 @@
+"""
+Audit log query types (read-only, no mutations).
+Audit writes are handled exclusively by PostgreSQL triggers.
+"""
+
+type AuditLogEntry {
+  id: ID!
+  actorID: String!
+  actorRole: String!
+  actionType: String!
+  targetType: String!
+  targetID: String!
+  marketID: String
+  timestamp: String!
+  payload: String
+}
+
+type AuditLogConnection {
+  entries: [AuditLogEntry!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+input AuditLogFilter {
+  actorID: String
+  actionType: String
+  targetType: String
+  targetID: String
+  marketID: String
+  startDate: String
+  endDate: String
+}
+
+"""
+Root Query type - extended by each domain schema.
+"""
+type Query {
+  """Query audit log entries (Manager only, read-only)."""
+  auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+}
+
+"""
+Root Mutation type - extended by each domain schema.
+No audit mutations exist; audit writes are DB trigger-only.
+"""
+type Mutation {
+  """Placeholder - no audit mutations. Audit writes are PostgreSQL trigger-only."""
+  _empty: Boolean
+}

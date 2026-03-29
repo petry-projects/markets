@@ -1,0 +1,55 @@
+"""
+Notification preferences and device token management.
+"""
+
+type NotificationPreferences {
+  id: ID!
+  userID: ID!
+  pushEnabled: Boolean!
+  vendorCheckInAlerts: Boolean!
+  marketUpdateAlerts: Boolean!
+  exceptionAlerts: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type DeviceToken {
+  id: ID!
+  userID: ID!
+  token: String!
+  platform: Platform!
+  createdAt: String!
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+input UpdateNotificationPreferencesInput {
+  pushEnabled: Boolean
+  vendorCheckInAlerts: Boolean
+  marketUpdateAlerts: Boolean
+  exceptionAlerts: Boolean
+}
+
+input RegisterDeviceTokenInput {
+  token: String!
+  platform: Platform!
+}
+
+extend type Query {
+  """Get the authenticated user's notification preferences."""
+  myNotificationPreferences: NotificationPreferences
+}
+
+extend type Mutation {
+  """Update notification preferences."""
+  updateNotificationPreferences(input: UpdateNotificationPreferencesInput!): NotificationPreferences!
+
+  """Register a device token for push notifications."""
+  registerDeviceToken(input: RegisterDeviceTokenInput!): DeviceToken!
+
+  """Remove a device token."""
+  removeDeviceToken(tokenID: ID!): Boolean!
+}

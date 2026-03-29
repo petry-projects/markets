@@ -1,0 +1,12 @@
+mutation UpdateNotificationPrefs($input: UpdateNotificationPreferencesInput!) {
+  updateNotificationPreferences(input: $input) {
+    id
+    userID
+    pushEnabled
+    vendorCheckInAlerts
+    marketUpdateAlerts
+    exceptionAlerts
+    createdAt
+    updatedAt
+  }
+}

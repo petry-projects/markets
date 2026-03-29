@@ -1,0 +1,12 @@
+query MyNotificationPrefs {
+  myNotificationPreferences {
+    id
+    userID
+    pushEnabled
+    vendorCheckInAlerts
+    marketUpdateAlerts
+    exceptionAlerts
+    createdAt
+    updatedAt
+  }
+}

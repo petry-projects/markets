@@ -7,6 +7,7 @@ import (
 	"github.com/petry-projects/markets-api/internal/customer"
 	"github.com/petry-projects/markets-api/internal/events"
 	"github.com/petry-projects/markets-api/internal/market"
+	"github.com/petry-projects/markets-api/internal/notify"
 	"github.com/petry-projects/markets-api/internal/user"
 	"github.com/petry-projects/markets-api/internal/vendor"
 )
@@ -20,6 +21,7 @@ type Resolver struct {
 	MarketRepo   market.Repository
 	VendorRepo   vendor.Repository
 	CustomerRepo customer.Repository
+	NotifyRepo   notify.Repository
 	ClaimsSetter auth.ClaimsSetter
 }
 

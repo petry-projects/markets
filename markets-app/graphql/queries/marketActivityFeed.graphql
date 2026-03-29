@@ -1,0 +1,12 @@
+query MarketActivityFeed($marketID: ID!, $limit: Int, $offset: Int) {
+  marketActivityFeed(marketID: $marketID, limit: $limit, offset: $offset) {
+    id
+    actorID
+    actionType
+    targetType
+    targetID
+    marketID
+    message
+    createdAt
+  }
+}

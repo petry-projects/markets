@@ -44,10 +44,10 @@ export default function ProductCard({
                 </Box>
               )}
             </Box>
-            {category && (
+            {category != null && category !== '' && (
               <Text className="text-sm text-typography-500">{category}</Text>
             )}
-            {description && (
+            {description != null && description !== '' && (
               <Text className="text-sm text-typography-600" numberOfLines={2}>
                 {description}
               </Text>
@@ -56,7 +56,7 @@ export default function ProductCard({
           {onDelete && (
             <Button
               className="bg-transparent"
-              onPress={() => onDelete(id)}
+              onPress={() => { onDelete(id); }}
               accessibilityLabel={`Delete ${name}`}
             >
               <ButtonText className="text-error-600 text-sm">Delete</ButtonText>

@@ -26,7 +26,7 @@ export default function MarketSearchCard({
 }: MarketSearchCardProps) {
   return (
     <Pressable
-      onPress={() => onPress(id)}
+      onPress={() => { onPress(id); }}
       accessibilityLabel={`Market: ${name}`}
       accessibilityRole="button"
     >
@@ -36,7 +36,7 @@ export default function MarketSearchCard({
             <Heading className="flex-1 text-base text-typography-900">
               {name}
             </Heading>
-            {vendorStatus && (
+            {vendorStatus != null && vendorStatus !== '' && (
               <Box
                 className={`rounded-full px-2 py-0.5 ${
                   vendorStatus === 'APPROVED'

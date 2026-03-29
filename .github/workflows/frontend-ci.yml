@@ -1,0 +1,35 @@
+name: Frontend CI
+
+on:
+  pull_request:
+    paths:
+      - 'markets-app/**'
+  push:
+    branches: [main]
+    paths:
+      - 'markets-app/**'
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: markets-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: markets-app/package-lock.json
+      - run: npm ci
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+      - name: Format check
+        run: npx prettier --check .
+      - name: Unit + component tests
+        run: npx jest --ci --coverage
+      - name: Codegen check
+        run: npm run codegen:check

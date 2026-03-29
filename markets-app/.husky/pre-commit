@@ -1,0 +1,2 @@
+cd markets-app || exit 1
+npx lint-staged && npx tsc --noEmit

@@ -8,7 +8,6 @@ package graph
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -229,7 +228,47 @@ func (r *mutationResolver) CheckIn(ctx context.Context, input model.CheckInInput
 	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: CheckIn - checkIn"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to find vendor", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("vendor profile not found")
+	}
+
+	// Check for active check-ins to detect conflicts
+	activeCheckIns, err := r.VendorRepo.FindActiveCheckInsByVendor(ctx, v.ID)
+	if err != nil {
+		slog.Error("failed to find active check-ins", "error", err, "vendorID", v.ID)
+		return nil, gqlerr.Internal("failed to verify check-in status")
+	}
+
+	if err := vendor.CheckConflict(activeCheckIns, domain.MarketID(input.MarketID)); err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, err.Error())
+	}
+
+	ci := vendor.NewCheckIn(vendor.NewCheckInParams{
+		VendorID: v.ID,
+		MarketID: domain.MarketID(input.MarketID),
+	})
+
+	created, err := r.VendorRepo.CreateCheckIn(ctx, ci)
+	if err != nil {
+		slog.Error("failed to create check-in", "error", err, "vendorID", v.ID, "marketID", input.MarketID)
+		return nil, gqlerr.Internal("failed to check in")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorCheckedIn{
+		VendorID:  v.ID.String(),
+		MarketID:  input.MarketID,
+		Timestamp: created.CheckedInAt,
+	})
+
+	return checkInToModel(created), nil
 }
 
 // CheckOut is the resolver for the checkOut field.
@@ -237,7 +276,41 @@ func (r *mutationResolver) CheckOut(ctx context.Context, checkInID string) (*mod
 	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: CheckOut - checkOut"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	ci, err := r.VendorRepo.FindCheckInByID(ctx, domain.CheckInID(checkInID))
+	if err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, "check-in not found")
+	}
+
+	// Verify ownership
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil || v.ID != ci.VendorID {
+		return nil, gqlerr.NewError(gqlerr.CodeForbidden, "not authorized to check out this check-in")
+	}
+
+	if err := ci.CheckOut(); err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, err.Error())
+	}
+
+	updated, err := r.VendorRepo.UpdateCheckIn(ctx, ci)
+	if err != nil {
+		slog.Error("failed to check out", "error", err, "checkInID", checkInID)
+		return nil, gqlerr.Internal("failed to check out")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorCheckedOut{
+		VendorID:  v.ID.String(),
+		MarketID:  ci.MarketID.String(),
+		CheckInID: checkInID,
+		Timestamp: *updated.CheckedOutAt,
+	})
+
+	return checkInToModel(updated), nil
 }
 
 // ReportException is the resolver for the reportException field.
@@ -245,7 +318,42 @@ func (r *mutationResolver) ReportException(ctx context.Context, input model.Exce
 	if err := auth.RequireRole(ctx, "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: ReportException - reportException"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	ci, err := r.VendorRepo.FindCheckInByID(ctx, domain.CheckInID(input.CheckInID))
+	if err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, "check-in not found")
+	}
+
+	// Verify ownership
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil || v.ID != ci.VendorID {
+		return nil, gqlerr.NewError(gqlerr.CodeForbidden, "not authorized to report exception for this check-in")
+	}
+
+	if err := ci.ReportException(input.Reason); err != nil {
+		return nil, gqlerr.NewError(gqlerr.CodeValidationError, err.Error())
+	}
+
+	updated, err := r.VendorRepo.UpdateCheckIn(ctx, ci)
+	if err != nil {
+		slog.Error("failed to report exception", "error", err, "checkInID", input.CheckInID)
+		return nil, gqlerr.Internal("failed to report exception")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorExceptionReported{
+		VendorID:  v.ID.String(),
+		MarketID:  ci.MarketID.String(),
+		CheckInID: input.CheckInID,
+		Reason:    input.Reason,
+		Timestamp: *updated.CheckedOutAt,
+	})
+
+	return checkInToModel(updated), nil
 }
 
 // Vendor is the resolver for the vendor field.

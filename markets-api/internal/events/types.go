@@ -132,3 +132,26 @@ type ProductDeleted struct {
 
 // EventType returns the dotted event type string.
 func (e ProductDeleted) EventType() string { return "product.deleted" }
+
+// VendorCheckedOut is published when a vendor checks out of a market.
+type VendorCheckedOut struct {
+	VendorID  string
+	MarketID  string
+	CheckInID string
+	Timestamp time.Time
+}
+
+// EventType returns the dotted event type string.
+func (e VendorCheckedOut) EventType() string { return "vendor.checked_out" }
+
+// VendorExceptionReported is published when a vendor reports an exception status.
+type VendorExceptionReported struct {
+	VendorID  string
+	MarketID  string
+	CheckInID string
+	Reason    string
+	Timestamp time.Time
+}
+
+// EventType returns the dotted event type string.
+func (e VendorExceptionReported) EventType() string { return "vendor.exception_reported" }

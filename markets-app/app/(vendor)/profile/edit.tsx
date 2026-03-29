@@ -4,23 +4,15 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { Alert } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
-import VendorProfileForm, {
-  VendorProfileFormData,
-} from '@/components/vendor/VendorProfileForm';
-import {
-  MyVendorProfileDocument,
-  UpdateVendorProfileDocument,
-} from '@/graphql/generated/graphql';
+import VendorProfileForm, { VendorProfileFormData } from '@/components/vendor/VendorProfileForm';
+import { MyVendorProfileDocument, UpdateVendorProfileDocument } from '@/graphql/generated/graphql';
 
 export default function EditVendorProfileScreen() {
   const router = useRouter();
   const { data, loading: queryLoading } = useQuery(MyVendorProfileDocument);
-  const [updateProfile, { loading: mutationLoading }] = useMutation(
-    UpdateVendorProfileDocument,
-    {
-      refetchQueries: [{ query: MyVendorProfileDocument }],
-    },
-  );
+  const [updateProfile, { loading: mutationLoading }] = useMutation(UpdateVendorProfileDocument, {
+    refetchQueries: [{ query: MyVendorProfileDocument }],
+  });
 
   const profile = data?.myVendorProfile;
 
@@ -37,13 +29,14 @@ export default function EditVendorProfileScreen() {
             websiteURL: formData.websiteURL || undefined,
           },
         },
-      }).then(() => {
-        router.back();
-      }).catch((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : 'An unexpected error occurred';
-        Alert.alert('Error', message);
-      });
+      })
+        .then(() => {
+          router.back();
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          Alert.alert('Error', message);
+        });
     },
     [updateProfile, router],
   );

@@ -653,7 +653,9 @@ enum CheckInStatus {
   EXCEPTION
 }
 
-"""A market association for a vendor, showing status and committed dates."""
+"""
+A market association for a vendor, showing status and committed dates.
+"""
 type VendorMarketAssociation {
   market: Market!
   status: VendorMarketJoinStatus!
@@ -661,7 +663,9 @@ type VendorMarketAssociation {
   nextUpcomingDate: String
 }
 
-"""A single date commitment for a vendor at a market."""
+"""
+A single date commitment for a vendor at a market.
+"""
 type VendorMarketDate {
   id: ID!
   date: String!
@@ -675,12 +679,16 @@ enum VendorMarketJoinStatus {
   MIXED
 }
 
-"""Search result for market browsing."""
+"""
+Search result for market browsing.
+"""
 type MarketSearchResult {
   market: Market!
   distanceKm: Float
   vendorCount: Int!
-  """The vendor's current status at this market, if any."""
+  """
+  The vendor's current status at this market, if any.
+  """
   vendorStatus: VendorMarketJoinStatus
 }
 
@@ -729,7 +737,9 @@ input ExceptionStatusInput {
 }
 
 input SearchMarketsInput {
-  """Search term for market name, city, or category."""
+  """
+  Search term for market name, city, or category.
+  """
   searchTerm: String
   latitude: Float
   longitude: Float
@@ -754,10 +764,14 @@ extend type Query {
   """
   vendorProducts(vendorID: ID!): [Product!]!
 
-  """Search available markets for a vendor to join."""
+  """
+  Search available markets for a vendor to join.
+  """
   searchMarketsToJoin(input: SearchMarketsInput!): [MarketSearchResult!]!
 
-  """List markets the current vendor is associated with."""
+  """
+  List markets the current vendor is associated with.
+  """
   vendorMarkets: [VendorMarketAssociation!]!
 }
 

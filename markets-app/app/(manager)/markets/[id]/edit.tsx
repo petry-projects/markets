@@ -16,7 +16,11 @@ export default function EditMarketScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data, loading: queryLoading, error } = useQuery(GetMarketDocument, {
+  const {
+    data,
+    loading: queryLoading,
+    error,
+  } = useQuery(GetMarketDocument, {
     variables: { id: id },
     skip: !id,
   });
@@ -46,12 +50,14 @@ export default function EditMarketScreen() {
             },
           },
         },
-      }).then(() => {
-        router.back();
-      }).catch((err: unknown) => {
-        const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-        Alert.alert('Error', message);
-      });
+      })
+        .then(() => {
+          router.back();
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          Alert.alert('Error', message);
+        });
     },
     [updateMarket, id, router],
   );
@@ -94,7 +100,7 @@ export default function EditMarketScreen() {
       mode="edit"
       initialData={initialData}
       onSubmit={(data) => {
-        void handleSubmit(data);
+        handleSubmit(data);
       }}
       loading={mutationLoading}
     />

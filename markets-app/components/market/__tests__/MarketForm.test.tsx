@@ -35,7 +35,9 @@ jest.mock('@/components/ui/button', () => {
   const { Pressable, Text } = require('react-native') as typeof import('react-native');
   return {
     Button: ({ children, onPress, ...props }: MockPressableProps) => (
-      <Pressable {...props} onPress={onPress}>{children}</Pressable>
+      <Pressable {...props} onPress={onPress}>
+        {children}
+      </Pressable>
     ),
     ButtonText: ({ children, ...props }: MockProps) => <Text {...props}>{children}</Text>,
   };
@@ -53,17 +55,13 @@ describe('MarketForm', () => {
   });
 
   it('renders in create mode with title', () => {
-    render(
-      <MarketForm mode="create" onSubmit={mockSubmit} />,
-    );
+    render(<MarketForm mode="create" onSubmit={mockSubmit} />);
     // "Create Market" appears in heading and button — verify at least one exists
     expect(screen.getAllByText('Create Market').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders in edit mode with title', () => {
-    render(
-      <MarketForm mode="edit" onSubmit={mockSubmit} />,
-    );
+    render(<MarketForm mode="edit" onSubmit={mockSubmit} />);
     expect(screen.getByText('Edit Market')).toBeTruthy();
   });
 
@@ -76,18 +74,14 @@ describe('MarketForm', () => {
       contactEmail: 'info@riverside.com',
     };
 
-    render(
-      <MarketForm mode="edit" initialData={initialData} onSubmit={mockSubmit} />,
-    );
+    render(<MarketForm mode="edit" initialData={initialData} onSubmit={mockSubmit} />);
 
     expect(screen.getByDisplayValue('Riverside Market')).toBeTruthy();
     expect(screen.getByDisplayValue('123 River St')).toBeTruthy();
   });
 
   it('does not call onSubmit with empty required fields', async () => {
-    render(
-      <MarketForm mode="create" onSubmit={mockSubmit} />,
-    );
+    render(<MarketForm mode="create" onSubmit={mockSubmit} />);
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const submitButton = screen.getByLabelText('Create market');
@@ -108,9 +102,7 @@ describe('MarketForm', () => {
       recoveryContact: 'recovery@test.com',
     };
 
-    render(
-      <MarketForm mode="create" initialData={validData} onSubmit={mockSubmit} />,
-    );
+    render(<MarketForm mode="create" initialData={validData} onSubmit={mockSubmit} />);
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const submitButton = screen.getByLabelText('Create market');
@@ -129,19 +121,17 @@ describe('MarketForm', () => {
   });
 
   it('disables submit button when loading', () => {
-    render(
-      <MarketForm mode="create" onSubmit={mockSubmit} loading={true} />,
-    );
+    render(<MarketForm mode="create" onSubmit={mockSubmit} loading={true} />);
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const submitButton = screen.getByLabelText('Create market');
     // Pressable receives disabled via props or accessibilityState
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const buttonProps = submitButton.props as Record<string, unknown>;
-    const accessibilityState = buttonProps.accessibilityState as Record<string, unknown> | undefined;
-    const isDisabled =
-      buttonProps.disabled ??
-      accessibilityState?.disabled;
+    const accessibilityState = buttonProps.accessibilityState as
+      | Record<string, unknown>
+      | undefined;
+    const isDisabled = buttonProps.disabled ?? accessibilityState?.disabled;
     expect(isDisabled).toBe(true);
   });
 });

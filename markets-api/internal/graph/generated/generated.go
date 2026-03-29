@@ -185,7 +185,7 @@ type ComplexityRoot struct {
 		ApproveRosterRequest          func(childComplexity int, id string) int
 		AssignManager                 func(childComplexity int, managerID string, marketID string) int
 		AutoCheckoutMarket            func(childComplexity int, marketID string) int
-		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string) int
+		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string, endEarly *bool) int
 		CheckIn                       func(childComplexity int, input model.CheckInInput) int
 		CheckOut                      func(childComplexity int, checkInID string) int
 		CreateMarket                  func(childComplexity int, input model.CreateMarketInput) int

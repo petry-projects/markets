@@ -5,39 +5,73 @@ import { MarketForm, MarketFormData } from '../MarketForm';
 // Mock gluestack components using React Native primitives.
 // require() inside factory avoids out-of-scope variable error.
 jest.mock('@/components/ui/box', () => {
-  const { View } = require('react-native');
-  return { Box: ({ children, ...props }: any) => <View {...props}>{children}</View> };
+  const { View } = require('react-native') as typeof import('react-native');
+  return {
+    Box: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+      <View {...props}>{children}</View>
+    ),
+  };
 });
 jest.mock('@/components/ui/vstack', () => {
-  const { View } = require('react-native');
-  return { VStack: ({ children, ...props }: any) => <View {...props}>{children}</View> };
+  const { View } = require('react-native') as typeof import('react-native');
+  return {
+    VStack: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+      <View {...props}>{children}</View>
+    ),
+  };
 });
 jest.mock('@/components/ui/text', () => {
-  const { Text } = require('react-native');
-  return { Text: ({ children, ...props }: any) => <Text {...props}>{children}</Text> };
+  const { Text } = require('react-native') as typeof import('react-native');
+  return {
+    Text: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+      <Text {...props}>{children}</Text>
+    ),
+  };
 });
 jest.mock('@/components/ui/heading', () => {
-  const { Text } = require('react-native');
-  return { Heading: ({ children, ...props }: any) => <Text {...props}>{children}</Text> };
+  const { Text } = require('react-native') as typeof import('react-native');
+  return {
+    Heading: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+      <Text {...props}>{children}</Text>
+    ),
+  };
 });
 jest.mock('@/components/ui/input', () => {
-  const { View, TextInput } = require('react-native');
+  const { View, TextInput } = require('react-native') as typeof import('react-native');
   return {
-    Input: ({ children, ...props }: any) => <View {...props}>{children}</View>,
-    InputField: (props: any) => <TextInput {...props} />,
+    Input: ({ children, ...props }: { children?: React.ReactNode; [key: string]: unknown }) => (
+      <View {...props}>{children}</View>
+    ),
+    InputField: (props: Record<string, unknown>) => <TextInput {...props} />,
   };
 });
 jest.mock('@/components/ui/button', () => {
-  const { Pressable, Text } = require('react-native');
+  const { Pressable, Text } = require('react-native') as typeof import('react-native');
   return {
-    Button: ({ children, onPress, ...props }: any) => (
-      <Pressable {...props} onPress={onPress}>{children}</Pressable>
+    Button: ({
+      children,
+      onPress,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      onPress?: () => void;
+      [key: string]: unknown;
+    }) => (
+      <Pressable {...props} onPress={onPress}>
+        {children}
+      </Pressable>
     ),
-    ButtonText: ({ children, ...props }: any) => <Text {...props}>{children}</Text>,
+    ButtonText: ({
+      children,
+      ...props
+    }: {
+      children?: React.ReactNode;
+      [key: string]: unknown;
+    }) => <Text {...props}>{children}</Text>,
   };
 });
 jest.mock('@/components/ui/spinner', () => {
-  const { View } = require('react-native');
+  const { View } = require('react-native') as typeof import('react-native');
   return { Spinner: () => <View testID="spinner" /> };
 });
 
@@ -49,17 +83,13 @@ describe('MarketForm', () => {
   });
 
   it('renders in create mode with title', () => {
-    const { getAllByText } = render(
-      <MarketForm mode="create" onSubmit={mockSubmit} />,
-    );
+    const { getAllByText } = render(<MarketForm mode="create" onSubmit={mockSubmit} />);
     // "Create Market" appears in heading and button — verify at least one exists
     expect(getAllByText('Create Market').length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders in edit mode with title', () => {
-    const { getByText } = render(
-      <MarketForm mode="edit" onSubmit={mockSubmit} />,
-    );
+    const { getByText } = render(<MarketForm mode="edit" onSubmit={mockSubmit} />);
     expect(getByText('Edit Market')).toBeTruthy();
   });
 
@@ -81,11 +111,10 @@ describe('MarketForm', () => {
   });
 
   it('does not call onSubmit with empty required fields', async () => {
-    const { getByLabelText } = render(
-      <MarketForm mode="create" onSubmit={mockSubmit} />,
-    );
+    const rendered = render(<MarketForm mode="create" onSubmit={mockSubmit} />);
 
-    const submitButton = getByLabelText('Create market');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const submitButton = rendered.getByLabelText('Create market');
     fireEvent.press(submitButton);
 
     await waitFor(() => {
@@ -103,11 +132,12 @@ describe('MarketForm', () => {
       recoveryContact: 'recovery@test.com',
     };
 
-    const { getByLabelText } = render(
+    const rendered = render(
       <MarketForm mode="create" initialData={validData} onSubmit={mockSubmit} />,
     );
 
-    const submitButton = getByLabelText('Create market');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const submitButton = rendered.getByLabelText('Create market');
     fireEvent.press(submitButton);
 
     await waitFor(() => {
@@ -123,15 +153,17 @@ describe('MarketForm', () => {
   });
 
   it('disables submit button when loading', () => {
-    const { getByLabelText } = render(
-      <MarketForm mode="create" onSubmit={mockSubmit} loading={true} />,
-    );
+    const rendered = render(<MarketForm mode="create" onSubmit={mockSubmit} loading={true} />);
 
-    const submitButton = getByLabelText('Create market');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const submitButton = rendered.getByLabelText('Create market');
     // Pressable receives disabled via props or accessibilityState
-    const isDisabled =
-      submitButton.props.disabled ??
-      submitButton.props.accessibilityState?.disabled;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const buttonProps = submitButton.props as Record<string, unknown>;
+    const accessibilityState = buttonProps.accessibilityState as
+      | Record<string, unknown>
+      | undefined;
+    const isDisabled = buttonProps.disabled ?? accessibilityState?.disabled;
     expect(isDisabled).toBe(true);
   });
 });

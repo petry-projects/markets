@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -601,22 +602,23 @@ func (r *PgMarketRepository) GetInvitationsByVendor(ctx context.Context, vendorI
 }
 
 // CreateRosterEntries creates roster entries for a vendor on given dates.
-func (r *PgMarketRepository) CreateRosterEntries(ctx context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string) ([]*market.RosterEntry, error) {
+func (r *PgMarketRepository) CreateRosterEntries(ctx context.Context, marketID domain.MarketID, vendorID domain.UserID, dates []string, status string, rulesAcknowledged bool) ([]*market.RosterEntry, error) {
 	var entries []*market.RosterEntry
 	for _, date := range dates {
 		query := `
-			INSERT INTO vendor_roster (market_id, vendor_id, date, status)
-			VALUES ($1, $2, $3::date, $4)
-			ON CONFLICT (market_id, vendor_id, date) DO UPDATE SET status = $4, updated_at = NOW()
+			INSERT INTO vendor_roster (market_id, vendor_id, date, status, rules_acknowledged)
+			VALUES ($1, $2, $3::date, $4, $5)
+			ON CONFLICT (market_id, vendor_id, date) DO UPDATE SET status = $4, rules_acknowledged = $5, updated_at = NOW()
 			RETURNING id, created_at, updated_at
 		`
 		entry := &market.RosterEntry{
-			MarketID: marketID,
-			VendorID: vendorID,
-			Date:     date,
-			Status:   status,
+			MarketID:          marketID,
+			VendorID:          vendorID,
+			Date:              date,
+			Status:            status,
+			RulesAcknowledged: rulesAcknowledged,
 		}
-		err := r.pool.QueryRow(ctx, query, marketID.String(), vendorID.String(), date, status).
+		err := r.pool.QueryRow(ctx, query, marketID.String(), vendorID.String(), date, status, rulesAcknowledged).
 			Scan(&entry.ID, &entry.CreatedAt, &entry.UpdatedAt)
 		if err != nil {
 			return nil, fmt.Errorf("insert roster entry for %s: %w", date, err)
@@ -768,6 +770,9 @@ func (r *PgMarketRepository) GetDayPlans(ctx context.Context, marketID domain.Ma
 	for _, p := range planMap {
 		plans = append(plans, p)
 	}
+	sort.Slice(plans, func(i, j int) bool {
+		return plans[i].Date < plans[j].Date
+	})
 	return plans, nil
 }
 

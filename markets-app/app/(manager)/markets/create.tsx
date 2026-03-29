@@ -43,5 +43,13 @@ export default function CreateMarketScreen() {
     [createMarket, router],
   );
 
-  return <MarketForm mode="create" onSubmit={handleSubmit} loading={loading} />;
+  return (
+    <MarketForm
+      mode="create"
+      onSubmit={(data) => {
+        void handleSubmit(data);
+      }}
+      loading={loading}
+    />
+  );
 }

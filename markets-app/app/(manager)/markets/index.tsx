@@ -56,7 +56,7 @@ export default function MyMarketsScreen() {
       {markets.length === 0 ? (
         <Box className="flex-1 items-center justify-center p-8">
           <Text className="text-typography-500 text-center mb-4">
-            You don't have any markets yet.
+            You don&apos;t have any markets yet.
           </Text>
           <Button
             className="h-14 bg-primary-500 rounded-lg px-8"
@@ -80,7 +80,9 @@ export default function MyMarketsScreen() {
               onPress={handleMarketPress}
             />
           )}
-          onRefresh={refetch}
+          onRefresh={() => {
+            void refetch();
+          }}
           refreshing={loading}
         />
       )}

@@ -242,6 +242,9 @@ var ErrMissingDayOfWeek = errors.New("day of week is required for recurring sche
 // ErrMissingEventDate is returned when a one-time schedule has no event date.
 var ErrMissingEventDate = errors.New("event date is required for one-time schedules")
 
+// ErrInvalidDayOfWeek is returned when day of week is outside 0..6.
+var ErrInvalidDayOfWeek = errors.New("day of week must be between 0 (Sunday) and 6 (Saturday)")
+
 // NewSchedule validates inputs and returns a new ScheduleRecord.
 func NewSchedule(p NewScheduleParams) (*ScheduleRecord, error) {
 	if p.ScheduleType != "recurring" && p.ScheduleType != "one_time" {
@@ -255,6 +258,9 @@ func NewSchedule(p NewScheduleParams) (*ScheduleRecord, error) {
 	}
 	if p.ScheduleType == "recurring" && p.DayOfWeek == nil {
 		return nil, ErrMissingDayOfWeek
+	}
+	if p.ScheduleType == "recurring" && p.DayOfWeek != nil && (*p.DayOfWeek < 0 || *p.DayOfWeek > 6) {
+		return nil, ErrInvalidDayOfWeek
 	}
 	if p.ScheduleType == "one_time" && p.EventDate == "" {
 		return nil, ErrMissingEventDate

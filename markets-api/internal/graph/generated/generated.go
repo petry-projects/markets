@@ -159,7 +159,7 @@ type ComplexityRoot struct {
 		AddVendorToRoster             func(childComplexity int, marketID string, vendorID string, dates []string) int
 		ApproveRosterRequest          func(childComplexity int, id string) int
 		AssignManager                 func(childComplexity int, managerID string, marketID string) int
-		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string) int
+		CancelMarket                  func(childComplexity int, marketID string, reason model.CancellationReason, message *string, endEarly *bool) int
 		CheckIn                       func(childComplexity int, input model.CheckInInput) int
 		CheckOut                      func(childComplexity int, checkInID string) int
 		CreateMarket                  func(childComplexity int, input model.CreateMarketInput) int
@@ -314,7 +314,7 @@ type MutationResolver interface {
 	DeleteMarketSchedule(ctx context.Context, id string) (bool, error)
 	UpdateMarketRules(ctx context.Context, marketID string, rulesText string) (*model.Market, error)
 	SendVendorNotification(ctx context.Context, marketID string, message string) (*model.VendorNotification, error)
-	CancelMarket(ctx context.Context, marketID string, reason model.CancellationReason, message *string) (*model.Market, error)
+	CancelMarket(ctx context.Context, marketID string, reason model.CancellationReason, message *string, endEarly *bool) (*model.Market, error)
 	ReactivateMarket(ctx context.Context, marketID string) (*model.Market, error)
 	InviteVendor(ctx context.Context, marketID string, vendorID string, targetDates []string, message *string) (*model.VendorInvitation, error)
 	RespondToInvitation(ctx context.Context, invitationID string, accept bool) (*model.VendorInvitation, error)
@@ -936,7 +936,7 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 			return 0, false
 		}
 
-		return e.ComplexityRoot.Mutation.CancelMarket(childComplexity, args["marketID"].(string), args["reason"].(model.CancellationReason), args["message"].(*string)), true
+		return e.ComplexityRoot.Mutation.CancelMarket(childComplexity, args["marketID"].(string), args["reason"].(model.CancellationReason), args["message"].(*string), args["endEarly"].(*bool)), true
 	case "Mutation.checkIn":
 		if e.ComplexityRoot.Mutation.CheckIn == nil {
 			break
@@ -2317,8 +2317,8 @@ extend type Mutation {
   """Send a notification to all rostered vendors (Manager only)."""
   sendVendorNotification(marketID: ID!, message: String!): VendorNotification!
 
-  """Cancel a market day or end it early (Manager only)."""
-  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String): Market!
+  """Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled."""
+  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String, endEarly: Boolean): Market!
 
   """Reactivate a cancelled market (Manager only)."""
   reactivateMarket(marketID: ID!): Market!
@@ -2610,6 +2610,11 @@ func (ec *executionContext) field_Mutation_cancelMarket_args(ctx context.Context
 		return nil, err
 	}
 	args["message"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "endEarly", ec.unmarshalOBoolean2ᚖbool)
+	if err != nil {
+		return nil, err
+	}
+	args["endEarly"] = arg3
 	return args, nil
 }
 
@@ -6773,7 +6778,7 @@ func (ec *executionContext) _Mutation_cancelMarket(ctx context.Context, field gr
 		ec.fieldContext_Mutation_cancelMarket,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.Resolvers.Mutation().CancelMarket(ctx, fc.Args["marketID"].(string), fc.Args["reason"].(model.CancellationReason), fc.Args["message"].(*string))
+			return ec.Resolvers.Mutation().CancelMarket(ctx, fc.Args["marketID"].(string), fc.Args["reason"].(model.CancellationReason), fc.Args["message"].(*string), fc.Args["endEarly"].(*bool))
 		},
 		nil,
 		ec.marshalNMarket2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐMarket,

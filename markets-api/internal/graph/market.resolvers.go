@@ -143,7 +143,7 @@ func (r *mutationResolver) AddMarketSchedule(ctx context.Context, input model.Ad
 
 	s, err := market.NewSchedule(market.NewScheduleParams{
 		MarketID:     domain.MarketID(input.MarketID),
-		ScheduleType: string(input.ScheduleType),
+		ScheduleType: scheduleTypeToDB(input.ScheduleType),
 		DayOfWeek:    input.DayOfWeek,
 		Frequency:    ptrToString(input.Frequency),
 		SeasonStart:  ptrToString(input.SeasonStart),
@@ -292,7 +292,7 @@ func (r *mutationResolver) SendVendorNotification(ctx context.Context, marketID 
 }
 
 // CancelMarket is the resolver for the cancelMarket field.
-func (r *mutationResolver) CancelMarket(ctx context.Context, marketID string, reason model.CancellationReason, message *string) (*model.Market, error) {
+func (r *mutationResolver) CancelMarket(ctx context.Context, marketID string, reason model.CancellationReason, message *string, endEarly *bool) (*model.Market, error) {
 	if err := auth.RequireRole(ctx, "manager"); err != nil {
 		return nil, err
 	}
@@ -301,7 +301,7 @@ func (r *mutationResolver) CancelMarket(ctx context.Context, marketID string, re
 	}
 
 	status := "cancelled"
-	if reason == model.CancellationReasonOther {
+	if endEarly != nil && *endEarly {
 		status = "ended_early"
 	}
 
@@ -400,7 +400,7 @@ func (r *mutationResolver) RequestToJoinMarket(ctx context.Context, marketID str
 	}
 
 	uid := auth.UserIDFromContext(ctx)
-	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(uid), dates, "pending")
+	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(uid), dates, "pending", acknowledgeRules)
 	if err != nil {
 		slog.Error("failed to create roster entries", "error", err)
 		return nil, gqlerr.Internal("failed to request to join market")
@@ -458,7 +458,7 @@ func (r *mutationResolver) AddVendorToRoster(ctx context.Context, marketID strin
 		return nil, err
 	}
 
-	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(vendorID), dates, "approved")
+	entries, err := r.MarketRepo.CreateRosterEntries(ctx, domain.MarketID(marketID), domain.UserID(vendorID), dates, "approved", false)
 	if err != nil {
 		slog.Error("failed to add vendor to roster", "error", err)
 		return nil, gqlerr.Internal("failed to add vendor to roster")
@@ -497,7 +497,7 @@ func (r *mutationResolver) UpdateRosterStatus(ctx context.Context, id string, st
 		return nil, err
 	}
 
-	entry, err := r.MarketRepo.UpdateRosterEntryStatus(ctx, id, string(status))
+	entry, err := r.MarketRepo.UpdateRosterEntryStatus(ctx, id, rosterStatusToDB(status))
 	if err != nil {
 		slog.Error("failed to update roster status", "error", err)
 		return nil, gqlerr.Internal("failed to update roster status")

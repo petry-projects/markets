@@ -80,9 +80,7 @@ export default function MyMarketsScreen() {
               onPress={handleMarketPress}
             />
           )}
-          onRefresh={() => {
-            void refetch();
-          }}
+          onRefresh={() => { void refetch(); }}
           refreshing={loading}
         />
       )}

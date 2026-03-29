@@ -30,24 +30,23 @@ export default function EditProductScreen() {
   );
 
   const handleSubmit = useCallback(
-    async (formData: ProductFormData) => {
-      try {
-        await updateProduct({
-          variables: {
-            id: id!,
-            input: {
-              name: formData.name,
-              description: formData.description || undefined,
-              category: formData.category || undefined,
-            },
+    (formData: ProductFormData) => {
+      void updateProduct({
+        variables: {
+          id: id,
+          input: {
+            name: formData.name,
+            description: formData.description || undefined,
+            category: formData.category || undefined,
           },
-        });
+        },
+      }).then(() => {
         router.back();
-      } catch (err) {
+      }).catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : 'An unexpected error occurred';
         Alert.alert('Error', message);
-      }
+      });
     },
     [updateProduct, router, id],
   );

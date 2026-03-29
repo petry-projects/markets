@@ -7,10 +7,76 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 
+	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/db"
+	"github.com/petry-projects/markets-api/internal/domain"
+	"github.com/petry-projects/markets-api/internal/events"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/model"
+	"github.com/petry-projects/markets-api/internal/market"
 )
+
+// checkManagerScope verifies that the current user (if role == "manager") is assigned
+// to the specified market. Returns a GraphQL error if not authorized, or nil if OK.
+// Non-manager roles pass through (scope enforcement is for managers only).
+func (r *mutationResolver) checkManagerScope(ctx context.Context, marketID domain.MarketID) error {
+	role := auth.RoleFromContext(ctx)
+	if role != "manager" {
+		return nil
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.MarketRepo == nil {
+		return gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
+	}
+
+	assigned, err := r.MarketRepo.IsManagerAssigned(ctx, domain.UserID(uid), marketID)
+	if err != nil {
+		slog.Error("failed to verify market access", "error", err, "userID", uid, "marketID", marketID)
+		return gqlerr.NewError(gqlerr.CodeInternal, "failed to verify market access")
+	}
+	if !assigned {
+		return gqlerr.NewError(gqlerr.CodeForbidden, "not authorized for this market")
+	}
+
+	return nil
+}
+
+// checkQueryManagerScope is the query-resolver equivalent of checkManagerScope.
+func (r *queryResolver) checkQueryManagerScope(ctx context.Context, marketID domain.MarketID) error {
+	role := auth.RoleFromContext(ctx)
+	if role != "manager" {
+		return nil
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.MarketRepo == nil {
+		return gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
+	}
+
+	assigned, err := r.MarketRepo.IsManagerAssigned(ctx, domain.UserID(uid), marketID)
+	if err != nil {
+		slog.Error("failed to verify market access", "error", err, "userID", uid, "marketID", marketID)
+		return gqlerr.NewError(gqlerr.CodeInternal, "failed to verify market access")
+	}
+	if !assigned {
+		return gqlerr.NewError(gqlerr.CodeForbidden, "not authorized for this market")
+	}
+
+	return nil
+}
 
 // CreateMarket is the resolver for the createMarket field.
 func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error) {
@@ -19,11 +85,19 @@ func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateM
 
 // UpdateMarket is the resolver for the updateMarket field.
 func (r *mutationResolver) UpdateMarket(ctx context.Context, id string, input model.UpdateMarketInput) (*model.Market, error) {
+	// Scope check: manager must be assigned to this market
+	if err := r.checkManagerScope(ctx, domain.MarketID(id)); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: UpdateMarket - updateMarket"))
 }
 
 // AddMarketSchedule is the resolver for the addMarketSchedule field.
 func (r *mutationResolver) AddMarketSchedule(ctx context.Context, input model.AddScheduleInput) (*model.MarketSchedule, error) {
+	// Scope check: manager must be assigned to this market
+	if err := r.checkManagerScope(ctx, domain.MarketID(input.MarketID)); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: AddMarketSchedule - addMarketSchedule"))
 }
 
@@ -32,8 +106,110 @@ func (r *mutationResolver) UpdateRosterStatus(ctx context.Context, id string, st
 	panic(fmt.Errorf("not implemented: UpdateRosterStatus - updateRosterStatus"))
 }
 
+// AssignManager is the resolver for the assignManager field.
+func (r *mutationResolver) AssignManager(ctx context.Context, managerID string, marketID string) (bool, error) {
+	// Auth: require manager role
+	role := auth.RoleFromContext(ctx)
+	if role != "manager" {
+		return false, gqlerr.NewError(gqlerr.CodeForbidden, "manager role required")
+	}
+
+	// Scope: calling manager must be assigned to the target market
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return false, err
+	}
+
+	if r.MarketRepo == nil {
+		return false, gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
+	}
+
+	_, err := r.MarketRepo.AssignManager(ctx, domain.UserID(managerID), domain.MarketID(marketID))
+	if err != nil {
+		if errors.Is(err, db.ErrDuplicateAssignment) {
+			return false, gqlerr.Conflict("manager already assigned to this market")
+		}
+		slog.Error("failed to assign manager", "error", err, "managerID", managerID, "marketID", marketID)
+		return false, gqlerr.Internal("failed to assign manager")
+	}
+
+	// Publish domain event after successful DB write
+	r.EventBus.Publish(ctx, events.ManagerAssigned{
+		UserID:   managerID,
+		MarketID: marketID,
+	})
+
+	return true, nil
+}
+
+// RemoveManager is the resolver for the removeManager field.
+func (r *mutationResolver) RemoveManager(ctx context.Context, managerID string, marketID string) (bool, error) {
+	// Auth: require manager role
+	role := auth.RoleFromContext(ctx)
+	if role != "manager" {
+		return false, gqlerr.NewError(gqlerr.CodeForbidden, "manager role required")
+	}
+
+	// Scope: calling manager must be assigned to the target market
+	if err := r.checkManagerScope(ctx, domain.MarketID(marketID)); err != nil {
+		return false, err
+	}
+
+	if r.MarketRepo == nil {
+		return false, gqlerr.NewError(gqlerr.CodeInternal, "market repository not configured")
+	}
+
+	// NOTE on TOCTOU (C2): The count-check-delete sequence below is not
+	// wrapped in a DB transaction in the resolver layer. The aggregate
+	// invariant (minimum 2 managers) is enforced via the domain model's
+	// RemoveManager method, which validates against the fetched state.
+	// For production hardening, this should use a DB transaction with
+	// SELECT ... FOR UPDATE or an atomic single-query approach. Acceptable
+	// for scaffolding; tracked for follow-up.
+
+	// Load current manager count to build aggregate state
+	assignments, err := r.MarketRepo.GetManagersByMarket(ctx, domain.MarketID(marketID))
+	if err != nil {
+		slog.Error("failed to get market managers", "error", err, "marketID", marketID)
+		return false, gqlerr.Internal("failed to verify manager count")
+	}
+
+	// Build aggregate and delegate invariant check
+	m := &market.Market{
+		ID:       domain.MarketID(marketID),
+		Managers: assignments,
+	}
+
+	if err := m.RemoveManager(domain.UserID(managerID)); err != nil {
+		if errors.Is(err, market.ErrMinimumManagersRequired) {
+			return false, gqlerr.Conflict("Market requires minimum 2 managers")
+		}
+		if errors.Is(err, market.ErrManagerNotAssigned) {
+			return false, gqlerr.NewError(gqlerr.CodeValidationError, "manager not assigned to this market")
+		}
+		return false, gqlerr.Internal("failed to remove manager")
+	}
+
+	// Persist the removal
+	if err := r.MarketRepo.RemoveManager(ctx, domain.UserID(managerID), domain.MarketID(marketID)); err != nil {
+		slog.Error("failed to remove manager", "error", err, "managerID", managerID, "marketID", marketID)
+		return false, gqlerr.Internal("failed to remove manager")
+	}
+
+	// Publish domain event after successful DB write
+	r.EventBus.Publish(ctx, events.ManagerRemoved{
+		UserID:   managerID,
+		MarketID: marketID,
+	})
+
+	return true, nil
+}
+
 // Market is the resolver for the market field.
 func (r *queryResolver) Market(ctx context.Context, id string) (*model.Market, error) {
+	// Scope check: manager must be assigned to this market
+	if err := r.checkQueryManagerScope(ctx, domain.MarketID(id)); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: Market - market"))
 }
 

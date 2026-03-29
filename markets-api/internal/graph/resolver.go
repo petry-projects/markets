@@ -5,6 +5,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/events"
+	"github.com/petry-projects/markets-api/internal/market"
 	"github.com/petry-projects/markets-api/internal/user"
 )
 
@@ -14,6 +15,7 @@ type Resolver struct {
 	Pool         *pgxpool.Pool
 	EventBus     *events.Bus
 	UserRepo     user.Repository
+	MarketRepo   market.Repository
 	ClaimsSetter auth.ClaimsSetter
 }
 
@@ -23,6 +25,17 @@ func NewResolver(pool *pgxpool.Pool, eventBus *events.Bus, userRepo user.Reposit
 		Pool:         pool,
 		EventBus:     eventBus,
 		UserRepo:     userRepo,
+		ClaimsSetter: claimsSetter,
+	}
+}
+
+// NewResolverWithMarketRepo creates a new Resolver with all dependencies including market repo.
+func NewResolverWithMarketRepo(pool *pgxpool.Pool, eventBus *events.Bus, userRepo user.Repository, claimsSetter auth.ClaimsSetter, marketRepo market.Repository) *Resolver {
+	return &Resolver{
+		Pool:         pool,
+		EventBus:     eventBus,
+		UserRepo:     userRepo,
+		MarketRepo:   marketRepo,
 		ClaimsSetter: claimsSetter,
 	}
 }

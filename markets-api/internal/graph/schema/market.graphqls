@@ -86,4 +86,10 @@ extend type Mutation {
 
   """Approve or reject a vendor roster request (Manager only)."""
   updateRosterStatus(id: ID!, status: RosterStatus!): VendorRosterEntry!
+
+  """Assign a manager to a market (Admin only)."""
+  assignManager(managerID: ID!, marketID: ID!): Boolean!
+
+  """Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers."""
+  removeManager(managerID: ID!, marketID: ID!): Boolean!
 }

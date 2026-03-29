@@ -35,20 +35,20 @@ export default function VendorMarketsScreen() {
             <Heading className="text-xl text-typography-900">My Markets</Heading>
             <Button
               className="bg-primary-500 rounded-lg px-4 h-10"
-              onPress={() => {
-                router.push('/(vendor)/markets/search');
-              }}
+              onPress={() => router.push('/(vendor)/markets/search')}
               accessibilityLabel="Find markets"
             >
-              <ButtonText className="text-white text-sm font-semibold">Find Markets</ButtonText>
+              <ButtonText className="text-white text-sm font-semibold">
+                Find Markets
+              </ButtonText>
             </Button>
           </Box>
         }
         renderItem={({ item }) => (
           <Pressable
-            onPress={() => {
-              router.push(`/(vendor)/markets/${item.market.id}/detail`);
-            }}
+            onPress={() =>
+              router.push(`/(vendor)/markets/${item.market.id}/detail`)
+            }
             accessibilityLabel={`Market: ${item.market.name}`}
           >
             <Box className="rounded-lg border border-outline-200 bg-background-0 p-4 mb-3">
@@ -83,12 +83,17 @@ export default function VendorMarketsScreen() {
                     </Text>
                   </Box>
                 </Box>
-                <Text className="text-sm text-typography-500">{item.market.address}</Text>
-                {item.nextUpcomingDate != null && item.nextUpcomingDate !== '' && (
-                  <Text className="text-sm text-primary-600">Next: {item.nextUpcomingDate}</Text>
+                <Text className="text-sm text-typography-500">
+                  {item.market.address}
+                </Text>
+                {item.nextUpcomingDate && (
+                  <Text className="text-sm text-primary-600">
+                    Next: {item.nextUpcomingDate}
+                  </Text>
                 )}
                 <Text className="text-sm text-typography-400">
-                  {item.dates.length} date{item.dates.length !== 1 ? 's' : ''} committed
+                  {item.dates.length} date{item.dates.length !== 1 ? 's' : ''}{' '}
+                  committed
                 </Text>
               </VStack>
             </Box>
@@ -97,22 +102,22 @@ export default function VendorMarketsScreen() {
         ListEmptyComponent={
           <Box className="items-center py-8">
             <VStack className="items-center gap-4">
-              <Text className="text-typography-400">You haven&apos;t joined any markets yet.</Text>
+              <Text className="text-typography-400">
+                You haven't joined any markets yet.
+              </Text>
               <Button
                 className="h-12 bg-primary-500 rounded-lg px-6"
-                onPress={() => {
-                  router.push('/(vendor)/markets/search');
-                }}
+                onPress={() => router.push('/(vendor)/markets/search')}
                 accessibilityLabel="Find markets to join"
               >
-                <ButtonText className="text-white font-semibold">Find Markets</ButtonText>
+                <ButtonText className="text-white font-semibold">
+                  Find Markets
+                </ButtonText>
               </Button>
             </VStack>
           </Box>
         }
-        onRefresh={() => {
-          void refetch();
-        }}
+        onRefresh={refetch}
         refreshing={loading}
       />
     </Box>

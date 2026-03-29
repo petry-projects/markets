@@ -19,13 +19,16 @@ export default function MarketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data, loading } = useQuery(GetMarketDocument, {
-    variables: { id },
+    variables: { id: id! },
   });
-  const [requestJoin, { loading: joinLoading }] = useMutation(RequestToJoinMarketDocument, {
-    refetchQueries: [{ query: VendorMarketsDocument }],
-  });
+  const [requestJoin, { loading: joinLoading }] = useMutation(
+    RequestToJoinMarketDocument,
+    {
+      refetchQueries: [{ query: VendorMarketsDocument }],
+    },
+  );
 
-  const [selectedDates, setSelectedDates] = useState(new Set<string>());
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   const [rulesAcknowledged, setRulesAcknowledged] = useState(false);
 
   const market = data?.market;
@@ -43,28 +46,19 @@ export default function MarketDetailScreen() {
         d.setDate(d.getDate() + (diff === 0 ? 0 : diff));
 
         for (let i = 0; i < 12; i++) {
-          const dateStr = d.toISOString().split('T')[0] ?? '';
+          const dateStr = d.toISOString().split('T')[0]!;
 
-          if (
-            sched.seasonStart != null &&
-            sched.seasonStart !== '' &&
-            dateStr < sched.seasonStart
-          ) {
+          if (sched.seasonStart && dateStr < sched.seasonStart) {
             d.setDate(d.getDate() + 7);
             continue;
           }
-          if (sched.seasonEnd != null && sched.seasonEnd !== '' && dateStr > sched.seasonEnd) break;
+          if (sched.seasonEnd && dateStr > sched.seasonEnd) break;
 
           dates.push(dateStr);
           d.setDate(d.getDate() + 7);
         }
-      } else if (
-        sched.scheduleType === 'ONE_TIME' &&
-        sched.eventDate != null &&
-        sched.eventDate !== ''
-      ) {
-        const todayStr = now.toISOString().split('T')[0] ?? '';
-        if (sched.eventDate >= todayStr) {
+      } else if (sched.scheduleType === 'ONE_TIME' && sched.eventDate) {
+        if (sched.eventDate >= now.toISOString().split('T')[0]!) {
           dates.push(sched.eventDate);
         }
       }
@@ -98,21 +92,17 @@ export default function MarketDetailScreen() {
     try {
       await requestJoin({
         variables: {
-          marketID: id,
+          marketID: id!,
           dates: Array.from(selectedDates),
           acknowledgeRules: rulesAcknowledged,
         },
       });
       Alert.alert('Request Sent', 'Your join request has been submitted.', [
-        {
-          text: 'OK',
-          onPress: () => {
-            router.back();
-          },
-        },
+        { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to submit request';
+      const message =
+        err instanceof Error ? err.message : 'Failed to submit request';
       Alert.alert('Error', message);
     }
   }, [requestJoin, id, selectedDates, rulesAcknowledged, router]);
@@ -142,14 +132,12 @@ export default function MarketDetailScreen() {
         <VStack className="gap-2">
           <Heading className="text-xl text-typography-900">{market.name}</Heading>
           <Text className="text-typography-500">{market.address}</Text>
-          {market.description != null && market.description !== '' && (
+          {market.description && (
             <Text className="text-typography-600">{market.description}</Text>
           )}
           <Text className="text-sm text-typography-500">
             Contact: {market.contactEmail}
-            {market.contactPhone != null && market.contactPhone !== ''
-              ? ` | ${market.contactPhone}`
-              : ''}
+            {market.contactPhone ? ` | ${market.contactPhone}` : ''}
           </Text>
         </VStack>
 
@@ -160,23 +148,25 @@ export default function MarketDetailScreen() {
             {market.schedule.map((s) => (
               <Text key={s.id} className="text-sm text-typography-600">
                 {s.scheduleType === 'RECURRING'
-                  ? `${String(dayNames[s.dayOfWeek ?? 0])}s ${s.startTime}-${s.endTime}`
-                  : `${s.eventName ?? 'Event'} on ${s.eventDate ?? ''}`}
-                {s.seasonStart != null && s.seasonStart !== ''
-                  ? ` (${s.seasonStart} - ${s.seasonEnd ?? ''})`
-                  : ''}
+                  ? `${dayNames[s.dayOfWeek ?? 0]}s ${s.startTime}-${s.endTime}`
+                  : `${s.eventName ?? 'Event'} on ${s.eventDate}`}
+                {s.seasonStart ? ` (${s.seasonStart} - ${s.seasonEnd})` : ''}
               </Text>
             ))}
           </VStack>
         )}
 
         {/* Rules */}
-        {market.rulesText != null && market.rulesText !== '' && (
+        {market.rulesText && (
           <VStack className="gap-2">
-            <Heading className="text-lg text-typography-900">Market Rules</Heading>
+            <Heading className="text-lg text-typography-900">
+              Market Rules
+            </Heading>
             <Box className="rounded-lg border border-outline-200 bg-background-50 p-3">
-              <Text className="text-sm text-typography-600">{market.rulesText}</Text>
-              {market.rulesUpdatedAt != null && market.rulesUpdatedAt !== '' && (
+              <Text className="text-sm text-typography-600">
+                {market.rulesText}
+              </Text>
+              {market.rulesUpdatedAt && (
                 <Text className="text-xs text-typography-400 mt-2">
                   Last updated: {market.rulesUpdatedAt}
                 </Text>
@@ -188,13 +178,17 @@ export default function MarketDetailScreen() {
         {/* Date Selection */}
         <VStack className="gap-2">
           <Box className="flex-row items-center justify-between">
-            <Heading className="text-lg text-typography-900">Select Dates</Heading>
+            <Heading className="text-lg text-typography-900">
+              Select Dates
+            </Heading>
             <Button
               className="bg-transparent"
               onPress={selectAll}
               accessibilityLabel="Select all dates"
             >
-              <ButtonText className="text-primary-600 text-sm">Select All</ButtonText>
+              <ButtonText className="text-primary-600 text-sm">
+                Select All
+              </ButtonText>
             </Button>
           </Box>
 
@@ -208,12 +202,9 @@ export default function MarketDetailScreen() {
           {upcomingDates.map((date) => (
             <Pressable
               key={date}
-              onPress={() => {
-                toggleDate(date);
-              }}
+              onPress={() => toggleDate(date)}
               accessibilityLabel={`Select ${date}`}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: selectedDates.has(date) }}
             >
               <Box
                 className={`rounded-lg border p-3 ${
@@ -236,26 +227,27 @@ export default function MarketDetailScreen() {
                       day: 'numeric',
                     })}
                   </Text>
-                  {selectedDates.has(date) && <CheckIcon size={16} color="#16a34a" />}
+                  {selectedDates.has(date) && (
+                    <CheckIcon size={16} color="#16a34a" />
+                  )}
                 </Box>
               </Box>
             </Pressable>
           ))}
 
           {upcomingDates.length === 0 && (
-            <Text className="text-sm text-typography-400">No upcoming dates available.</Text>
+            <Text className="text-sm text-typography-400">
+              No upcoming dates available.
+            </Text>
           )}
         </VStack>
 
         {/* Rules Acknowledgment */}
-        {market.rulesText != null && market.rulesText !== '' && (
+        {market.rulesText && (
           <Pressable
-            onPress={() => {
-              setRulesAcknowledged(!rulesAcknowledged);
-            }}
+            onPress={() => setRulesAcknowledged(!rulesAcknowledged)}
             accessibilityLabel="I acknowledge the market rules"
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: rulesAcknowledged }}
           >
             <Box className="flex-row items-center gap-3">
               <Box
@@ -265,7 +257,9 @@ export default function MarketDetailScreen() {
                     : 'border-outline-300 bg-background-0'
                 }`}
               >
-                {rulesAcknowledged && <CheckIcon size={14} color="#ffffff" />}
+                {rulesAcknowledged && (
+                  <CheckIcon size={14} color="#ffffff" />
+                )}
               </Box>
               <Text className="text-sm text-typography-600 flex-1">
                 I acknowledge and agree to the market rules
@@ -277,20 +271,20 @@ export default function MarketDetailScreen() {
         {/* Submit */}
         <Button
           className="h-14 bg-primary-500 rounded-lg mt-2"
-          onPress={() => {
-            void handleJoinRequest();
-          }}
+          onPress={handleJoinRequest}
           disabled={
             joinLoading ||
             selectedDates.size === 0 ||
-            (market.rulesText != null && market.rulesText !== '' && !rulesAcknowledged)
+            (!!market.rulesText && !rulesAcknowledged)
           }
           accessibilityLabel="Request to join market"
         >
           {joinLoading ? (
             <Spinner className="text-white" />
           ) : (
-            <ButtonText className="text-white font-semibold text-base">Request to Join</ButtonText>
+            <ButtonText className="text-white font-semibold text-base">
+              Request to Join
+            </ButtonText>
           )}
         </Button>
       </VStack>

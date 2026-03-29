@@ -5,38 +5,49 @@ import { Alert } from 'react-native';
 import { Box } from '@/components/ui/box';
 import { Spinner } from '@/components/ui/spinner';
 import ProductForm, { ProductFormData } from '@/components/vendor/ProductForm';
-import { UpdateProductDocument, MyVendorProfileDocument } from '@/graphql/generated/graphql';
+import {
+  VendorProductsDocument,
+  UpdateProductDocument,
+  MyVendorProfileDocument,
+} from '@/graphql/generated/graphql';
 
 export default function EditProductScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { data: profileData, loading: profileLoading } = useQuery(MyVendorProfileDocument);
-  const [updateProduct, { loading: mutationLoading }] = useMutation(UpdateProductDocument, {
-    refetchQueries: [{ query: MyVendorProfileDocument }],
-  });
+  const { data: profileData, loading: profileLoading } = useQuery(
+    MyVendorProfileDocument,
+  );
+  const [updateProduct, { loading: mutationLoading }] = useMutation(
+    UpdateProductDocument,
+    {
+      refetchQueries: [{ query: MyVendorProfileDocument }],
+    },
+  );
 
-  const product = profileData?.myVendorProfile?.products.find((p) => p.id === id);
+  const product = profileData?.myVendorProfile?.products.find(
+    (p) => p.id === id,
+  );
 
   const handleSubmit = useCallback(
-    (formData: ProductFormData) => {
-      void updateProduct({
-        variables: {
-          id: id,
-          input: {
-            name: formData.name,
-            description: formData.description || undefined,
-            category: formData.category || undefined,
+    async (formData: ProductFormData) => {
+      try {
+        await updateProduct({
+          variables: {
+            id: id!,
+            input: {
+              name: formData.name,
+              description: formData.description || undefined,
+              category: formData.category || undefined,
+            },
           },
-        },
-      })
-        .then(() => {
-          router.back();
-        })
-        .catch((err: unknown) => {
-          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-          Alert.alert('Error', message);
         });
+        router.back();
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : 'An unexpected error occurred';
+        Alert.alert('Error', message);
+      }
     },
     [updateProduct, router, id],
   );

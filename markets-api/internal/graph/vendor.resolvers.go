@@ -7,9 +7,8 @@ package graph
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
-	"time"
 
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/domain"
@@ -362,17 +361,9 @@ func (r *queryResolver) Vendor(ctx context.Context, id string) (*model.Vendor, e
 		return nil, err
 	}
 
-	if r.VendorRepo == nil {
-		return nil, gqlerr.Internal("vendor repository not configured")
-	}
-
 	v, err := r.VendorRepo.FindVendorByID(ctx, domain.VendorID(id))
 	if err != nil {
-		if errors.Is(err, vendor.ErrVendorNotFound) {
-			return nil, nil // return nil for not found (nullable field)
-		}
-		slog.Error("failed to load vendor", "error", err, "vendorID", id)
-		return nil, gqlerr.Internal("failed to load vendor")
+		return nil, nil // return nil for not found (nullable field)
 	}
 
 	return vendorToModel(v), nil
@@ -395,11 +386,7 @@ func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, err
 
 	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
 	if err != nil {
-		if errors.Is(err, vendor.ErrVendorNotFound) {
-			return nil, nil // no profile yet
-		}
-		slog.Error("failed to load vendor profile", "error", err, "userID", uid)
-		return nil, gqlerr.Internal("failed to load vendor profile")
+		return nil, nil // no profile yet
 	}
 
 	return vendorToModel(v), nil
@@ -409,10 +396,6 @@ func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, err
 func (r *queryResolver) VendorProducts(ctx context.Context, vendorID string) ([]*model.Product, error) {
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
-	}
-
-	if r.VendorRepo == nil {
-		return nil, gqlerr.Internal("vendor repository not configured")
 	}
 
 	products, err := r.VendorRepo.FindProductsByVendorID(ctx, domain.VendorID(vendorID))
@@ -434,10 +417,6 @@ func (r *queryResolver) SearchMarketsToJoin(ctx context.Context, input model.Sea
 		return nil, err
 	}
 
-	if r.VendorRepo == nil || r.MarketRepo == nil {
-		return nil, gqlerr.Internal("repository not configured")
-	}
-
 	uid := auth.UserIDFromContext(ctx)
 	if uid == "" {
 		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
@@ -454,8 +433,18 @@ func (r *queryResolver) SearchMarketsToJoin(ctx context.Context, input model.Sea
 		return nil, gqlerr.Internal("failed to search markets")
 	}
 
-	// Collect vendor's roster dates for status lookup (vendor_roster uses user_id)
-	rosterDates, _ := r.VendorRepo.GetVendorMarketDates(ctx, domain.UserID(uid))
+	// Look up vendor to check roster status
+	var vendorID domain.VendorID
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err == nil {
+		vendorID = v.ID
+	}
+
+	// Collect vendor's roster dates for status lookup
+	var rosterDates []vendor.VendorMarketDateRow
+	if vendorID != "" {
+		rosterDates, _ = r.VendorRepo.GetVendorMarketDates(ctx, vendorID)
+	}
 
 	// Group roster dates by market for status
 	marketStatuses := make(map[domain.MarketID]model.VendorMarketJoinStatus)
@@ -500,16 +489,17 @@ func (r *queryResolver) VendorMarkets(ctx context.Context) ([]*model.VendorMarke
 		return nil, err
 	}
 
-	if r.VendorRepo == nil || r.MarketRepo == nil {
-		return nil, gqlerr.Internal("repository not configured")
-	}
-
 	uid := auth.UserIDFromContext(ctx)
 	if uid == "" {
 		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
 	}
 
-	rosterDates, err := r.VendorRepo.GetVendorMarketDates(ctx, domain.UserID(uid))
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		return []*model.VendorMarketAssociation{}, nil // no profile = no markets
+	}
+
+	rosterDates, err := r.VendorRepo.GetVendorMarketDates(ctx, v.ID)
 	if err != nil {
 		slog.Error("failed to get vendor market dates", "error", err)
 		return nil, gqlerr.Internal("failed to load vendor markets")
@@ -534,11 +524,11 @@ func (r *queryResolver) VendorMarkets(ctx context.Context) ([]*model.VendorMarke
 		g.dates = append(g.dates, &model.VendorMarketDate{
 			ID:     rd.ID,
 			Date:   rd.Date,
-			Status: dbStatusToRosterStatus(rd.Status),
+			Status: model.VendorRosterStatus(rd.Status),
 		})
 		g.statuses[rd.Status] = true
-		// Track next upcoming date (dates are sorted, filter to future dates)
-		if g.nextUpcoming == "" && (rd.Status == "approved" || rd.Status == "committed") && rd.Date >= time.Now().Format("2006-01-02") {
+		// Track next upcoming date (dates are sorted)
+		if g.nextUpcoming == "" && (rd.Status == "approved" || rd.Status == "committed") {
 			g.nextUpcoming = rd.Date
 		}
 	}
@@ -593,9 +583,4 @@ func determineJoinStatus(statuses map[string]bool) model.VendorMarketJoinStatus 
 		}
 	}
 	return model.VendorMarketJoinStatusMixed
-}
-
-// dbStatusToRosterStatus maps lowercase DB status to uppercase GraphQL VendorRosterStatus.
-func dbStatusToRosterStatus(status string) model.VendorRosterStatus {
-	return rosterStatusToModel(status)
 }

@@ -1,8 +1,6 @@
 package graph
 
 import (
-	"strings"
-
 	"github.com/petry-projects/markets-api/internal/graph/model"
 	"github.com/petry-projects/markets-api/internal/vendor"
 )
@@ -24,22 +22,6 @@ func vendorToModel(v *vendor.VendorRecord) *model.Vendor {
 		CreatedAt:       v.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
 		UpdatedAt:       v.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
-}
-
-// checkInToModel converts a domain CheckInRecord to a GraphQL model CheckIn.
-func checkInToModel(c *vendor.CheckInRecord) *model.CheckIn {
-	ci := &model.CheckIn{
-		ID:          c.ID.String(),
-		VendorID:    c.VendorID.String(),
-		MarketID:    c.MarketID.String(),
-		Status:      model.CheckInStatus(strings.ToUpper(string(c.Status))),
-		CheckedInAt: c.CheckedInAt.Format("2006-01-02T15:04:05Z07:00"),
-	}
-	if c.CheckedOutAt != nil {
-		s := c.CheckedOutAt.Format("2006-01-02T15:04:05Z07:00")
-		ci.CheckedOutAt = &s
-	}
-	return ci
 }
 
 // productToModel converts a domain ProductRecord to a GraphQL model Product.

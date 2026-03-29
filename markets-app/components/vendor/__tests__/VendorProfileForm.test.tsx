@@ -1,11 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import VendorProfileForm from '../VendorProfileForm';
 
 const mockOnSubmit = jest.fn();
 
-function renderProfileForm(props = {}) {
-  render(<VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />);
+function renderForm(props = {}) {
+  return render(
+    <VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />,
+  );
 }
 
 beforeEach(() => {
@@ -14,28 +16,32 @@ beforeEach(() => {
 
 describe('VendorProfileForm', () => {
   it('renders create mode heading', () => {
-    renderProfileForm();
-    expect(screen.getByText('Create Vendor Profile')).toBeTruthy();
+    const { getByText } = renderForm();
+    expect(getByText('Create Vendor Profile')).toBeTruthy();
   });
 
   it('renders edit mode heading', () => {
-    renderProfileForm({ mode: 'edit' });
-    expect(screen.getByText('Edit Profile')).toBeTruthy();
+    const { getByText } = renderForm({ mode: 'edit' });
+    expect(getByText('Edit Profile')).toBeTruthy();
   });
 
   it('shows validation error for empty business name', async () => {
-    renderProfileForm();
-    fireEvent.press(screen.getByLabelText('Create profile'));
+    const { getByLabelText, getByText } = renderForm();
+    const submitButton = getByLabelText('Create profile');
+    fireEvent.press(submitButton);
     await waitFor(() => {
-      expect(screen.getByText('Business name is required')).toBeTruthy();
+      expect(getByText('Business name is required')).toBeTruthy();
     });
     expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
   it('submits valid form data', async () => {
-    renderProfileForm();
-    fireEvent.changeText(screen.getByLabelText('Business Name'), 'Farm Fresh');
-    fireEvent.press(screen.getByLabelText('Create profile'));
+    const { getByLabelText } = renderForm();
+    const nameInput = getByLabelText('Business Name');
+    fireEvent.changeText(nameInput, 'Farm Fresh');
+
+    const submitButton = getByLabelText('Create profile');
+    fireEvent.press(submitButton);
 
     await waitFor(() => {
       expect(mockOnSubmit).toHaveBeenCalledWith(
@@ -47,20 +53,21 @@ describe('VendorProfileForm', () => {
   });
 
   it('populates initial data in edit mode', () => {
-    renderProfileForm({
+    const { getByDisplayValue } = renderForm({
       mode: 'edit',
       initialData: {
         businessName: 'Existing Farm',
         description: 'Organic produce',
       },
     });
-    expect(screen.getByDisplayValue('Existing Farm')).toBeTruthy();
-    expect(screen.getByDisplayValue('Organic produce')).toBeTruthy();
+    expect(getByDisplayValue('Existing Farm')).toBeTruthy();
+    expect(getByDisplayValue('Organic produce')).toBeTruthy();
   });
 
   it('shows spinner when loading', () => {
-    renderProfileForm({ loading: true });
+    const { queryByLabelText } = renderForm({ loading: true });
     // When loading, the submit button should be present but disabled
-    expect(screen.queryByLabelText('Create profile')).toBeTruthy();
+    const submitButton = queryByLabelText('Create profile');
+    expect(submitButton).toBeTruthy();
   });
 });

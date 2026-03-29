@@ -260,14 +260,15 @@ type Mutation struct {
 
 // Notification preferences and device token management.
 type NotificationPreferences struct {
-	ID                  string `json:"id"`
-	UserID              string `json:"userID"`
-	PushEnabled         bool   `json:"pushEnabled"`
-	VendorCheckInAlerts bool   `json:"vendorCheckInAlerts"`
-	MarketUpdateAlerts  bool   `json:"marketUpdateAlerts"`
-	ExceptionAlerts     bool   `json:"exceptionAlerts"`
-	CreatedAt           string `json:"createdAt"`
-	UpdatedAt           string `json:"updatedAt"`
+	ID                   string `json:"id"`
+	UserID               string `json:"userID"`
+	PushEnabled          bool   `json:"pushEnabled"`
+	VendorCheckInAlerts  bool   `json:"vendorCheckInAlerts"`
+	VendorCheckoutAlerts bool   `json:"vendorCheckoutAlerts"`
+	MarketUpdateAlerts   bool   `json:"marketUpdateAlerts"`
+	ExceptionAlerts      bool   `json:"exceptionAlerts"`
+	CreatedAt            string `json:"createdAt"`
+	UpdatedAt            string `json:"updatedAt"`
 }
 
 type Product struct {
@@ -335,10 +336,11 @@ type UpdateMarketInput struct {
 
 // Input for updating notification preferences.
 type UpdateNotificationPreferencesInput struct {
-	PushEnabled         *bool `json:"pushEnabled,omitempty"`
-	VendorCheckInAlerts *bool `json:"vendorCheckInAlerts,omitempty"`
-	MarketUpdateAlerts  *bool `json:"marketUpdateAlerts,omitempty"`
-	ExceptionAlerts     *bool `json:"exceptionAlerts,omitempty"`
+	PushEnabled          *bool `json:"pushEnabled,omitempty"`
+	VendorCheckInAlerts  *bool `json:"vendorCheckInAlerts,omitempty"`
+	VendorCheckoutAlerts *bool `json:"vendorCheckoutAlerts,omitempty"`
+	MarketUpdateAlerts   *bool `json:"marketUpdateAlerts,omitempty"`
+	ExceptionAlerts      *bool `json:"exceptionAlerts,omitempty"`
 }
 
 type UpdateProductInput struct {

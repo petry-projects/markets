@@ -4,6 +4,7 @@ query MyNotificationPrefs {
     userID
     pushEnabled
     vendorCheckInAlerts
+    vendorCheckoutAlerts
     marketUpdateAlerts
     exceptionAlerts
     createdAt

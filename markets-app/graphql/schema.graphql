@@ -551,6 +551,7 @@ type NotificationPreferences {
   userID: ID!
   pushEnabled: Boolean!
   vendorCheckInAlerts: Boolean!
+  vendorCheckoutAlerts: Boolean!
   marketUpdateAlerts: Boolean!
   exceptionAlerts: Boolean!
   createdAt: String!
@@ -588,6 +589,7 @@ type ActivityFeedItem {
 input UpdateNotificationPreferencesInput {
   pushEnabled: Boolean
   vendorCheckInAlerts: Boolean
+  vendorCheckoutAlerts: Boolean
   marketUpdateAlerts: Boolean
   exceptionAlerts: Boolean
 }

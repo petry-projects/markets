@@ -46,7 +46,7 @@ jest.mock('lucide-react-native', () => {
 
 const mockUseQuery = jest.fn();
 const mockMutate = jest.fn();
-const mockUseMutation = jest.fn(() => [mockMutate]);
+const mockUseMutation = jest.fn(() => [mockMutate, { loading: false }]);
 jest.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args) as unknown,
   useMutation: () => mockUseMutation() as unknown,
@@ -79,6 +79,7 @@ describe('CustomerNotificationsScreen', () => {
           id: 'np1',
           pushEnabled: true,
           vendorCheckInAlerts: true,
+          vendorCheckoutAlerts: false,
           marketUpdateAlerts: false,
           exceptionAlerts: true,
         },
@@ -97,6 +98,7 @@ describe('CustomerNotificationsScreen', () => {
           id: 'np1',
           pushEnabled: true,
           vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
           marketUpdateAlerts: false,
           exceptionAlerts: false,
         },
@@ -107,6 +109,7 @@ describe('CustomerNotificationsScreen', () => {
     render(<CustomerNotificationsScreen />);
     expect(screen.getByText('Push Notifications')).toBeTruthy();
     expect(screen.getByText('Check-in Alerts')).toBeTruthy();
+    expect(screen.getByText('Checkout Alerts')).toBeTruthy();
     expect(screen.getByText('Market Updates')).toBeTruthy();
     expect(screen.getByText('Exception Alerts')).toBeTruthy();
   });
@@ -118,6 +121,7 @@ describe('CustomerNotificationsScreen', () => {
           id: 'np1',
           pushEnabled: true,
           vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
           marketUpdateAlerts: false,
           exceptionAlerts: false,
         },
@@ -126,7 +130,7 @@ describe('CustomerNotificationsScreen', () => {
     });
 
     render(<CustomerNotificationsScreen />);
-    fireEvent.press(screen.getByLabelText('Check-in Alerts'));
+    fireEvent(screen.getByLabelText('Check-in Alerts toggle'), 'valueChange', true);
     expect(mockMutate).toHaveBeenCalled();
   });
 

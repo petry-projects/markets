@@ -233,14 +233,15 @@ type ComplexityRoot struct {
 	}
 
 	NotificationPreferences struct {
-		CreatedAt           func(childComplexity int) int
-		ExceptionAlerts     func(childComplexity int) int
-		ID                  func(childComplexity int) int
-		MarketUpdateAlerts  func(childComplexity int) int
-		PushEnabled         func(childComplexity int) int
-		UpdatedAt           func(childComplexity int) int
-		UserID              func(childComplexity int) int
-		VendorCheckInAlerts func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
+		ExceptionAlerts      func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		MarketUpdateAlerts   func(childComplexity int) int
+		PushEnabled          func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
+		UserID               func(childComplexity int) int
+		VendorCheckInAlerts  func(childComplexity int) int
+		VendorCheckoutAlerts func(childComplexity int) int
 	}
 
 	Product struct {
@@ -1581,6 +1582,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.NotificationPreferences.VendorCheckInAlerts(childComplexity), true
+	case "NotificationPreferences.vendorCheckoutAlerts":
+		if e.ComplexityRoot.NotificationPreferences.VendorCheckoutAlerts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationPreferences.VendorCheckoutAlerts(childComplexity), true
 
 	case "Product.category":
 		if e.ComplexityRoot.Product.Category == nil {
@@ -2820,6 +2827,7 @@ type NotificationPreferences {
   userID: ID!
   pushEnabled: Boolean!
   vendorCheckInAlerts: Boolean!
+  vendorCheckoutAlerts: Boolean!
   marketUpdateAlerts: Boolean!
   exceptionAlerts: Boolean!
   createdAt: String!
@@ -2856,6 +2864,7 @@ type ActivityFeedItem {
 input UpdateNotificationPreferencesInput {
   pushEnabled: Boolean
   vendorCheckInAlerts: Boolean
+  vendorCheckoutAlerts: Boolean
   marketUpdateAlerts: Boolean
   exceptionAlerts: Boolean
 }
@@ -9110,6 +9119,8 @@ func (ec *executionContext) fieldContext_Mutation_updateNotificationPreferences(
 				return ec.fieldContext_NotificationPreferences_pushEnabled(ctx, field)
 			case "vendorCheckInAlerts":
 				return ec.fieldContext_NotificationPreferences_vendorCheckInAlerts(ctx, field)
+			case "vendorCheckoutAlerts":
+				return ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts(ctx, field)
 			case "marketUpdateAlerts":
 				return ec.fieldContext_NotificationPreferences_marketUpdateAlerts(ctx, field)
 			case "exceptionAlerts":
@@ -9800,6 +9811,35 @@ func (ec *executionContext) _NotificationPreferences_vendorCheckInAlerts(ctx con
 }
 
 func (ec *executionContext) fieldContext_NotificationPreferences_vendorCheckInAlerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationPreferences",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _NotificationPreferences_vendorCheckoutAlerts(ctx context.Context, field graphql.CollectedField, obj *model.NotificationPreferences) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts,
+		func(ctx context.Context) (any, error) {
+			return obj.VendorCheckoutAlerts, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationPreferences_vendorCheckoutAlerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "NotificationPreferences",
 		Field:      field,
@@ -11156,6 +11196,8 @@ func (ec *executionContext) fieldContext_Query_myNotificationPreferences(_ conte
 				return ec.fieldContext_NotificationPreferences_pushEnabled(ctx, field)
 			case "vendorCheckInAlerts":
 				return ec.fieldContext_NotificationPreferences_vendorCheckInAlerts(ctx, field)
+			case "vendorCheckoutAlerts":
+				return ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts(ctx, field)
 			case "marketUpdateAlerts":
 				return ec.fieldContext_NotificationPreferences_marketUpdateAlerts(ctx, field)
 			case "exceptionAlerts":
@@ -15839,7 +15881,7 @@ func (ec *executionContext) unmarshalInputUpdateNotificationPreferencesInput(ctx
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"pushEnabled", "vendorCheckInAlerts", "marketUpdateAlerts", "exceptionAlerts"}
+	fieldsInOrder := [...]string{"pushEnabled", "vendorCheckInAlerts", "vendorCheckoutAlerts", "marketUpdateAlerts", "exceptionAlerts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15860,6 +15902,13 @@ func (ec *executionContext) unmarshalInputUpdateNotificationPreferencesInput(ctx
 				return it, err
 			}
 			it.VendorCheckInAlerts = data
+		case "vendorCheckoutAlerts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vendorCheckoutAlerts"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VendorCheckoutAlerts = data
 		case "marketUpdateAlerts":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketUpdateAlerts"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -17450,6 +17499,11 @@ func (ec *executionContext) _NotificationPreferences(ctx context.Context, sel as
 			}
 		case "vendorCheckInAlerts":
 			out.Values[i] = ec._NotificationPreferences_vendorCheckInAlerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "vendorCheckoutAlerts":
+			out.Values[i] = ec._NotificationPreferences_vendorCheckoutAlerts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

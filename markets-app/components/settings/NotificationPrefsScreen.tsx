@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, Switch } from 'react-native';
+import { Switch } from 'react-native';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Bell } from 'lucide-react-native';
 import { Box } from '@/components/ui/box';
@@ -12,7 +12,12 @@ import {
   UpdateNotificationPrefsDocument,
 } from '@/graphql/generated/graphql';
 
-type PrefKey = 'pushEnabled' | 'vendorCheckInAlerts' | 'marketUpdateAlerts' | 'exceptionAlerts';
+type PrefKey =
+  | 'pushEnabled'
+  | 'vendorCheckInAlerts'
+  | 'vendorCheckoutAlerts'
+  | 'marketUpdateAlerts'
+  | 'exceptionAlerts';
 
 type PrefRow = {
   key: PrefKey;
@@ -29,7 +34,12 @@ const PREF_ROWS: PrefRow[] = [
   {
     key: 'vendorCheckInAlerts',
     label: 'Check-in Alerts',
-    description: 'Get notified when vendors check in or out',
+    description: 'Get notified when vendors check in',
+  },
+  {
+    key: 'vendorCheckoutAlerts',
+    label: 'Checkout Alerts',
+    description: 'Get notified when vendors check out',
   },
   {
     key: 'marketUpdateAlerts',
@@ -45,14 +55,14 @@ const PREF_ROWS: PrefRow[] = [
 
 export default function NotificationPrefsScreen() {
   const { data, loading } = useQuery(MyNotificationPrefsDocument);
-  const [updatePrefs] = useMutation(UpdateNotificationPrefsDocument, {
+  const [updatePrefs, { loading: updating }] = useMutation(UpdateNotificationPrefsDocument, {
     refetchQueries: [{ query: MyNotificationPrefsDocument }],
   });
 
   const prefs = data?.myNotificationPreferences;
 
   const handleToggle = (key: PrefKey) => {
-    const currentValue = prefs?.[key] ?? false;
+    const currentValue = prefs !== null && prefs !== undefined ? prefs[key] : false;
     void updatePrefs({
       variables: {
         input: { [key]: !currentValue },
@@ -82,31 +92,27 @@ export default function NotificationPrefsScreen() {
 
       <VStack className="gap-2">
         {PREF_ROWS.map((row) => {
-          const isEnabled = prefs?.[row.key] ?? false;
+          const isEnabled = prefs !== null && prefs !== undefined ? prefs[row.key] : false;
           return (
-            <Pressable
+            <Box
               key={row.key}
-              onPress={() => {
-                handleToggle(row.key);
-              }}
-              accessibilityLabel={row.label}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: isEnabled }}
+              className="flex-row items-center rounded-lg border border-outline-200 bg-background-0 p-4"
             >
-              <Box className="flex-row items-center rounded-lg border border-outline-200 bg-background-0 p-4">
-                <Box className="flex-1">
-                  <Text className="text-base text-typography-900">{row.label}</Text>
-                  <Text className="text-xs text-typography-500 mt-1">{row.description}</Text>
-                </Box>
-                <Switch
-                  value={isEnabled}
-                  onValueChange={() => {
-                    handleToggle(row.key);
-                  }}
-                  accessibilityLabel={`${row.label} toggle`}
-                />
+              <Box className="flex-1">
+                <Text className="text-base text-typography-900">{row.label}</Text>
+                <Text className="text-xs text-typography-500 mt-1">{row.description}</Text>
               </Box>
-            </Pressable>
+              <Switch
+                value={isEnabled}
+                disabled={updating}
+                onValueChange={() => {
+                  handleToggle(row.key);
+                }}
+                accessibilityLabel={`${row.label} toggle`}
+                accessibilityRole="switch"
+                accessibilityState={{ checked: isEnabled }}
+              />
+            </Box>
           );
         })}
       </VStack>

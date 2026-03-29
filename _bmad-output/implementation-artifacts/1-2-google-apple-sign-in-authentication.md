@@ -174,11 +174,11 @@ func (m *Middleware) extractUser(token *auth.Token) (UserID, string, error) {
 ### Project Structure Notes
 
 **Backend files to create/modify:**
-- `api/internal/auth/middleware.go` - Firebase JWT validation, context injection
-- `api/internal/auth/middleware_test.go` - Unit tests (1.2.1-1.2.6)
-- `api/internal/auth/claims.go` - Custom claim parsing (role extraction)
-- `api/internal/auth/claims_test.go` - Claim parsing tests
-- `api/cmd/api/main.go` - Wire auth middleware into HTTP chain
+- `markets-api/internal/auth/middleware.go` - Firebase JWT validation, context injection
+- `markets-api/internal/auth/middleware_test.go` - Unit tests (1.2.1-1.2.6)
+- `markets-api/internal/auth/claims.go` - Custom claim parsing (role extraction)
+- `markets-api/internal/auth/claims_test.go` - Claim parsing tests
+- `markets-api/cmd/api/main.go` - Wire auth middleware into HTTP chain
 
 **Frontend files to create/modify:**
 - `app/(auth)/login.tsx` - Login screen with Google + Apple sign-in buttons
@@ -187,7 +187,7 @@ func (m *Middleware) extractUser(token *auth.Token) (UserID, string, error) {
 - `hooks/useAuth.ts` - Sign-in/sign-out hook encapsulating auth logic
 
 **Shared schema:**
-- `schema/auth.graphqls` - Auth-related GraphQL types (if needed for this story)
+- `markets-api/internal/graph/schema/auth.graphqls` - Auth-related GraphQL types (if needed for this story)
 
 **Alignment with architecture:** Paths follow the project structure defined in architecture.md. The `internal/auth/` package is the Auth bounded context (stateless middleware). Only `internal/auth/` imports `firebase-admin-go` for JWT validation per dependency direction rules.
 

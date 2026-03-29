@@ -80,11 +80,17 @@ func (r *queryResolver) checkQueryManagerScope(ctx context.Context, marketID dom
 
 // CreateMarket is the resolver for the createMarket field.
 func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: CreateMarket - createMarket"))
 }
 
 // UpdateMarket is the resolver for the updateMarket field.
 func (r *mutationResolver) UpdateMarket(ctx context.Context, id string, input model.UpdateMarketInput) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
 	// Scope check: manager must be assigned to this market
 	if err := r.checkManagerScope(ctx, domain.MarketID(id)); err != nil {
 		return nil, err
@@ -94,6 +100,9 @@ func (r *mutationResolver) UpdateMarket(ctx context.Context, id string, input mo
 
 // AddMarketSchedule is the resolver for the addMarketSchedule field.
 func (r *mutationResolver) AddMarketSchedule(ctx context.Context, input model.AddScheduleInput) (*model.MarketSchedule, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
 	// Scope check: manager must be assigned to this market
 	if err := r.checkManagerScope(ctx, domain.MarketID(input.MarketID)); err != nil {
 		return nil, err
@@ -103,6 +112,9 @@ func (r *mutationResolver) AddMarketSchedule(ctx context.Context, input model.Ad
 
 // UpdateRosterStatus is the resolver for the updateRosterStatus field.
 func (r *mutationResolver) UpdateRosterStatus(ctx context.Context, id string, status model.RosterStatus) (*model.VendorRosterEntry, error) {
+	if err := auth.RequireRole(ctx, "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: UpdateRosterStatus - updateRosterStatus"))
 }
 
@@ -206,6 +218,9 @@ func (r *mutationResolver) RemoveManager(ctx context.Context, managerID string, 
 
 // Market is the resolver for the market field.
 func (r *queryResolver) Market(ctx context.Context, id string) (*model.Market, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	// Scope check: manager must be assigned to this market
 	if err := r.checkQueryManagerScope(ctx, domain.MarketID(id)); err != nil {
 		return nil, err
@@ -215,5 +230,8 @@ func (r *queryResolver) Market(ctx context.Context, id string) (*model.Market, e
 
 // Markets is the resolver for the markets field.
 func (r *queryResolver) Markets(ctx context.Context, latitude *float64, longitude *float64, radiusMiles *float64, limit *int32, offset *int32) ([]*model.Market, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
 	panic(fmt.Errorf("not implemented: Markets - markets"))
 }

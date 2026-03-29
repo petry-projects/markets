@@ -20,7 +20,7 @@ export default function SearchMarketsScreen() {
   );
 
   const handleSearch = useCallback(() => {
-    search({
+    void search({
       variables: {
         input: {
           searchTerm: searchTerm || undefined,
@@ -79,7 +79,7 @@ export default function SearchMarketsScreen() {
             distanceKm={item.distanceKm}
             vendorCount={item.vendorCount}
             vendorStatus={item.vendorStatus}
-            onPress={(id) => router.push(`/(vendor)/markets/${id}/detail`)}
+            onPress={(id) => { router.push(`/(vendor)/markets/${id}/detail`); }}
           />
         )}
         ListEmptyComponent={

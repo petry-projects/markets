@@ -20,26 +20,25 @@ export default function CreateVendorProfileScreen() {
   );
 
   const handleSubmit = useCallback(
-    async (data: VendorProfileFormData) => {
-      try {
-        await createProfile({
-          variables: {
-            input: {
-              businessName: data.businessName,
-              description: data.description || undefined,
-              contactInfo: data.contactInfo || undefined,
-              instagramHandle: data.instagramHandle || undefined,
-              facebookURL: data.facebookURL || undefined,
-              websiteURL: data.websiteURL || undefined,
-            },
+    (data: VendorProfileFormData) => {
+      void createProfile({
+        variables: {
+          input: {
+            businessName: data.businessName,
+            description: data.description || undefined,
+            contactInfo: data.contactInfo || undefined,
+            instagramHandle: data.instagramHandle || undefined,
+            facebookURL: data.facebookURL || undefined,
+            websiteURL: data.websiteURL || undefined,
           },
-        });
+        },
+      }).then(() => {
         router.back();
-      } catch (err) {
+      }).catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : 'An unexpected error occurred';
         Alert.alert('Error', message);
-      }
+      });
     },
     [createProfile, router],
   );

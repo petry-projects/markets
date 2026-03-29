@@ -15,23 +15,22 @@ export default function CreateProductScreen() {
   });
 
   const handleSubmit = useCallback(
-    async (data: ProductFormData) => {
-      try {
-        await createProduct({
-          variables: {
-            input: {
-              name: data.name,
-              description: data.description || undefined,
-              category: data.category || undefined,
-            },
+    (data: ProductFormData) => {
+      void createProduct({
+        variables: {
+          input: {
+            name: data.name,
+            description: data.description || undefined,
+            category: data.category || undefined,
           },
-        });
+        },
+      }).then(() => {
         router.back();
-      } catch (err) {
+      }).catch((err: unknown) => {
         const message =
           err instanceof Error ? err.message : 'An unexpected error occurred';
         Alert.alert('Error', message);
-      }
+      });
     },
     [createProduct, router],
   );

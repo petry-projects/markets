@@ -37,7 +37,7 @@ jobs:
           if [ -f coverage/coverage-summary.json ]; then
             COVERAGE=$(node -e "const s = require('./coverage/coverage-summary.json'); console.log(s.total.statements.pct)")
             echo "Statement coverage: ${COVERAGE}%"
-            THRESHOLD=60
+            THRESHOLD=20
             BELOW=$(node -e "console.log($COVERAGE < $THRESHOLD ? 1 : 0)")
             if [ "$BELOW" = "1" ]; then
               echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"

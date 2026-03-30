@@ -98,7 +98,7 @@ export default function MarketDetailScreen() {
       await requestJoin({
         variables: {
           marketID: id,
-          dates: Array.from(selectedDates),
+          dates: Array.from(selectedDates) as string[],
           acknowledgeRules: rulesAcknowledged,
         },
       });

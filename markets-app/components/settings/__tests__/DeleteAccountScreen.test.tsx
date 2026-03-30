@@ -58,8 +58,10 @@ jest.mock('expo-router', () => ({
 
 const mockDeleteAccount = jest.fn();
 const mockUseMutation = jest.fn();
+const mockClearStore = jest.fn().mockResolvedValue(undefined);
 jest.mock('@apollo/client/react', () => ({
   useMutation: (...args: unknown[]) => mockUseMutation(...args) as unknown,
+  useApolloClient: () => ({ clearStore: mockClearStore }) as unknown,
 }));
 
 const mockSignOut = jest.fn();

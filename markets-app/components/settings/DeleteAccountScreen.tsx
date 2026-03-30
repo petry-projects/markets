@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useApolloClient } from '@apollo/client/react';
 import { AlertTriangle } from 'lucide-react-native';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
@@ -17,6 +17,7 @@ const CONFIRMATION_TEXT = 'DELETE';
 
 export default function DeleteAccountScreen() {
   const router = useRouter();
+  const client = useApolloClient();
   const { signOut } = useAuth();
   const [confirmText, setConfirmText] = useState('');
   const [deleteAccount, { loading }] = useMutation(DeleteAccountDocument);
@@ -26,13 +27,14 @@ export default function DeleteAccountScreen() {
   const handleDelete = useCallback(async () => {
     try {
       await deleteAccount();
+      await client.clearStore();
       await signOut();
       router.replace('/(auth)');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Failed to delete account';
       Alert.alert('Error', message);
     }
-  }, [deleteAccount, signOut, router]);
+  }, [deleteAccount, client, signOut, router]);
 
   const onPressDelete = useCallback(() => {
     Alert.alert(

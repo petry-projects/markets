@@ -190,6 +190,18 @@ func (r *mutationResolver) DeleteAccount(ctx context.Context) (bool, error) {
 		}
 	}
 
+	// Clean up device tokens and notification preferences (all roles)
+	_, err = tx.Exec(ctx, "DELETE FROM device_tokens WHERE user_id = $1", uid)
+	if err != nil {
+		slog.Error("failed to delete device tokens", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+	_, err = tx.Exec(ctx, "DELETE FROM notification_prefs WHERE user_id = $1", uid)
+	if err != nil {
+		slog.Error("failed to delete notification prefs", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+
 	if err := tx.Commit(ctx); err != nil {
 		slog.Error("failed to commit account deletion", "error", err, "userID", uid)
 		return false, gqlerr.Internal("failed to delete account")

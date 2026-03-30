@@ -120,6 +120,9 @@ func (q *Querier) Query(ctx context.Context, f Filter, limit, offset int) ([]Ent
 		}
 		entries = append(entries, e)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate audit log: %w", err)
+	}
 
 	return entries, totalCount, nil
 }
@@ -213,6 +216,9 @@ func (q *Querier) QueryForManagedMarkets(ctx context.Context, marketIDs []string
 		}
 		entries = append(entries, e)
 	}
+	if err := rows.Err(); err != nil {
+		return nil, 0, fmt.Errorf("iterate audit log (managed): %w", err)
+	}
 
 	return entries, totalCount, nil
 }
@@ -256,6 +262,9 @@ func (q *Querier) QueryByActor(ctx context.Context, actorID string, startDate, e
 			return nil, fmt.Errorf("scan audit log entry (actor): %w", err)
 		}
 		entries = append(entries, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate audit log (actor): %w", err)
 	}
 
 	return entries, nil

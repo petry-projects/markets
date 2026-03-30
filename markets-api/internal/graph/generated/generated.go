@@ -203,6 +203,7 @@ type ComplexityRoot struct {
 		CreateProduct                 func(childComplexity int, input model.CreateProductInput) int
 		CreateUser                    func(childComplexity int, input model.CreateUserInput) int
 		CreateVendorProfile           func(childComplexity int, input model.CreateVendorProfileInput) int
+		DeleteAccount                 func(childComplexity int) int
 		DeleteMarketSchedule          func(childComplexity int, id string) int
 		DeleteProduct                 func(childComplexity int, id string) int
 		Empty                         func(childComplexity int) int
@@ -270,6 +271,7 @@ type ComplexityRoot struct {
 		MarketUpdates             func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		Markets                   func(childComplexity int, latitude *float64, longitude *float64, radiusMiles *float64, limit *int32, offset *int32) int
 		Me                        func(childComplexity int) int
+		MyActivityLog             func(childComplexity int, startDate *string, endDate *string, limit *int32, offset *int32) int
 		MyCustomerProfile         func(childComplexity int) int
 		MyInvitations             func(childComplexity int) int
 		MyMarkets                 func(childComplexity int) int
@@ -375,6 +377,7 @@ type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	SignUp(ctx context.Context, input model.SignUpInput) (*model.AuthPayload, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error)
+	DeleteAccount(ctx context.Context) (bool, error)
 	Follow(ctx context.Context, targetType model.FollowTargetType, targetID string) (*model.Follow, error)
 	Unfollow(ctx context.Context, targetType model.FollowTargetType, targetID string) (bool, error)
 	CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error)
@@ -413,6 +416,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	AuditLog(ctx context.Context, filter *model.AuditLogFilter, limit *int32, offset *int32) (*model.AuditLogConnection, error)
+	MyActivityLog(ctx context.Context, startDate *string, endDate *string, limit *int32, offset *int32) ([]*model.AuditLogEntry, error)
 	Me(ctx context.Context) (*model.User, error)
 	MyCustomerProfile(ctx context.Context) (*model.CustomerProfile, error)
 	DiscoverMarkets(ctx context.Context, latitude float64, longitude float64, radiusMiles float64, limit *int32, offset *int32) ([]*model.Market, error)
@@ -1241,6 +1245,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateVendorProfile(childComplexity, args["input"].(model.CreateVendorProfileInput)), true
+	case "Mutation.deleteAccount":
+		if e.ComplexityRoot.Mutation.DeleteAccount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAccount(childComplexity), true
 	case "Mutation.deleteMarketSchedule":
 		if e.ComplexityRoot.Mutation.DeleteMarketSchedule == nil {
 			break
@@ -1783,6 +1793,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Me(childComplexity), true
+	case "Query.myActivityLog":
+		if e.ComplexityRoot.Query.MyActivityLog == nil {
+			break
+		}
+
+		args, err := ec.field_Query_myActivityLog_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MyActivityLog(childComplexity, args["startDate"].(*string), args["endDate"].(*string), args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.myCustomerProfile":
 		if e.ComplexityRoot.Query.MyCustomerProfile == nil {
 			break
@@ -2371,8 +2392,11 @@ input AuditLogFilter {
 Root Query type - extended by each domain schema.
 """
 type Query {
-  """Query audit log entries (Manager only, read-only)."""
+  """Query audit log entries (Manager only, read-only). Scoped to managed markets."""
   auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+
+  """Get the authenticated user's activity history."""
+  myActivityLog(startDate: String, endDate: String, limit: Int, offset: Int): [AuditLogEntry!]!
 }
 
 """
@@ -2443,6 +2467,9 @@ extend type Mutation {
 
   """Create user record after role selection. Requires authentication."""
   createUser(input: CreateUserInput!): CreateUserPayload!
+
+  """Delete the authenticated user's account (soft-delete). Customer/Vendor only."""
+  deleteAccount: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../schema/customer.graphqls", Input: `"""
@@ -3868,6 +3895,32 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 		return nil, err
 	}
 	args["offset"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_myActivityLog_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "startDate", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["startDate"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "endDate", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["endDate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
 	return args, nil
 }
 
@@ -7626,6 +7679,35 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_deleteAccount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteAccount,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().DeleteAccount(ctx)
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteAccount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_follow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -10272,6 +10354,67 @@ func (ec *executionContext) fieldContext_Query_auditLog(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_auditLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myActivityLog(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_myActivityLog,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MyActivityLog(ctx, fc.Args["startDate"].(*string), fc.Args["endDate"].(*string), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		},
+		nil,
+		ec.marshalNAuditLogEntry2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐAuditLogEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_myActivityLog(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AuditLogEntry_id(ctx, field)
+			case "actorID":
+				return ec.fieldContext_AuditLogEntry_actorID(ctx, field)
+			case "actorRole":
+				return ec.fieldContext_AuditLogEntry_actorRole(ctx, field)
+			case "actionType":
+				return ec.fieldContext_AuditLogEntry_actionType(ctx, field)
+			case "targetType":
+				return ec.fieldContext_AuditLogEntry_targetType(ctx, field)
+			case "targetID":
+				return ec.fieldContext_AuditLogEntry_targetID(ctx, field)
+			case "marketID":
+				return ec.fieldContext_AuditLogEntry_marketID(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_AuditLogEntry_timestamp(ctx, field)
+			case "payload":
+				return ec.fieldContext_AuditLogEntry_payload(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AuditLogEntry", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myActivityLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -17203,6 +17346,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "deleteAccount":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteAccount(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "follow":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_follow(ctx, field)
@@ -17649,6 +17799,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_auditLog(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myActivityLog":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myActivityLog(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}

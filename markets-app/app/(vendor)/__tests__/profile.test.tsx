@@ -39,6 +39,15 @@ jest.mock('@/components/ui/spinner', () => {
   return { Spinner: (props: Record<string, unknown>) => <View testID="spinner" {...props} /> };
 });
 
+jest.mock('lucide-react-native', () => {
+  const { View } = require('react-native') as typeof import('react-native');
+  return {
+    FileText: (props: Record<string, unknown>) => <View {...props} />,
+    Trash2: (props: Record<string, unknown>) => <View {...props} />,
+    ChevronRight: (props: Record<string, unknown>) => <View {...props} />,
+  };
+});
+
 jest.mock('@/components/vendor/ProductCard', () => {
   const { Text } = require('react-native') as typeof import('react-native');
   return {

@@ -1,0 +1,13 @@
+query MyActivityLog($startDate: String, $endDate: String, $limit: Int, $offset: Int) {
+  myActivityLog(startDate: $startDate, endDate: $endDate, limit: $limit, offset: $offset) {
+    id
+    actorID
+    actorRole
+    actionType
+    targetType
+    targetID
+    marketID
+    timestamp
+    payload
+  }
+}

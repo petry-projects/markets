@@ -185,3 +185,12 @@ type MarketAutoCheckoutCompleted struct {
 
 // EventType returns the dotted event type string.
 func (e MarketAutoCheckoutCompleted) EventType() string { return "market.auto_checkout_completed" }
+
+// AccountDeleted is published when a user soft-deletes their account.
+type AccountDeleted struct {
+	UserID string
+	Role   string
+}
+
+// EventType returns the dotted event type string.
+func (e AccountDeleted) EventType() string { return "account.deleted" }

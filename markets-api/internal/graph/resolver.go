@@ -3,6 +3,7 @@ package graph
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/petry-projects/markets-api/internal/audit"
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/customer"
 	"github.com/petry-projects/markets-api/internal/events"
@@ -15,13 +16,15 @@ import (
 // Resolver is the root resolver struct with injected dependencies.
 // It serves as the composition root for all GraphQL resolver methods.
 type Resolver struct {
-	Pool         *pgxpool.Pool
-	EventBus     *events.Bus
-	UserRepo     user.Repository
-	MarketRepo   market.Repository
-	VendorRepo   vendor.Repository
-	CustomerRepo customer.Repository
-	ClaimsSetter auth.ClaimsSetter
+	Pool          *pgxpool.Pool
+	EventBus      *events.Bus
+	UserRepo      user.Repository
+	MarketRepo    market.Repository
+	VendorRepo    vendor.Repository
+	CustomerRepo  customer.Repository
+	NotifyRepo    notify.Repository
+	ClaimsSetter  auth.ClaimsSetter
+	AuditQuerier  *audit.Querier
 }
 
 // NewResolver creates a new Resolver with the provided dependencies.

@@ -2,7 +2,7 @@ import React from 'react';
 import { FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@apollo/client/react';
-import { User, Heart, MapPin, Settings, ChevronRight } from 'lucide-react-native';
+import { User, Heart, MapPin, FileText, Trash2, ChevronRight } from 'lucide-react-native';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
 import { Text } from '@/components/ui/text';
@@ -55,9 +55,20 @@ export default function CustomerProfileScreen() {
       },
     },
     {
-      id: 'settings',
-      label: 'Settings & Preferences',
-      icon: <Settings size={20} color="#6b7280" />,
+      id: 'activity-log',
+      label: 'Activity Log',
+      icon: <FileText size={20} color="#6b7280" />,
+      onPress: () => {
+        router.push('/(customer)/settings/activity-log');
+      },
+    },
+    {
+      id: 'delete-account',
+      label: 'Delete Account',
+      icon: <Trash2 size={20} color="#ef4444" />,
+      onPress: () => {
+        router.push('/(customer)/settings/delete-account');
+      },
     },
   ];
 

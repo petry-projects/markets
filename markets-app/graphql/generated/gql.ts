@@ -21,6 +21,7 @@ type Documents = {
     "mutation CreateProduct($input: CreateProductInput!) {\n  createProduct(input: $input) {\n    id\n    vendorID\n    name\n    description\n    category\n    imageURL\n    isAvailable\n    createdAt\n    updatedAt\n  }\n}": typeof types.CreateProductDocument,
     "mutation CreateUser($input: CreateUserInput!) {\n  createUser(input: $input) {\n    user {\n      id\n      firebaseUID\n      email\n      displayName\n      role\n      createdAt\n    }\n  }\n}": typeof types.CreateUserDocument,
     "mutation CreateVendorProfile($input: CreateVendorProfileInput!) {\n  createVendorProfile(input: $input) {\n    id\n    userID\n    businessName\n    description\n    contactInfo\n    instagramHandle\n    facebookURL\n    websiteURL\n    imageURL\n    createdAt\n    updatedAt\n  }\n}": typeof types.CreateVendorProfileDocument,
+    "mutation DeleteAccount {\n  deleteAccount\n}": typeof types.DeleteAccountDocument,
     "mutation DeleteMarketSchedule($id: ID!) {\n  deleteMarketSchedule(id: $id)\n}": typeof types.DeleteMarketScheduleDocument,
     "mutation DeleteProduct($id: ID!) {\n  deleteProduct(id: $id)\n}": typeof types.DeleteProductDocument,
     "mutation Follow($targetType: FollowTargetType!, $targetID: ID!) {\n  follow(targetType: $targetType, targetID: $targetID) {\n    id\n    customerID\n    targetType\n    targetID\n    createdAt\n  }\n}": typeof types.FollowDocument,
@@ -47,6 +48,7 @@ type Documents = {
     "query MarketActivityFeed($marketID: ID!, $limit: Int, $offset: Int) {\n  marketActivityFeed(marketID: $marketID, limit: $limit, offset: $offset) {\n    id\n    actorID\n    actionType\n    targetType\n    targetID\n    marketID\n    message\n    createdAt\n  }\n}": typeof types.MarketActivityFeedDocument,
     "query MarketDayPlans($marketID: ID!, $startDate: String!, $endDate: String!) {\n  marketDayPlans(marketID: $marketID, startDate: $startDate, endDate: $endDate) {\n    date\n    vendorCount\n  }\n}": typeof types.MarketDayPlansDocument,
     "query MarketRoster($marketID: ID!, $date: String!) {\n  marketRoster(marketID: $marketID, date: $date) {\n    id\n    marketID\n    vendorID\n    status\n    date\n    rulesAcknowledged\n    createdAt\n    updatedAt\n  }\n}": typeof types.MarketRosterDocument,
+    "query MyActivityLog($startDate: String, $endDate: String, $limit: Int, $offset: Int) {\n  myActivityLog(\n    startDate: $startDate\n    endDate: $endDate\n    limit: $limit\n    offset: $offset\n  ) {\n    id\n    actorID\n    actorRole\n    actionType\n    targetType\n    targetID\n    marketID\n    timestamp\n    payload\n  }\n}": typeof types.MyActivityLogDocument,
     "query MyCustomerProfile {\n  myCustomerProfile {\n    id\n    userID\n    displayName\n    followedVendors {\n      id\n      businessName\n      imageURL\n    }\n    followedMarkets {\n      id\n      name\n      address\n    }\n    createdAt\n    updatedAt\n  }\n}": typeof types.MyCustomerProfileDocument,
     "query MyMarkets {\n  myMarkets {\n    id\n    name\n    description\n    address\n    latitude\n    longitude\n    contactEmail\n    contactPhone\n    imageURL\n    createdAt\n    updatedAt\n  }\n}": typeof types.MyMarketsDocument,
     "query MyNotificationPrefs {\n  myNotificationPreferences {\n    id\n    userID\n    pushEnabled\n    vendorCheckInAlerts\n    vendorCheckoutAlerts\n    marketUpdateAlerts\n    exceptionAlerts\n    createdAt\n    updatedAt\n  }\n}": typeof types.MyNotificationPrefsDocument,
@@ -64,6 +66,7 @@ const documents: Documents = {
     "mutation CreateProduct($input: CreateProductInput!) {\n  createProduct(input: $input) {\n    id\n    vendorID\n    name\n    description\n    category\n    imageURL\n    isAvailable\n    createdAt\n    updatedAt\n  }\n}": types.CreateProductDocument,
     "mutation CreateUser($input: CreateUserInput!) {\n  createUser(input: $input) {\n    user {\n      id\n      firebaseUID\n      email\n      displayName\n      role\n      createdAt\n    }\n  }\n}": types.CreateUserDocument,
     "mutation CreateVendorProfile($input: CreateVendorProfileInput!) {\n  createVendorProfile(input: $input) {\n    id\n    userID\n    businessName\n    description\n    contactInfo\n    instagramHandle\n    facebookURL\n    websiteURL\n    imageURL\n    createdAt\n    updatedAt\n  }\n}": types.CreateVendorProfileDocument,
+    "mutation DeleteAccount {\n  deleteAccount\n}": types.DeleteAccountDocument,
     "mutation DeleteMarketSchedule($id: ID!) {\n  deleteMarketSchedule(id: $id)\n}": types.DeleteMarketScheduleDocument,
     "mutation DeleteProduct($id: ID!) {\n  deleteProduct(id: $id)\n}": types.DeleteProductDocument,
     "mutation Follow($targetType: FollowTargetType!, $targetID: ID!) {\n  follow(targetType: $targetType, targetID: $targetID) {\n    id\n    customerID\n    targetType\n    targetID\n    createdAt\n  }\n}": types.FollowDocument,
@@ -90,6 +93,7 @@ const documents: Documents = {
     "query MarketActivityFeed($marketID: ID!, $limit: Int, $offset: Int) {\n  marketActivityFeed(marketID: $marketID, limit: $limit, offset: $offset) {\n    id\n    actorID\n    actionType\n    targetType\n    targetID\n    marketID\n    message\n    createdAt\n  }\n}": types.MarketActivityFeedDocument,
     "query MarketDayPlans($marketID: ID!, $startDate: String!, $endDate: String!) {\n  marketDayPlans(marketID: $marketID, startDate: $startDate, endDate: $endDate) {\n    date\n    vendorCount\n  }\n}": types.MarketDayPlansDocument,
     "query MarketRoster($marketID: ID!, $date: String!) {\n  marketRoster(marketID: $marketID, date: $date) {\n    id\n    marketID\n    vendorID\n    status\n    date\n    rulesAcknowledged\n    createdAt\n    updatedAt\n  }\n}": types.MarketRosterDocument,
+    "query MyActivityLog($startDate: String, $endDate: String, $limit: Int, $offset: Int) {\n  myActivityLog(\n    startDate: $startDate\n    endDate: $endDate\n    limit: $limit\n    offset: $offset\n  ) {\n    id\n    actorID\n    actorRole\n    actionType\n    targetType\n    targetID\n    marketID\n    timestamp\n    payload\n  }\n}": types.MyActivityLogDocument,
     "query MyCustomerProfile {\n  myCustomerProfile {\n    id\n    userID\n    displayName\n    followedVendors {\n      id\n      businessName\n      imageURL\n    }\n    followedMarkets {\n      id\n      name\n      address\n    }\n    createdAt\n    updatedAt\n  }\n}": types.MyCustomerProfileDocument,
     "query MyMarkets {\n  myMarkets {\n    id\n    name\n    description\n    address\n    latitude\n    longitude\n    contactEmail\n    contactPhone\n    imageURL\n    createdAt\n    updatedAt\n  }\n}": types.MyMarketsDocument,
     "query MyNotificationPrefs {\n  myNotificationPreferences {\n    id\n    userID\n    pushEnabled\n    vendorCheckInAlerts\n    vendorCheckoutAlerts\n    marketUpdateAlerts\n    exceptionAlerts\n    createdAt\n    updatedAt\n  }\n}": types.MyNotificationPrefsDocument,
@@ -142,6 +146,10 @@ export function graphql(source: "mutation CreateUser($input: CreateUserInput!) {
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "mutation CreateVendorProfile($input: CreateVendorProfileInput!) {\n  createVendorProfile(input: $input) {\n    id\n    userID\n    businessName\n    description\n    contactInfo\n    instagramHandle\n    facebookURL\n    websiteURL\n    imageURL\n    createdAt\n    updatedAt\n  }\n}"): (typeof documents)["mutation CreateVendorProfile($input: CreateVendorProfileInput!) {\n  createVendorProfile(input: $input) {\n    id\n    userID\n    businessName\n    description\n    contactInfo\n    instagramHandle\n    facebookURL\n    websiteURL\n    imageURL\n    createdAt\n    updatedAt\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "mutation DeleteAccount {\n  deleteAccount\n}"): (typeof documents)["mutation DeleteAccount {\n  deleteAccount\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
@@ -246,6 +254,10 @@ export function graphql(source: "query MarketDayPlans($marketID: ID!, $startDate
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "query MarketRoster($marketID: ID!, $date: String!) {\n  marketRoster(marketID: $marketID, date: $date) {\n    id\n    marketID\n    vendorID\n    status\n    date\n    rulesAcknowledged\n    createdAt\n    updatedAt\n  }\n}"): (typeof documents)["query MarketRoster($marketID: ID!, $date: String!) {\n  marketRoster(marketID: $marketID, date: $date) {\n    id\n    marketID\n    vendorID\n    status\n    date\n    rulesAcknowledged\n    createdAt\n    updatedAt\n  }\n}"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "query MyActivityLog($startDate: String, $endDate: String, $limit: Int, $offset: Int) {\n  myActivityLog(\n    startDate: $startDate\n    endDate: $endDate\n    limit: $limit\n    offset: $offset\n  ) {\n    id\n    actorID\n    actorRole\n    actionType\n    targetType\n    targetID\n    marketID\n    timestamp\n    payload\n  }\n}"): (typeof documents)["query MyActivityLog($startDate: String, $endDate: String, $limit: Int, $offset: Int) {\n  myActivityLog(\n    startDate: $startDate\n    endDate: $endDate\n    limit: $limit\n    offset: $offset\n  ) {\n    id\n    actorID\n    actorRole\n    actionType\n    targetType\n    targetID\n    marketID\n    timestamp\n    payload\n  }\n}"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

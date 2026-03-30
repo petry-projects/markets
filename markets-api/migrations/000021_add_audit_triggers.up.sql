@@ -2,6 +2,10 @@
 -- Implements Epic 8: Audit, Privacy & Account Governance
 -- Uses the existing audit_trigger_func() from migration 000002.
 
+-- Drop any existing triggers to avoid conflicts, then recreate uniformly as BEFORE triggers.
+-- vendor_roster already has an audit trigger from migration 000010; drop it first.
+DROP TRIGGER IF EXISTS audit_vendor_roster ON vendor_roster;
+
 CREATE TRIGGER audit_users BEFORE INSERT OR UPDATE OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
 CREATE TRIGGER audit_markets BEFORE INSERT OR UPDATE OR DELETE ON markets FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
 CREATE TRIGGER audit_market_managers BEFORE INSERT OR UPDATE OR DELETE ON market_managers FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();

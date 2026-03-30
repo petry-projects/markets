@@ -30,7 +30,7 @@ function formatActionType(actionType: string): string {
 }
 
 export default function ActivityLogScreen() {
-  const { data, loading, refetch } = useQuery(MyActivityLogDocument, {
+  const { data, loading, error, refetch } = useQuery(MyActivityLogDocument, {
     variables: { limit: PAGE_SIZE, offset: 0 },
   });
 
@@ -40,6 +40,16 @@ export default function ActivityLogScreen() {
     return (
       <Box className="flex-1 items-center justify-center bg-background-0">
         <Spinner />
+      </Box>
+    );
+  }
+
+  if (error !== undefined && items.length === 0) {
+    return (
+      <Box className="flex-1 items-center justify-center bg-background-0 p-4">
+        <Text className="text-red-600 text-center">
+          Failed to load activity log. Pull down to retry.
+        </Text>
       </Box>
     );
   }

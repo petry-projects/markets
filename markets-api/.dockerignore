@@ -1,0 +1,7 @@
+.git
+coverage*
+*.test
+*.out
+docs/
+vendor/
+tmp/

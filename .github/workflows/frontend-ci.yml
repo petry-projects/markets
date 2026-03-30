@@ -65,6 +65,9 @@ jobs:
       - name: Codegen check
         run: npm run codegen:check
 
+      - name: Expo export smoke test
+        run: npx expo export --platform web --output-dir /tmp/expo-export 2>&1 | tail -5
+
       - name: Test summary
         if: always()
         run: |

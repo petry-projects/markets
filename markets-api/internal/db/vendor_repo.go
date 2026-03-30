@@ -439,3 +439,124 @@ func (r *PgVendorRepository) GetVendorMarketDates(ctx context.Context, userID do
 	}
 	return results, nil
 }
+
+// CreateCheckIn inserts a new check-in record.
+func (r *PgVendorRepository) CreateCheckIn(ctx context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	query := `
+		INSERT INTO vendor_check_ins (vendor_id, market_id, status, checked_in_at)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id
+	`
+	err := r.pool.QueryRow(ctx, query,
+		c.VendorID.String(), c.MarketID.String(), string(c.Status), c.CheckedInAt,
+	).Scan(&c.ID)
+	if err != nil {
+		return nil, fmt.Errorf("create check-in: %w", err)
+	}
+	return c, nil
+}
+
+// UpdateCheckIn persists changes to a check-in record.
+func (r *PgVendorRepository) UpdateCheckIn(ctx context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	query := `
+		UPDATE vendor_check_ins
+		SET status = $2, exception_reason = $3, checked_out_at = $4
+		WHERE id = $1
+	`
+	_, err := r.pool.Exec(ctx, query,
+		c.ID.String(), string(c.Status), c.ExceptionReason, c.CheckedOutAt,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("update check-in: %w", err)
+	}
+	return c, nil
+}
+
+// FindCheckInByID returns a check-in by its ID.
+func (r *PgVendorRepository) FindCheckInByID(ctx context.Context, id domain.CheckInID) (*vendor.CheckInRecord, error) {
+	query := `
+		SELECT id, vendor_id, market_id, status, exception_reason, checked_in_at, checked_out_at
+		FROM vendor_check_ins WHERE id = $1
+	`
+	c := &vendor.CheckInRecord{}
+	err := r.pool.QueryRow(ctx, query, id.String()).Scan(
+		&c.ID, &c.VendorID, &c.MarketID, &c.Status, &c.ExceptionReason, &c.CheckedInAt, &c.CheckedOutAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, vendor.ErrCheckInNotFound
+		}
+		return nil, fmt.Errorf("find check-in: %w", err)
+	}
+	return c, nil
+}
+
+// FindActiveCheckInsByVendor returns all active (status=checked_in) check-ins for a vendor.
+func (r *PgVendorRepository) FindActiveCheckInsByVendor(ctx context.Context, vendorID domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	query := `
+		SELECT id, vendor_id, market_id, status, exception_reason, checked_in_at, checked_out_at
+		FROM vendor_check_ins WHERE vendor_id = $1 AND status = 'checked_in'
+	`
+	return r.scanCheckIns(ctx, query, vendorID.String())
+}
+
+// FindCheckInsByVendor returns all check-ins for a vendor.
+func (r *PgVendorRepository) FindCheckInsByVendor(ctx context.Context, vendorID domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	query := `
+		SELECT id, vendor_id, market_id, status, exception_reason, checked_in_at, checked_out_at
+		FROM vendor_check_ins WHERE vendor_id = $1 ORDER BY checked_in_at DESC
+	`
+	return r.scanCheckIns(ctx, query, vendorID.String())
+}
+
+// FindCheckInsByMarketAndDate returns all check-ins for a market on a specific date.
+func (r *PgVendorRepository) FindCheckInsByMarketAndDate(ctx context.Context, marketID domain.MarketID, date string) ([]*vendor.CheckInRecord, error) {
+	query := `
+		SELECT id, vendor_id, market_id, status, exception_reason, checked_in_at, checked_out_at
+		FROM vendor_check_ins WHERE market_id = $1 AND checked_in_at::date = $2::date
+		ORDER BY checked_in_at
+	`
+	return r.scanCheckIns(ctx, query, marketID.String(), date)
+}
+
+// FindActiveCheckInsByMarket returns all active (checked_in) check-ins for a market.
+func (r *PgVendorRepository) FindActiveCheckInsByMarket(ctx context.Context, marketID domain.MarketID) ([]*vendor.CheckInRecord, error) {
+	query := `
+		SELECT id, vendor_id, market_id, status, exception_reason, checked_in_at, checked_out_at
+		FROM vendor_check_ins WHERE market_id = $1 AND status = 'checked_in'
+	`
+	return r.scanCheckIns(ctx, query, marketID.String())
+}
+
+// BatchCheckOut checks out all active check-ins for a market. Returns the count.
+func (r *PgVendorRepository) BatchCheckOut(ctx context.Context, marketID domain.MarketID) (int, error) {
+	query := `
+		UPDATE vendor_check_ins
+		SET status = 'checked_out', checked_out_at = NOW()
+		WHERE market_id = $1 AND status = 'checked_in'
+	`
+	tag, err := r.pool.Exec(ctx, query, marketID.String())
+	if err != nil {
+		return 0, fmt.Errorf("batch check-out: %w", err)
+	}
+	return int(tag.RowsAffected()), nil
+}
+
+// scanCheckIns is a helper that scans multiple check-in rows.
+func (r *PgVendorRepository) scanCheckIns(ctx context.Context, query string, args ...any) ([]*vendor.CheckInRecord, error) {
+	rows, err := r.pool.Query(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query check-ins: %w", err)
+	}
+	defer rows.Close()
+
+	var checkIns []*vendor.CheckInRecord
+	for rows.Next() {
+		c := &vendor.CheckInRecord{}
+		if err := rows.Scan(&c.ID, &c.VendorID, &c.MarketID, &c.Status, &c.ExceptionReason, &c.CheckedInAt, &c.CheckedOutAt); err != nil {
+			return nil, fmt.Errorf("scan check-in: %w", err)
+		}
+		checkIns = append(checkIns, c)
+	}
+	return checkIns, rows.Err()
+}

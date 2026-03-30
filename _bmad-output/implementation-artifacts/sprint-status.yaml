@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-29  # Epic 8 done — all epics complete
+last_updated: 2026-03-30  # Epic 9 done — server bootstrap + integration tests
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -114,3 +114,11 @@ development_status:
   8-3-account-deletion-soft-delete: done
   8-4-governance-rules-enforcement: done
   epic-8-retrospective: optional
+
+  # ── Epic 9: Server Bootstrap & Integration Tests ──
+  epic-9: done
+  9-1-server-entry-point-config-firebase: done
+  9-2-dockerfile-container: done
+  9-3-integration-tests: done
+  9-4-ci-enhancements: done
+  epic-9-retrospective: optional

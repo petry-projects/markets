@@ -806,6 +806,48 @@ func (r *PgMarketRepository) SearchVendors(ctx context.Context, query, category 
 	return vendors, rows.Err()
 }
 
+// CreateMarketUpdate inserts a market-wide operational update.
+func (r *PgMarketRepository) CreateMarketUpdate(ctx context.Context, u *market.MarketUpdateRecord) (*market.MarketUpdateRecord, error) {
+	query := `
+		INSERT INTO market_updates (market_id, sender_id, message)
+		VALUES ($1, $2, $3)
+		RETURNING id, created_at
+	`
+	err := r.pool.QueryRow(ctx, query,
+		u.MarketID.String(), u.SenderID.String(), u.Message,
+	).Scan(&u.ID, &u.CreatedAt)
+	if err != nil {
+		return nil, fmt.Errorf("create market update: %w", err)
+	}
+	return u, nil
+}
+
+// FindMarketUpdates returns market updates, newest first.
+func (r *PgMarketRepository) FindMarketUpdates(ctx context.Context, marketID domain.MarketID, limit, offset int32) ([]*market.MarketUpdateRecord, error) {
+	query := `
+		SELECT id, market_id, sender_id, message, created_at
+		FROM market_updates
+		WHERE market_id = $1
+		ORDER BY created_at DESC
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := r.pool.Query(ctx, query, marketID.String(), limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("find market updates: %w", err)
+	}
+	defer rows.Close()
+
+	var updates []*market.MarketUpdateRecord
+	for rows.Next() {
+		u := &market.MarketUpdateRecord{}
+		if err := rows.Scan(&u.ID, &u.MarketID, &u.SenderID, &u.Message, &u.CreatedAt); err != nil {
+			return nil, fmt.Errorf("scan market update: %w", err)
+		}
+		updates = append(updates, u)
+	}
+	return updates, rows.Err()
+}
+
 // scanMarkets is a helper that scans multiple market rows.
 func (r *PgMarketRepository) scanMarkets(ctx context.Context, query string, args ...any) ([]*market.MarketRecord, error) {
 	rows, err := r.pool.Query(ctx, query, args...)

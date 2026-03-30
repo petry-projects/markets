@@ -51,10 +51,13 @@ jobs:
           go-version: '1.23'
           cache-dependency-path: markets-api/go.sum
 
-      - name: Run tests with race detector
+      - name: Run unit tests with race detector
         run: |
-          go test $(go list ./... | grep -v /generated) \
+          go test $(go list ./... | grep -v /generated | grep -v /integration) \
             -short -count=1 -race -coverprofile=coverage.out
+
+      - name: Run integration tests
+        run: go test ./internal/integration/ -count=1 -race -v
 
       - name: Enforce coverage threshold
         run: |

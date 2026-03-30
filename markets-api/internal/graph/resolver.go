@@ -59,3 +59,28 @@ func NewResolverWithVendorRepo(pool *pgxpool.Pool, eventBus *events.Bus, userRep
 		ClaimsSetter: claimsSetter,
 	}
 }
+
+// NewFullResolver creates a Resolver with all dependencies wired.
+func NewFullResolver(
+	pool *pgxpool.Pool,
+	eventBus *events.Bus,
+	userRepo user.Repository,
+	claimsSetter auth.ClaimsSetter,
+	marketRepo market.Repository,
+	vendorRepo vendor.Repository,
+	customerRepo customer.Repository,
+	notifyRepo notify.Repository,
+	auditQuerier *audit.Querier,
+) *Resolver {
+	return &Resolver{
+		Pool:         pool,
+		EventBus:     eventBus,
+		UserRepo:     userRepo,
+		ClaimsSetter: claimsSetter,
+		MarketRepo:   marketRepo,
+		VendorRepo:   vendorRepo,
+		CustomerRepo: customerRepo,
+		NotifyRepo:   notifyRepo,
+		AuditQuerier: auditQuerier,
+	}
+}

@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
-import CustomerProfileScreen from '../profile';
+import ActivityLogScreen from '../ActivityLogScreen';
 
 type MockProps = Record<string, unknown> & { children?: ReactNode };
 
@@ -30,20 +30,10 @@ jest.mock('@/components/ui/spinner', () => {
 jest.mock('lucide-react-native', () => {
   const { View } = require('react-native') as typeof import('react-native');
   return {
-    User: (props: Record<string, unknown>) => <View testID="user-icon" {...props} />,
-    Heart: (props: Record<string, unknown>) => <View {...props} />,
-    MapPin: (props: Record<string, unknown>) => <View {...props} />,
-    Settings: (props: Record<string, unknown>) => <View {...props} />,
+    Clock: (props: Record<string, unknown>) => <View {...props} />,
     FileText: (props: Record<string, unknown>) => <View {...props} />,
-    Trash2: (props: Record<string, unknown>) => <View {...props} />,
-    ChevronRight: (props: Record<string, unknown>) => <View {...props} />,
   };
 });
-
-const mockPush = jest.fn();
-jest.mock('expo-router', () => ({
-  useRouter: jest.fn(() => ({ push: mockPush, back: jest.fn() })),
-}));
 
 const mockUseQuery = jest.fn();
 jest.mock('@apollo/client/react', () => ({
@@ -51,10 +41,10 @@ jest.mock('@apollo/client/react', () => ({
 }));
 
 jest.mock('@/graphql/generated/graphql', () => ({
-  MyCustomerProfileDocument: { kind: 'Document' },
+  MyActivityLogDocument: { kind: 'Document' },
 }));
 
-describe('CustomerProfileScreen', () => {
+describe('ActivityLogScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -66,77 +56,73 @@ describe('CustomerProfileScreen', () => {
       refetch: jest.fn(),
     });
 
-    render(<CustomerProfileScreen />);
+    render(<ActivityLogScreen />);
     expect(screen.getByTestId('spinner')).toBeTruthy();
   });
 
-  it('renders profile with display name', () => {
+  it('renders activity log items', () => {
     mockUseQuery.mockReturnValue({
       data: {
-        myCustomerProfile: {
-          displayName: 'Jane Doe',
-          followedVendors: [{ id: 'v1' }, { id: 'v2' }],
-          followedMarkets: [{ id: 'm1' }],
-        },
+        myActivityLog: [
+          {
+            id: '1',
+            actorID: 'user-1',
+            actorRole: 'CUSTOMER',
+            actionType: 'PROFILE_UPDATE',
+            targetType: 'User',
+            targetID: 'user-1',
+            marketID: null,
+            timestamp: '2026-03-15T10:30:00Z',
+            payload: null,
+          },
+          {
+            id: '2',
+            actorID: 'user-1',
+            actorRole: 'CUSTOMER',
+            actionType: 'FOLLOW_VENDOR',
+            targetType: 'Vendor',
+            targetID: 'vendor-1',
+            marketID: null,
+            timestamp: '2026-03-14T09:00:00Z',
+            payload: null,
+          },
+        ],
       },
       loading: false,
       refetch: jest.fn(),
     });
 
-    render(<CustomerProfileScreen />);
-    expect(screen.getByText('Jane Doe')).toBeTruthy();
-  });
-
-  it('renders vendor and market counts', () => {
-    mockUseQuery.mockReturnValue({
-      data: {
-        myCustomerProfile: {
-          displayName: 'Jane',
-          followedVendors: [{ id: 'v1' }, { id: 'v2' }, { id: 'v3' }],
-          followedMarkets: [{ id: 'm1' }],
-        },
-      },
-      loading: false,
-      refetch: jest.fn(),
-    });
-
-    render(<CustomerProfileScreen />);
-    expect(screen.getAllByText('3').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByText('1').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Vendors')).toBeTruthy();
-    expect(screen.getByText('Markets')).toBeTruthy();
-  });
-
-  it('renders menu items', () => {
-    mockUseQuery.mockReturnValue({
-      data: {
-        myCustomerProfile: {
-          displayName: 'Jane',
-          followedVendors: [],
-          followedMarkets: [],
-        },
-      },
-      loading: false,
-      refetch: jest.fn(),
-    });
-
-    render(<CustomerProfileScreen />);
-    expect(screen.getByText('Followed Vendors')).toBeTruthy();
-    expect(screen.getByText('Followed Markets')).toBeTruthy();
+    render(<ActivityLogScreen />);
     expect(screen.getByText('Activity Log')).toBeTruthy();
-    expect(screen.getByText('Delete Account')).toBeTruthy();
+    expect(screen.getByText('Profile update')).toBeTruthy();
+    expect(screen.getByText('Follow vendor')).toBeTruthy();
+    expect(screen.getByText('User user-1')).toBeTruthy();
+    expect(screen.getByText('Vendor vendor-1')).toBeTruthy();
   });
 
-  it('renders "Customer" when no display name', () => {
+  it('renders empty state when no items', () => {
     mockUseQuery.mockReturnValue({
       data: {
-        myCustomerProfile: null,
+        myActivityLog: [],
       },
       loading: false,
       refetch: jest.fn(),
     });
 
-    render(<CustomerProfileScreen />);
-    expect(screen.getByText('Customer')).toBeTruthy();
+    render(<ActivityLogScreen />);
+    expect(screen.getByText('No activity recorded yet')).toBeTruthy();
+  });
+
+  it('renders header text', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myActivityLog: [],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<ActivityLogScreen />);
+    expect(screen.getByText('Your recent account activity')).toBeTruthy();
   });
 });

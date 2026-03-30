@@ -32,6 +32,7 @@ export default function ManagerLayout() {
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="activity" options={{ href: null }} />
       <Tabs.Screen name="markets" options={{ href: null }} />
+      <Tabs.Screen name="settings/activity-log" options={{ href: null, title: 'Activity Log' }} />
     </Tabs>
   );
 }

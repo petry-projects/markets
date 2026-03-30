@@ -106,6 +106,104 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input model.CreateUse
 	}, nil
 }
 
+// DeleteAccount is the resolver for the deleteAccount field.
+// Soft-deletes the authenticated user's account and all associated data.
+// Only available to customer and vendor roles.
+func (r *mutationResolver) DeleteAccount(ctx context.Context) (bool, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor"); err != nil {
+		return false, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return false, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	role := auth.RoleFromContext(ctx)
+
+	// Use a transaction to soft-delete all related records atomically
+	tx, err := r.Pool.Begin(ctx)
+	if err != nil {
+		slog.Error("failed to begin transaction for account deletion", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+	defer tx.Rollback(ctx) //nolint:errcheck
+
+	// Set session variables so audit triggers can record the actor
+	if err := auth.SetSessionVars(ctx, tx, uid, role); err != nil {
+		slog.Error("failed to set session vars", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+
+	// Soft-delete the user record
+	_, err = tx.Exec(ctx, "UPDATE users SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL", uid)
+	if err != nil {
+		slog.Error("failed to soft-delete user", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+
+	if role == "vendor" {
+		// Soft-delete vendor profile
+		_, err = tx.Exec(ctx,
+			"UPDATE vendors SET deleted_at = NOW() WHERE user_id = $1 AND deleted_at IS NULL", uid)
+		if err != nil {
+			slog.Error("failed to soft-delete vendor profile", "error", err, "userID", uid)
+			return false, gqlerr.Internal("failed to delete account")
+		}
+
+		// Soft-delete vendor products (via vendor_id from vendors table)
+		_, err = tx.Exec(ctx,
+			`UPDATE vendor_products SET deleted_at = NOW()
+			 WHERE vendor_id IN (SELECT id FROM vendors WHERE user_id = $1)
+			 AND deleted_at IS NULL`, uid)
+		if err != nil {
+			slog.Error("failed to soft-delete vendor products", "error", err, "userID", uid)
+			return false, gqlerr.Internal("failed to delete account")
+		}
+
+		// Soft-delete vendor roster entries (vendor_roster uses user_id)
+		_, err = tx.Exec(ctx,
+			"UPDATE vendor_roster SET deleted_at = NOW() WHERE vendor_id = $1 AND deleted_at IS NULL", uid)
+		if err != nil {
+			slog.Error("failed to soft-delete vendor roster entries", "error", err, "userID", uid)
+			return false, gqlerr.Internal("failed to delete account")
+		}
+	}
+
+	if role == "customer" {
+		// Soft-delete customer profile
+		_, err = tx.Exec(ctx,
+			"UPDATE customers SET deleted_at = NOW() WHERE user_id = $1 AND deleted_at IS NULL", uid)
+		if err != nil {
+			slog.Error("failed to soft-delete customer profile", "error", err, "userID", uid)
+			return false, gqlerr.Internal("failed to delete account")
+		}
+
+		// Soft-delete follows
+		_, err = tx.Exec(ctx,
+			`UPDATE follows SET deleted_at = NOW()
+			 WHERE customer_id IN (SELECT id FROM customers WHERE user_id = $1)
+			 AND deleted_at IS NULL`, uid)
+		if err != nil {
+			slog.Error("failed to soft-delete follows", "error", err, "userID", uid)
+			return false, gqlerr.Internal("failed to delete account")
+		}
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		slog.Error("failed to commit account deletion", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to delete account")
+	}
+
+	// Publish domain event after successful commit
+	r.EventBus.Publish(ctx, events.AccountDeleted{
+		UserID: uid,
+		Role:   role,
+	})
+
+	return true, nil
+}
+
 // Me is the resolver for the me field.
 func (r *queryResolver) Me(ctx context.Context) (*model.User, error) {
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {

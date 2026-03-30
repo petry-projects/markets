@@ -57,4 +57,7 @@ extend type Mutation {
 
   """Create user record after role selection. Requires authentication."""
   createUser(input: CreateUserInput!): CreateUserPayload!
+
+  """Delete the authenticated user's account (soft-delete). Customer/Vendor only."""
+  deleteAccount: Boolean!
 }

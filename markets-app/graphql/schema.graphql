@@ -38,6 +38,11 @@ type Query {
   Query audit log entries (Manager only, read-only).
   """
   auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+
+  """
+  Get the authenticated user's activity history.
+  """
+  myActivityLog(startDate: String, endDate: String, limit: Int, offset: Int): [AuditLogEntry!]!
 }
 
 """
@@ -116,6 +121,11 @@ extend type Mutation {
   Create user record after role selection. Requires authentication.
   """
   createUser(input: CreateUserInput!): CreateUserPayload!
+
+  """
+  Delete the authenticated user's account (soft-delete). Customer/Vendor only.
+  """
+  deleteAccount: Boolean!
 }
 """
 Customer profile, follows, and discovery queries.

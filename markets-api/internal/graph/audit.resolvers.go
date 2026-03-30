@@ -7,8 +7,11 @@ package graph
 
 import (
 	"context"
+	"log/slog"
 
+	"github.com/petry-projects/markets-api/internal/audit"
 	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/domain"
 	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/generated"
 	"github.com/petry-projects/markets-api/internal/graph/model"
@@ -20,11 +23,132 @@ func (r *mutationResolver) Empty(ctx context.Context) (*bool, error) {
 }
 
 // AuditLog is the resolver for the auditLog field.
+// Manager-only, scoped to markets the manager is assigned to.
 func (r *queryResolver) AuditLog(ctx context.Context, filter *model.AuditLogFilter, limit *int32, offset *int32) (*model.AuditLogConnection, error) {
 	if err := auth.RequireRole(ctx, "manager"); err != nil {
 		return nil, err
 	}
-	return nil, gqlerr.NewError(gqlerr.CodeInternal, "not implemented")
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.AuditQuerier == nil {
+		return nil, gqlerr.Internal("audit querier not configured")
+	}
+
+	if r.MarketRepo == nil {
+		return nil, gqlerr.Internal("market repository not configured")
+	}
+
+	// Get all markets this manager is assigned to
+	managedMarkets, err := r.MarketRepo.FindMarketsByManagerID(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to find managed markets", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load managed markets")
+	}
+
+	marketIDs := make([]string, len(managedMarkets))
+	for i, m := range managedMarkets {
+		marketIDs[i] = m.ID.String()
+	}
+
+	// Build audit filter
+	f := audit.Filter{}
+	if filter != nil {
+		f.ActorID = filter.ActorID
+		f.ActionType = filter.ActionType
+		f.TargetType = filter.TargetType
+		f.TargetID = filter.TargetID
+		f.MarketID = filter.MarketID
+		f.StartDate = filter.StartDate
+		f.EndDate = filter.EndDate
+	}
+
+	lim := 20
+	if limit != nil {
+		lim = int(*limit)
+	}
+	off := 0
+	if offset != nil {
+		off = int(*offset)
+	}
+
+	entries, totalCount, err := r.AuditQuerier.QueryForManagedMarkets(ctx, marketIDs, f, lim, off)
+	if err != nil {
+		slog.Error("failed to query audit log", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to query audit log")
+	}
+
+	result := make([]*model.AuditLogEntry, len(entries))
+	for i, e := range entries {
+		result[i] = auditEntryToModel(&e)
+	}
+
+	return &model.AuditLogConnection{
+		Entries:    result,
+		TotalCount: int32(totalCount),
+		HasMore:    off+lim < totalCount,
+	}, nil
+}
+
+// MyActivityLog is the resolver for the myActivityLog field.
+// Returns the authenticated user's own activity history from the audit log.
+func (r *queryResolver) MyActivityLog(ctx context.Context, startDate *string, endDate *string, limit *int32, offset *int32) ([]*model.AuditLogEntry, error) {
+	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
+		return nil, err
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.AuditQuerier == nil {
+		return nil, gqlerr.Internal("audit querier not configured")
+	}
+
+	lim := 20
+	if limit != nil {
+		lim = int(*limit)
+	}
+	off := 0
+	if offset != nil {
+		off = int(*offset)
+	}
+
+	entries, err := r.AuditQuerier.QueryByActor(ctx, uid, startDate, endDate, lim, off)
+	if err != nil {
+		slog.Error("failed to query activity log", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to query activity log")
+	}
+
+	result := make([]*model.AuditLogEntry, len(entries))
+	for i, e := range entries {
+		result[i] = auditEntryToModel(&e)
+	}
+
+	if result == nil {
+		result = []*model.AuditLogEntry{}
+	}
+
+	return result, nil
+}
+
+// auditEntryToModel converts an audit.Entry to a GraphQL model AuditLogEntry.
+func auditEntryToModel(e *audit.Entry) *model.AuditLogEntry {
+	return &model.AuditLogEntry{
+		ID:         e.ID,
+		ActorID:    e.ActorID,
+		ActorRole:  e.ActorRole,
+		ActionType: e.ActionType,
+		TargetType: e.TargetType,
+		TargetID:   e.TargetID,
+		MarketID:   e.MarketID,
+		Timestamp:  e.Timestamp,
+		Payload:    e.Payload,
+	}
 }
 
 // Mutation returns generated.MutationResolver implementation.

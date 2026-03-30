@@ -235,4 +235,3 @@ func (r *queryResolver) MarketActivityFeed(ctx context.Context, marketID string,
 
 	return result, nil
 }
-

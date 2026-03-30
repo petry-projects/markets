@@ -35,8 +35,11 @@ input AuditLogFilter {
 Root Query type - extended by each domain schema.
 """
 type Query {
-  """Query audit log entries (Manager only, read-only)."""
+  """Query audit log entries (Manager only, read-only). Scoped to managed markets."""
   auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+
+  """Get the authenticated user's activity history."""
+  myActivityLog(startDate: String, endDate: String, limit: Int, offset: Int): [AuditLogEntry!]!
 }
 
 """

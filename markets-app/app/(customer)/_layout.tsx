@@ -32,6 +32,12 @@ export default function CustomerLayout() {
       <Tabs.Screen name="onboarding" options={{ href: null }} />
       <Tabs.Screen name="market/[id]" options={{ href: null }} />
       <Tabs.Screen name="vendor/[id]" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="settings/activity-log" options={{ href: null, title: 'Activity Log' }} />
+      <Tabs.Screen
+        name="settings/delete-account"
+        options={{ href: null, title: 'Delete Account' }}
+      />
     </Tabs>
   );
 }

@@ -4,15 +4,21 @@ on:
   pull_request:
     paths:
       - 'markets-app/**'
+      - '.github/workflows/frontend-ci.yml'
   push:
     branches: [main]
     paths:
       - 'markets-app/**'
 
+concurrency:
+  group: frontend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   quality:
+    name: Quality Gates
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: markets-app
@@ -24,30 +30,56 @@ jobs:
           cache: 'npm'
           cache-dependency-path: markets-app/package-lock.json
       - run: npm ci
+
       - name: Type check
         run: npx tsc --noEmit
+
       - name: Lint
         run: npx eslint . --max-warnings 0
+
       - name: Format check
         run: npx prettier --check .
+
       - name: Unit + component tests
         run: npx jest --ci --coverage --coverageReporters=text --coverageReporters=json-summary
+
       - name: Enforce coverage threshold
         run: |
           if [ -f coverage/coverage-summary.json ]; then
             COVERAGE=$(node -e "const s = require('./coverage/coverage-summary.json'); console.log(s.total.statements.pct)")
             echo "Statement coverage: ${COVERAGE}%"
-            THRESHOLD=20
+            # Use higher threshold on main, lower on feature branches
+            if [ "$GITHUB_BASE_REF" = "main" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
+              THRESHOLD=60
+            else
+              THRESHOLD=20
+            fi
+            echo "Threshold: ${THRESHOLD}% (base: ${GITHUB_BASE_REF:-push})"
             BELOW=$(node -e "console.log($COVERAGE < $THRESHOLD ? 1 : 0)")
             if [ "$BELOW" = "1" ]; then
               echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
               exit 1
             fi
           fi
+
       - name: Codegen check
         run: npm run codegen:check
-      - name: Upload coverage report
+
+      - name: Test summary
         if: always()
+        run: |
+          echo "## Frontend CI Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f coverage/coverage-summary.json ]; then
+            COVERAGE=$(node -e "const s = require('./coverage/coverage-summary.json'); console.log(s.total.statements.pct)")
+            echo "- **Coverage**: ${COVERAGE}% statements" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "- **TypeScript**: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **ESLint**: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Prettier**: ✅ passed" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-coverage

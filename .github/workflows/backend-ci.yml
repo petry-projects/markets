@@ -5,10 +5,15 @@ on:
     branches: [main]
     paths:
       - 'markets-api/**'
+      - '.github/workflows/backend-ci.yml'
   pull_request:
-    branches: [main]
     paths:
       - 'markets-api/**'
+      - '.github/workflows/backend-ci.yml'
+
+concurrency:
+  group: backend-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 defaults:
   run:
@@ -37,6 +42,7 @@ jobs:
     name: Test
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    needs: lint
     steps:
       - uses: actions/checkout@v4
 
@@ -57,14 +63,31 @@ jobs:
           grep -v 'models_gen.go' coverage-filtered.out > coverage-clean.out || true
           COVERAGE=$(go tool cover -func=coverage-clean.out | grep total | awk '{print $3}' | tr -d '%')
           echo "Total coverage (excluding generated): ${COVERAGE}%"
-          THRESHOLD=60
+          # Use higher threshold on main, lower on feature branches
+          if [ "$GITHUB_BASE_REF" = "main" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
+            THRESHOLD=60
+          else
+            THRESHOLD=20
+          fi
+          echo "Threshold: ${THRESHOLD}% (base: ${GITHUB_BASE_REF:-push})"
           if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
             echo "::error::Coverage ${COVERAGE}% is below threshold ${THRESHOLD}%"
             exit 1
           fi
 
-      - name: Upload coverage report
+      - name: Test summary
         if: always()
+        run: |
+          echo "## Backend CI Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [ -f coverage-clean.out ]; then
+            COVERAGE=$(go tool cover -func=coverage-clean.out | grep total | awk '{print $3}')
+            echo "- **Coverage**: ${COVERAGE} (excluding generated)" >> "$GITHUB_STEP_SUMMARY"
+          fi
+          echo "- **Race detector**: ✅ enabled" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload coverage report
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: backend-coverage

@@ -109,7 +109,7 @@ export default function VendorProfileScreen() {
               <Button
                 className="bg-primary-500 rounded-lg px-4 h-10"
                 onPress={() => {
-                  router.push('/(vendor)/products/create');
+                  router.push('/(vendor)/products/create' as never);
                 }}
                 accessibilityLabel="Add product"
               >

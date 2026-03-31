@@ -1,8 +1,6 @@
 package graph
 
 import (
-	"strings"
-
 	"github.com/petry-projects/markets-api/internal/graph/model"
 	"github.com/petry-projects/markets-api/internal/vendor"
 )
@@ -26,20 +24,36 @@ func vendorToModel(v *vendor.VendorRecord) *model.Vendor {
 	}
 }
 
-// checkInToModel converts a domain CheckInRecord to a GraphQL model CheckIn.
-func checkInToModel(c *vendor.CheckInRecord) *model.CheckIn {
-	ci := &model.CheckIn{
-		ID:          c.ID.String(),
-		VendorID:    c.VendorID.String(),
-		MarketID:    c.MarketID.String(),
-		Status:      model.CheckInStatus(strings.ToUpper(string(c.Status))),
-		CheckedInAt: c.CheckedInAt.Format("2006-01-02T15:04:05Z07:00"),
+// rosterStatusToJoinStatus maps a DB roster status to a VendorMarketJoinStatus enum.
+func rosterStatusToJoinStatus(status string) model.VendorMarketJoinStatus {
+	switch status {
+	case "pending":
+		return model.VendorMarketJoinStatusPending
+	case "approved", "committed":
+		return model.VendorMarketJoinStatusApproved
+	case "rejected":
+		return model.VendorMarketJoinStatusRejected
+	default:
+		return model.VendorMarketJoinStatusPending
 	}
-	if c.CheckedOutAt != nil {
-		s := c.CheckedOutAt.Format("2006-01-02T15:04:05Z07:00")
-		ci.CheckedOutAt = &s
+}
+
+// determineJoinStatus picks a single join status from a set of observed statuses.
+func determineJoinStatus(statuses map[string]bool) model.VendorMarketJoinStatus {
+	if len(statuses) == 0 {
+		return model.VendorMarketJoinStatusPending
 	}
-	return ci
+	if len(statuses) == 1 {
+		for s := range statuses {
+			return rosterStatusToJoinStatus(s)
+		}
+	}
+	return model.VendorMarketJoinStatusMixed
+}
+
+// dbStatusToRosterStatus maps a DB status string to a GraphQL VendorRosterStatus.
+func dbStatusToRosterStatus(status string) model.VendorRosterStatus {
+	return rosterStatusToModel(status)
 }
 
 // rosterStatusToJoinStatus maps a roster status string to the join status enum.

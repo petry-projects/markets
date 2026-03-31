@@ -12,33 +12,34 @@ export default function CreateMarketScreen() {
   });
 
   const handleSubmit = useCallback(
-    async (data: MarketFormData) => {
-      try {
-        await createMarket({
-          variables: {
-            input: {
-              name: data.name,
-              description: data.description || undefined,
-              address: data.address,
-              latitude: parseFloat(data.latitude),
-              longitude: parseFloat(data.longitude),
-              contactEmail: data.contactEmail,
-              contactPhone: data.contactPhone || undefined,
-              recoveryContact: data.recoveryContact,
-              socialLinks: {
-                instagram: data.instagram || undefined,
-                facebook: data.facebook || undefined,
-                website: data.website || undefined,
-                twitter: data.twitter || undefined,
-              },
+    (data: MarketFormData) => {
+      void createMarket({
+        variables: {
+          input: {
+            name: data.name,
+            description: data.description || undefined,
+            address: data.address,
+            latitude: parseFloat(data.latitude),
+            longitude: parseFloat(data.longitude),
+            contactEmail: data.contactEmail,
+            contactPhone: data.contactPhone || undefined,
+            recoveryContact: data.recoveryContact,
+            socialLinks: {
+              instagram: data.instagram || undefined,
+              facebook: data.facebook || undefined,
+              website: data.website || undefined,
+              twitter: data.twitter || undefined,
             },
           },
+        },
+      })
+        .then(() => {
+          router.back();
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          Alert.alert('Error', message);
         });
-        router.back();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-        Alert.alert('Error', message);
-      }
     },
     [createMarket, router],
   );
@@ -47,7 +48,7 @@ export default function CreateMarketScreen() {
     <MarketForm
       mode="create"
       onSubmit={(data) => {
-        void handleSubmit(data);
+        handleSubmit(data);
       }}
       loading={loading}
     />

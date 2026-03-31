@@ -1,0 +1,15 @@
+mutation CreateVendorProfile($input: CreateVendorProfileInput!) {
+  createVendorProfile(input: $input) {
+    id
+    userID
+    businessName
+    description
+    contactInfo
+    instagramHandle
+    facebookURL
+    websiteURL
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

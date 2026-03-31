@@ -7,10 +7,17 @@ package graph
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
+	"time"
 
 	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/domain"
+	"github.com/petry-projects/markets-api/internal/events"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/model"
+	"github.com/petry-projects/markets-api/internal/vendor"
 )
 
 // CreateVendorProfile is the resolver for the createVendorProfile field.
@@ -18,7 +25,38 @@ func (r *mutationResolver) CreateVendorProfile(ctx context.Context, input model.
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: CreateVendorProfile - createVendorProfile"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	v, err := vendor.NewVendor(vendor.NewVendorParams{
+		UserID:          domain.UserID(uid),
+		BusinessName:    input.BusinessName,
+		Description:     ptrToString(input.Description),
+		ContactInfo:     ptrToString(input.ContactInfo),
+		InstagramHandle: ptrToString(input.InstagramHandle),
+		FacebookURL:     ptrToString(input.FacebookURL),
+		WebsiteURL:      ptrToString(input.WebsiteURL),
+		ImageURL:        ptrToString(input.ImageURL),
+	})
+	if err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	created, err := r.VendorRepo.CreateVendor(ctx, v)
+	if err != nil {
+		slog.Error("failed to create vendor profile", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to create vendor profile")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorProfileCreated{
+		VendorID: created.ID.String(),
+		UserID:   uid,
+	})
+
+	return vendorToModel(created), nil
 }
 
 // UpdateVendorProfile is the resolver for the updateVendorProfile field.
@@ -26,7 +64,41 @@ func (r *mutationResolver) UpdateVendorProfile(ctx context.Context, input model.
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: UpdateVendorProfile - updateVendorProfile"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	existing, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to find vendor profile", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("vendor profile not found")
+	}
+
+	if err := existing.Update(vendor.UpdateVendorParams{
+		BusinessName:    input.BusinessName,
+		Description:     input.Description,
+		ContactInfo:     input.ContactInfo,
+		InstagramHandle: input.InstagramHandle,
+		FacebookURL:     input.FacebookURL,
+		WebsiteURL:      input.WebsiteURL,
+		ImageURL:        input.ImageURL,
+	}); err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	updated, err := r.VendorRepo.UpdateVendor(ctx, existing)
+	if err != nil {
+		slog.Error("failed to update vendor profile", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to update vendor profile")
+	}
+
+	r.EventBus.Publish(ctx, events.VendorProfileUpdated{
+		VendorID: updated.ID.String(),
+	})
+
+	return vendorToModel(updated), nil
 }
 
 // CreateProduct is the resolver for the createProduct field.
@@ -34,7 +106,41 @@ func (r *mutationResolver) CreateProduct(ctx context.Context, input model.Create
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: CreateProduct - createProduct"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to find vendor", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("vendor profile not found")
+	}
+
+	p, err := vendor.NewProduct(vendor.NewProductParams{
+		VendorID:    v.ID,
+		Name:        input.Name,
+		Description: ptrToString(input.Description),
+		Category:    ptrToString(input.Category),
+		ImageURL:    ptrToString(input.ImageURL),
+	})
+	if err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	created, err := r.VendorRepo.CreateProduct(ctx, p)
+	if err != nil {
+		slog.Error("failed to create product", "error", err, "vendorID", v.ID)
+		return nil, gqlerr.Internal("failed to create product")
+	}
+
+	r.EventBus.Publish(ctx, events.ProductCreated{
+		ProductID: created.ID.String(),
+		VendorID:  v.ID.String(),
+	})
+
+	return productToModel(created), nil
 }
 
 // UpdateProduct is the resolver for the updateProduct field.
@@ -42,7 +148,45 @@ func (r *mutationResolver) UpdateProduct(ctx context.Context, id string, input m
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: UpdateProduct - updateProduct"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	// Verify ownership: product must belong to vendor's profile
+	existing, err := r.VendorRepo.FindProductByID(ctx, domain.ProductID(id))
+	if err != nil {
+		slog.Error("failed to find product", "error", err, "productID", id)
+		return nil, gqlerr.Internal("product not found")
+	}
+
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil || v.ID != existing.VendorID {
+		return nil, gqlerr.NewError(gqlerr.CodeForbidden, "not authorized to update this product")
+	}
+
+	if err := existing.Update(vendor.UpdateProductParams{
+		Name:        input.Name,
+		Description: input.Description,
+		Category:    input.Category,
+		ImageURL:    input.ImageURL,
+		IsAvailable: input.IsAvailable,
+	}); err != nil {
+		return nil, gqlerr.ValidationError(err.Error())
+	}
+
+	updated, err := r.VendorRepo.UpdateProduct(ctx, existing)
+	if err != nil {
+		slog.Error("failed to update product", "error", err, "productID", id)
+		return nil, gqlerr.Internal("failed to update product")
+	}
+
+	r.EventBus.Publish(ctx, events.ProductUpdated{
+		ProductID: updated.ID.String(),
+	})
+
+	return productToModel(updated), nil
 }
 
 // DeleteProduct is the resolver for the deleteProduct field.
@@ -50,7 +194,34 @@ func (r *mutationResolver) DeleteProduct(ctx context.Context, id string) (bool, 
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return false, err
 	}
-	panic(fmt.Errorf("not implemented: DeleteProduct - deleteProduct"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return false, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	// Verify ownership
+	existing, err := r.VendorRepo.FindProductByID(ctx, domain.ProductID(id))
+	if err != nil {
+		slog.Error("failed to find product", "error", err, "productID", id)
+		return false, gqlerr.Internal("product not found")
+	}
+
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil || v.ID != existing.VendorID {
+		return false, gqlerr.NewError(gqlerr.CodeForbidden, "not authorized to delete this product")
+	}
+
+	if err := r.VendorRepo.DeleteProduct(ctx, domain.ProductID(id)); err != nil {
+		slog.Error("failed to delete product", "error", err, "productID", id)
+		return false, gqlerr.Internal("failed to delete product")
+	}
+
+	r.EventBus.Publish(ctx, events.ProductDeleted{
+		ProductID: id,
+	})
+
+	return true, nil
 }
 
 // CheckIn is the resolver for the checkIn field.
@@ -82,7 +253,21 @@ func (r *queryResolver) Vendor(ctx context.Context, id string) (*model.Vendor, e
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: Vendor - vendor"))
+
+	if r.VendorRepo == nil {
+		return nil, gqlerr.Internal("vendor repository not configured")
+	}
+
+	v, err := r.VendorRepo.FindVendorByID(ctx, domain.VendorID(id))
+	if err != nil {
+		if errors.Is(err, vendor.ErrVendorNotFound) {
+			return nil, nil // return nil for not found (nullable field)
+		}
+		slog.Error("failed to load vendor", "error", err, "vendorID", id)
+		return nil, gqlerr.Internal("failed to load vendor")
+	}
+
+	return vendorToModel(v), nil
 }
 
 // MyVendorProfile is the resolver for the myVendorProfile field.
@@ -90,7 +275,26 @@ func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, err
 	if err := auth.RequireRole(ctx, "vendor"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: MyVendorProfile - myVendorProfile"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.VendorRepo == nil {
+		return nil, nil
+	}
+
+	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		if errors.Is(err, vendor.ErrVendorNotFound) {
+			return nil, nil // no profile yet
+		}
+		slog.Error("failed to load vendor profile", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load vendor profile")
+	}
+
+	return vendorToModel(v), nil
 }
 
 // VendorProducts is the resolver for the vendorProducts field.
@@ -98,5 +302,160 @@ func (r *queryResolver) VendorProducts(ctx context.Context, vendorID string) ([]
 	if err := auth.RequireRole(ctx, "customer", "vendor", "manager"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: VendorProducts - vendorProducts"))
+
+	if r.VendorRepo == nil {
+		return nil, gqlerr.Internal("vendor repository not configured")
+	}
+
+	products, err := r.VendorRepo.FindProductsByVendorID(ctx, domain.VendorID(vendorID))
+	if err != nil {
+		slog.Error("failed to load vendor products", "error", err, "vendorID", vendorID)
+		return nil, gqlerr.Internal("failed to load products")
+	}
+
+	result := make([]*model.Product, len(products))
+	for i, p := range products {
+		result[i] = productToModel(p)
+	}
+	return result, nil
+}
+
+// SearchMarketsToJoin is the resolver for the searchMarketsToJoin field.
+func (r *queryResolver) SearchMarketsToJoin(ctx context.Context, input model.SearchMarketsInput) ([]*model.MarketSearchResult, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
+
+	if r.VendorRepo == nil || r.MarketRepo == nil {
+		return nil, gqlerr.Internal("repository not configured")
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	searchTerm := ""
+	if input.SearchTerm != nil {
+		searchTerm = *input.SearchTerm
+	}
+
+	rows, err := r.VendorRepo.SearchMarkets(ctx, searchTerm, input.Latitude, input.Longitude, input.RadiusKm, input.Limit, input.Offset)
+	if err != nil {
+		slog.Error("failed to search markets", "error", err)
+		return nil, gqlerr.Internal("failed to search markets")
+	}
+
+	// Collect vendor's roster dates for status lookup (vendor_roster uses user_id)
+	rosterDates, _ := r.VendorRepo.GetVendorMarketDates(ctx, domain.UserID(uid))
+
+	// Group roster dates by market for status
+	marketStatuses := make(map[domain.MarketID]model.VendorMarketJoinStatus)
+	for _, rd := range rosterDates {
+		existing, ok := marketStatuses[rd.MarketID]
+		status := rosterStatusToJoinStatus(rd.Status)
+		if !ok {
+			marketStatuses[rd.MarketID] = status
+		} else if existing != status {
+			mixed := model.VendorMarketJoinStatusMixed
+			marketStatuses[rd.MarketID] = mixed
+		}
+	}
+
+	results := make([]*model.MarketSearchResult, 0, len(rows))
+	for _, row := range rows {
+		// Load market details
+		m, err := r.MarketRepo.FindMarketByID(ctx, row.MarketID)
+		if err != nil {
+			continue // skip markets that can't be loaded
+		}
+
+		result := &model.MarketSearchResult{
+			Market:      marketToModel(m),
+			DistanceKm:  row.DistanceKm,
+			VendorCount: int32(row.VendorCount),
+		}
+
+		if s, ok := marketStatuses[row.MarketID]; ok {
+			result.VendorStatus = &s
+		}
+
+		results = append(results, result)
+	}
+
+	return results, nil
+}
+
+// VendorMarkets is the resolver for the vendorMarkets field.
+func (r *queryResolver) VendorMarkets(ctx context.Context) ([]*model.VendorMarketAssociation, error) {
+	if err := auth.RequireRole(ctx, "vendor"); err != nil {
+		return nil, err
+	}
+
+	if r.VendorRepo == nil || r.MarketRepo == nil {
+		return nil, gqlerr.Internal("repository not configured")
+	}
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	rosterDates, err := r.VendorRepo.GetVendorMarketDates(ctx, domain.UserID(uid))
+	if err != nil {
+		slog.Error("failed to get vendor market dates", "error", err)
+		return nil, gqlerr.Internal("failed to load vendor markets")
+	}
+
+	// Group by market
+	type marketGroup struct {
+		dates        []*model.VendorMarketDate
+		statuses     map[string]bool
+		nextUpcoming string
+	}
+	groups := make(map[domain.MarketID]*marketGroup)
+	var orderedMarkets []domain.MarketID
+
+	for _, rd := range rosterDates {
+		g, ok := groups[rd.MarketID]
+		if !ok {
+			g = &marketGroup{statuses: make(map[string]bool)}
+			groups[rd.MarketID] = g
+			orderedMarkets = append(orderedMarkets, rd.MarketID)
+		}
+		g.dates = append(g.dates, &model.VendorMarketDate{
+			ID:     rd.ID,
+			Date:   rd.Date,
+			Status: dbStatusToRosterStatus(rd.Status),
+		})
+		g.statuses[rd.Status] = true
+		// Track next upcoming date (dates are sorted, filter to future dates)
+		if g.nextUpcoming == "" && (rd.Status == "approved" || rd.Status == "committed") && rd.Date >= time.Now().Format("2006-01-02") {
+			g.nextUpcoming = rd.Date
+		}
+	}
+
+	results := make([]*model.VendorMarketAssociation, 0, len(groups))
+	for _, marketID := range orderedMarkets {
+		g := groups[marketID]
+		m, err := r.MarketRepo.FindMarketByID(ctx, marketID)
+		if err != nil {
+			continue
+		}
+
+		// Determine overall status
+		status := determineJoinStatus(g.statuses)
+
+		assoc := &model.VendorMarketAssociation{
+			Market: marketToModel(m),
+			Status: status,
+			Dates:  g.dates,
+		}
+		if g.nextUpcoming != "" {
+			assoc.NextUpcomingDate = &g.nextUpcoming
+		}
+		results = append(results, assoc)
+	}
+
+	return results, nil
 }

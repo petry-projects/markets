@@ -102,9 +102,13 @@ type CreateUserPayload struct {
 }
 
 type CreateVendorProfileInput struct {
-	BusinessName string  `json:"businessName"`
-	Description  *string `json:"description,omitempty"`
-	ImageURL     *string `json:"imageURL,omitempty"`
+	BusinessName    string  `json:"businessName"`
+	Description     *string `json:"description,omitempty"`
+	ContactInfo     *string `json:"contactInfo,omitempty"`
+	InstagramHandle *string `json:"instagramHandle,omitempty"`
+	FacebookURL     *string `json:"facebookURL,omitempty"`
+	WebsiteURL      *string `json:"websiteURL,omitempty"`
+	ImageURL        *string `json:"imageURL,omitempty"`
 }
 
 // Customer profile, follows, and discovery queries.
@@ -206,6 +210,15 @@ type MarketSchedule struct {
 	UpdatedAt string  `json:"updatedAt"`
 }
 
+// Search result for market browsing.
+type MarketSearchResult struct {
+	Market      *Market  `json:"market"`
+	DistanceKm  *float64 `json:"distanceKm,omitempty"`
+	VendorCount int32    `json:"vendorCount"`
+	// The vendor's current status at this market, if any.
+	VendorStatus *VendorMarketJoinStatus `json:"vendorStatus,omitempty"`
+}
+
 // Root Mutation type - extended by each domain schema.
 // No audit mutations exist; audit writes are DB trigger-only.
 type Mutation struct {
@@ -242,6 +255,16 @@ type Query struct {
 type RegisterDeviceTokenInput struct {
 	Token    string   `json:"token"`
 	Platform Platform `json:"platform"`
+}
+
+type SearchMarketsInput struct {
+	// Search term for market name, city, or category.
+	SearchTerm *string  `json:"searchTerm,omitempty"`
+	Latitude   *float64 `json:"latitude,omitempty"`
+	Longitude  *float64 `json:"longitude,omitempty"`
+	RadiusKm   *float64 `json:"radiusKm,omitempty"`
+	Limit      *int32   `json:"limit,omitempty"`
+	Offset     *int32   `json:"offset,omitempty"`
 }
 
 type SignUpInput struct {
@@ -304,9 +327,13 @@ type UpdateScheduleInput struct {
 }
 
 type UpdateVendorProfileInput struct {
-	BusinessName *string `json:"businessName,omitempty"`
-	Description  *string `json:"description,omitempty"`
-	ImageURL     *string `json:"imageURL,omitempty"`
+	BusinessName    *string `json:"businessName,omitempty"`
+	Description     *string `json:"description,omitempty"`
+	ContactInfo     *string `json:"contactInfo,omitempty"`
+	InstagramHandle *string `json:"instagramHandle,omitempty"`
+	FacebookURL     *string `json:"facebookURL,omitempty"`
+	WebsiteURL      *string `json:"websiteURL,omitempty"`
+	ImageURL        *string `json:"imageURL,omitempty"`
 }
 
 type User struct {
@@ -321,15 +348,19 @@ type User struct {
 
 // Vendor profile, product catalog, and check-in types.
 type Vendor struct {
-	ID           string     `json:"id"`
-	UserID       string     `json:"userID"`
-	BusinessName string     `json:"businessName"`
-	Description  *string    `json:"description,omitempty"`
-	ImageURL     *string    `json:"imageURL,omitempty"`
-	Products     []*Product `json:"products"`
-	CheckIns     []*CheckIn `json:"checkIns"`
-	CreatedAt    string     `json:"createdAt"`
-	UpdatedAt    string     `json:"updatedAt"`
+	ID              string     `json:"id"`
+	UserID          string     `json:"userID"`
+	BusinessName    string     `json:"businessName"`
+	Description     *string    `json:"description,omitempty"`
+	ContactInfo     *string    `json:"contactInfo,omitempty"`
+	InstagramHandle *string    `json:"instagramHandle,omitempty"`
+	FacebookURL     *string    `json:"facebookURL,omitempty"`
+	WebsiteURL      *string    `json:"websiteURL,omitempty"`
+	ImageURL        *string    `json:"imageURL,omitempty"`
+	Products        []*Product `json:"products"`
+	CheckIns        []*CheckIn `json:"checkIns"`
+	CreatedAt       string     `json:"createdAt"`
+	UpdatedAt       string     `json:"updatedAt"`
 }
 
 type VendorInvitation struct {
@@ -342,6 +373,21 @@ type VendorInvitation struct {
 	Message     *string          `json:"message,omitempty"`
 	CreatedAt   string           `json:"createdAt"`
 	UpdatedAt   string           `json:"updatedAt"`
+}
+
+// A market association for a vendor, showing status and committed dates.
+type VendorMarketAssociation struct {
+	Market           *Market                `json:"market"`
+	Status           VendorMarketJoinStatus `json:"status"`
+	Dates            []*VendorMarketDate    `json:"dates"`
+	NextUpcomingDate *string                `json:"nextUpcomingDate,omitempty"`
+}
+
+// A single date commitment for a vendor at a market.
+type VendorMarketDate struct {
+	ID     string             `json:"id"`
+	Date   string             `json:"date"`
+	Status VendorRosterStatus `json:"status"`
 }
 
 type VendorNotification struct {
@@ -815,6 +861,65 @@ func (e *ScheduleType) UnmarshalJSON(b []byte) error {
 }
 
 func (e ScheduleType) MarshalJSON() ([]byte, error) {
+	var buf bytes.Buffer
+	e.MarshalGQL(&buf)
+	return buf.Bytes(), nil
+}
+
+type VendorMarketJoinStatus string
+
+const (
+	VendorMarketJoinStatusPending  VendorMarketJoinStatus = "PENDING"
+	VendorMarketJoinStatusApproved VendorMarketJoinStatus = "APPROVED"
+	VendorMarketJoinStatusRejected VendorMarketJoinStatus = "REJECTED"
+	VendorMarketJoinStatusMixed    VendorMarketJoinStatus = "MIXED"
+)
+
+var AllVendorMarketJoinStatus = []VendorMarketJoinStatus{
+	VendorMarketJoinStatusPending,
+	VendorMarketJoinStatusApproved,
+	VendorMarketJoinStatusRejected,
+	VendorMarketJoinStatusMixed,
+}
+
+func (e VendorMarketJoinStatus) IsValid() bool {
+	switch e {
+	case VendorMarketJoinStatusPending, VendorMarketJoinStatusApproved, VendorMarketJoinStatusRejected, VendorMarketJoinStatusMixed:
+		return true
+	}
+	return false
+}
+
+func (e VendorMarketJoinStatus) String() string {
+	return string(e)
+}
+
+func (e *VendorMarketJoinStatus) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = VendorMarketJoinStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid VendorMarketJoinStatus", str)
+	}
+	return nil
+}
+
+func (e VendorMarketJoinStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+func (e *VendorMarketJoinStatus) UnmarshalJSON(b []byte) error {
+	s, err := strconv.Unquote(string(b))
+	if err != nil {
+		return err
+	}
+	return e.UnmarshalGQL(s)
+}
+
+func (e VendorMarketJoinStatus) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	e.MarshalGQL(&buf)
 	return buf.Bytes(), nil

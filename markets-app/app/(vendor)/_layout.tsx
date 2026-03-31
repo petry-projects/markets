@@ -28,6 +28,13 @@ export default function VendorLayout() {
           tabBarAccessibilityLabel: 'Your vendor profile',
         }}
       />
+      {/* Hide nested screens from tab bar */}
+      <Tabs.Screen name="profile/create" options={{ href: null }} />
+      <Tabs.Screen name="profile/edit" options={{ href: null }} />
+      <Tabs.Screen name="products/create" options={{ href: null }} />
+      <Tabs.Screen name="products/[id]/edit" options={{ href: null }} />
+      <Tabs.Screen name="markets/search" options={{ href: null }} />
+      <Tabs.Screen name="markets/[id]/detail" options={{ href: null }} />
     </Tabs>
   );
 }

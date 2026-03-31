@@ -1,0 +1,24 @@
+query VendorMarkets {
+  vendorMarkets {
+    market {
+      id
+      name
+      address
+      status
+      schedule {
+        id
+        scheduleType
+        dayOfWeek
+        startTime
+        endTime
+      }
+    }
+    status
+    dates {
+      id
+      date
+      status
+    }
+    nextUpcomingDate
+  }
+}

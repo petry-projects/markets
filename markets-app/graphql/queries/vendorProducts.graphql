@@ -1,0 +1,13 @@
+query VendorProducts($vendorID: ID!) {
+  vendorProducts(vendorID: $vendorID) {
+    id
+    vendorID
+    name
+    description
+    category
+    imageURL
+    isAvailable
+    createdAt
+    updatedAt
+  }
+}

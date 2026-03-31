@@ -1,0 +1,23 @@
+query MyVendorProfile {
+  myVendorProfile {
+    id
+    userID
+    businessName
+    description
+    contactInfo
+    instagramHandle
+    facebookURL
+    websiteURL
+    imageURL
+    products {
+      id
+      name
+      description
+      category
+      imageURL
+      isAvailable
+    }
+    createdAt
+    updatedAt
+  }
+}

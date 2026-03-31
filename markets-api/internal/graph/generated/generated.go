@@ -35,6 +35,17 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ActivityFeedItem struct {
+		ActionType func(childComplexity int) int
+		ActorID    func(childComplexity int) int
+		CreatedAt  func(childComplexity int) int
+		ID         func(childComplexity int) int
+		MarketID   func(childComplexity int) int
+		Message    func(childComplexity int) int
+		TargetID   func(childComplexity int) int
+		TargetType func(childComplexity int) int
+	}
+
 	AuditLogConnection struct {
 		Entries    func(childComplexity int) int
 		HasMore    func(childComplexity int) int
@@ -192,6 +203,7 @@ type ComplexityRoot struct {
 		CreateProduct                 func(childComplexity int, input model.CreateProductInput) int
 		CreateUser                    func(childComplexity int, input model.CreateUserInput) int
 		CreateVendorProfile           func(childComplexity int, input model.CreateVendorProfileInput) int
+		DeleteAccount                 func(childComplexity int) int
 		DeleteMarketSchedule          func(childComplexity int, id string) int
 		DeleteProduct                 func(childComplexity int, id string) int
 		Empty                         func(childComplexity int) int
@@ -222,14 +234,15 @@ type ComplexityRoot struct {
 	}
 
 	NotificationPreferences struct {
-		CreatedAt           func(childComplexity int) int
-		ExceptionAlerts     func(childComplexity int) int
-		ID                  func(childComplexity int) int
-		MarketUpdateAlerts  func(childComplexity int) int
-		PushEnabled         func(childComplexity int) int
-		UpdatedAt           func(childComplexity int) int
-		UserID              func(childComplexity int) int
-		VendorCheckInAlerts func(childComplexity int) int
+		CreatedAt            func(childComplexity int) int
+		ExceptionAlerts      func(childComplexity int) int
+		ID                   func(childComplexity int) int
+		MarketUpdateAlerts   func(childComplexity int) int
+		PushEnabled          func(childComplexity int) int
+		UpdatedAt            func(childComplexity int) int
+		UserID               func(childComplexity int) int
+		VendorCheckInAlerts  func(childComplexity int) int
+		VendorCheckoutAlerts func(childComplexity int) int
 	}
 
 	Product struct {
@@ -245,17 +258,20 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		ActivityFeed              func(childComplexity int, limit *int32, offset *int32) int
 		AuditLog                  func(childComplexity int, filter *model.AuditLogFilter, limit *int32, offset *int32) int
 		DiscoverMarkets           func(childComplexity int, latitude float64, longitude float64, radiusMiles float64, limit *int32, offset *int32) int
 		DiscoverVendors           func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		FollowingFeed             func(childComplexity int, limit *int32, offset *int32) int
 		Market                    func(childComplexity int, id string) int
+		MarketActivityFeed        func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		MarketAttendance          func(childComplexity int, marketID string, date string) int
 		MarketDayPlans            func(childComplexity int, marketID string, startDate string, endDate string) int
 		MarketRoster              func(childComplexity int, marketID string, date string) int
 		MarketUpdates             func(childComplexity int, marketID string, limit *int32, offset *int32) int
 		Markets                   func(childComplexity int, latitude *float64, longitude *float64, radiusMiles *float64, limit *int32, offset *int32) int
 		Me                        func(childComplexity int) int
+		MyActivityLog             func(childComplexity int, startDate *string, endDate *string, limit *int32, offset *int32) int
 		MyCustomerProfile         func(childComplexity int) int
 		MyInvitations             func(childComplexity int) int
 		MyMarkets                 func(childComplexity int) int
@@ -361,6 +377,7 @@ type MutationResolver interface {
 	Login(ctx context.Context, input model.LoginInput) (*model.AuthPayload, error)
 	SignUp(ctx context.Context, input model.SignUpInput) (*model.AuthPayload, error)
 	CreateUser(ctx context.Context, input model.CreateUserInput) (*model.CreateUserPayload, error)
+	DeleteAccount(ctx context.Context) (bool, error)
 	Follow(ctx context.Context, targetType model.FollowTargetType, targetID string) (*model.Follow, error)
 	Unfollow(ctx context.Context, targetType model.FollowTargetType, targetID string) (bool, error)
 	CreateMarket(ctx context.Context, input model.CreateMarketInput) (*model.Market, error)
@@ -399,6 +416,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	AuditLog(ctx context.Context, filter *model.AuditLogFilter, limit *int32, offset *int32) (*model.AuditLogConnection, error)
+	MyActivityLog(ctx context.Context, startDate *string, endDate *string, limit *int32, offset *int32) ([]*model.AuditLogEntry, error)
 	Me(ctx context.Context) (*model.User, error)
 	MyCustomerProfile(ctx context.Context) (*model.CustomerProfile, error)
 	DiscoverMarkets(ctx context.Context, latitude float64, longitude float64, radiusMiles float64, limit *int32, offset *int32) ([]*model.Market, error)
@@ -414,6 +432,8 @@ type QueryResolver interface {
 	MarketAttendance(ctx context.Context, marketID string, date string) (*model.MarketAttendance, error)
 	MarketUpdates(ctx context.Context, marketID string, limit *int32, offset *int32) ([]*model.MarketUpdate, error)
 	MyNotificationPreferences(ctx context.Context) (*model.NotificationPreferences, error)
+	ActivityFeed(ctx context.Context, limit *int32, offset *int32) ([]*model.ActivityFeedItem, error)
+	MarketActivityFeed(ctx context.Context, marketID string, limit *int32, offset *int32) ([]*model.ActivityFeedItem, error)
 	Vendor(ctx context.Context, id string) (*model.Vendor, error)
 	MyVendorProfile(ctx context.Context) (*model.Vendor, error)
 	VendorProducts(ctx context.Context, vendorID string) ([]*model.Product, error)
@@ -434,6 +454,55 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	ec := newExecutionContext(nil, e, nil)
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ActivityFeedItem.actionType":
+		if e.ComplexityRoot.ActivityFeedItem.ActionType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.ActionType(childComplexity), true
+	case "ActivityFeedItem.actorID":
+		if e.ComplexityRoot.ActivityFeedItem.ActorID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.ActorID(childComplexity), true
+	case "ActivityFeedItem.createdAt":
+		if e.ComplexityRoot.ActivityFeedItem.CreatedAt == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.CreatedAt(childComplexity), true
+	case "ActivityFeedItem.id":
+		if e.ComplexityRoot.ActivityFeedItem.ID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.ID(childComplexity), true
+	case "ActivityFeedItem.marketID":
+		if e.ComplexityRoot.ActivityFeedItem.MarketID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.MarketID(childComplexity), true
+	case "ActivityFeedItem.message":
+		if e.ComplexityRoot.ActivityFeedItem.Message == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.Message(childComplexity), true
+	case "ActivityFeedItem.targetID":
+		if e.ComplexityRoot.ActivityFeedItem.TargetID == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.TargetID(childComplexity), true
+	case "ActivityFeedItem.targetType":
+		if e.ComplexityRoot.ActivityFeedItem.TargetType == nil {
+			break
+		}
+
+		return e.ComplexityRoot.ActivityFeedItem.TargetType(childComplexity), true
 
 	case "AuditLogConnection.entries":
 		if e.ComplexityRoot.AuditLogConnection.Entries == nil {
@@ -1176,6 +1245,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Mutation.CreateVendorProfile(childComplexity, args["input"].(model.CreateVendorProfileInput)), true
+	case "Mutation.deleteAccount":
+		if e.ComplexityRoot.Mutation.DeleteAccount == nil {
+			break
+		}
+
+		return e.ComplexityRoot.Mutation.DeleteAccount(childComplexity), true
 	case "Mutation.deleteMarketSchedule":
 		if e.ComplexityRoot.Mutation.DeleteMarketSchedule == nil {
 			break
@@ -1517,6 +1592,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.NotificationPreferences.VendorCheckInAlerts(childComplexity), true
+	case "NotificationPreferences.vendorCheckoutAlerts":
+		if e.ComplexityRoot.NotificationPreferences.VendorCheckoutAlerts == nil {
+			break
+		}
+
+		return e.ComplexityRoot.NotificationPreferences.VendorCheckoutAlerts(childComplexity), true
 
 	case "Product.category":
 		if e.ComplexityRoot.Product.Category == nil {
@@ -1573,6 +1654,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.ComplexityRoot.Product.VendorID(childComplexity), true
 
+	case "Query.activityFeed":
+		if e.ComplexityRoot.Query.ActivityFeed == nil {
+			break
+		}
+
+		args, err := ec.field_Query_activityFeed_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.ActivityFeed(childComplexity, args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.auditLog":
 		if e.ComplexityRoot.Query.AuditLog == nil {
 			break
@@ -1629,6 +1721,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Market(childComplexity, args["id"].(string)), true
+	case "Query.marketActivityFeed":
+		if e.ComplexityRoot.Query.MarketActivityFeed == nil {
+			break
+		}
+
+		args, err := ec.field_Query_marketActivityFeed_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MarketActivityFeed(childComplexity, args["marketID"].(string), args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.marketAttendance":
 		if e.ComplexityRoot.Query.MarketAttendance == nil {
 			break
@@ -1690,6 +1793,17 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.ComplexityRoot.Query.Me(childComplexity), true
+	case "Query.myActivityLog":
+		if e.ComplexityRoot.Query.MyActivityLog == nil {
+			break
+		}
+
+		args, err := ec.field_Query_myActivityLog_args(ctx, rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.ComplexityRoot.Query.MyActivityLog(childComplexity, args["startDate"].(*string), args["endDate"].(*string), args["limit"].(*int32), args["offset"].(*int32)), true
 	case "Query.myCustomerProfile":
 		if e.ComplexityRoot.Query.MyCustomerProfile == nil {
 			break
@@ -2278,8 +2392,11 @@ input AuditLogFilter {
 Root Query type - extended by each domain schema.
 """
 type Query {
-  """Query audit log entries (Manager only, read-only)."""
+  """Query audit log entries (Manager only, read-only). Scoped to managed markets."""
   auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+
+  """Get the authenticated user's activity history."""
+  myActivityLog(startDate: String, endDate: String, limit: Int, offset: Int): [AuditLogEntry!]!
 }
 
 """
@@ -2350,6 +2467,9 @@ extend type Mutation {
 
   """Create user record after role selection. Requires authentication."""
   createUser(input: CreateUserInput!): CreateUserPayload!
+
+  """Delete the authenticated user's account (soft-delete). Customer/Vendor only."""
+  deleteAccount: Boolean!
 }
 `, BuiltIn: false},
 	{Name: "../schema/customer.graphqls", Input: `"""
@@ -2734,6 +2854,7 @@ type NotificationPreferences {
   userID: ID!
   pushEnabled: Boolean!
   vendorCheckInAlerts: Boolean!
+  vendorCheckoutAlerts: Boolean!
   marketUpdateAlerts: Boolean!
   exceptionAlerts: Boolean!
   createdAt: String!
@@ -2751,11 +2872,26 @@ type DeviceToken {
 enum Platform {
   IOS
   ANDROID
+  WEB
 }
 
+"""Activity feed item representing an action in the system."""
+type ActivityFeedItem {
+  id: ID!
+  actorID: ID!
+  actionType: String!
+  targetType: String!
+  targetID: ID!
+  marketID: ID
+  message: String!
+  createdAt: String!
+}
+
+"""Input for updating notification preferences."""
 input UpdateNotificationPreferencesInput {
   pushEnabled: Boolean
   vendorCheckInAlerts: Boolean
+  vendorCheckoutAlerts: Boolean
   marketUpdateAlerts: Boolean
   exceptionAlerts: Boolean
 }
@@ -2768,6 +2904,12 @@ input RegisterDeviceTokenInput {
 extend type Query {
   """Get the authenticated user's notification preferences."""
   myNotificationPreferences: NotificationPreferences
+
+  """Get the authenticated user's activity feed."""
+  activityFeed(limit: Int, offset: Int): [ActivityFeedItem!]!
+
+  """Get a market's activity feed (manager only)."""
+  marketActivityFeed(marketID: ID!, limit: Int, offset: Int): [ActivityFeedItem!]!
 }
 
 extend type Mutation {
@@ -3514,6 +3656,22 @@ func (ec *executionContext) field_Query___type_args(ctx context.Context, rawArgs
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_activityFeed_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_auditLog_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3600,6 +3758,27 @@ func (ec *executionContext) field_Query_followingFeed_args(ctx context.Context, 
 		return nil, err
 	}
 	args["offset"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_marketActivityFeed_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "marketID", ec.unmarshalNID2string)
+	if err != nil {
+		return nil, err
+	}
+	args["marketID"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg2
 	return args, nil
 }
 
@@ -3719,6 +3898,32 @@ func (ec *executionContext) field_Query_markets_args(ctx context.Context, rawArg
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_myActivityLog_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "startDate", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["startDate"] = arg0
+	arg1, err := graphql.ProcessArgField(ctx, rawArgs, "endDate", ec.unmarshalOString2ᚖstring)
+	if err != nil {
+		return nil, err
+	}
+	args["endDate"] = arg1
+	arg2, err := graphql.ProcessArgField(ctx, rawArgs, "limit", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["limit"] = arg2
+	arg3, err := graphql.ProcessArgField(ctx, rawArgs, "offset", ec.unmarshalOInt2ᚖint32)
+	if err != nil {
+		return nil, err
+	}
+	args["offset"] = arg3
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_searchMarketsToJoin_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -3824,6 +4029,238 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ActivityFeedItem_id(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_actorID(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_actorID,
+		func(ctx context.Context) (any, error) {
+			return obj.ActorID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_actorID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_actionType(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_actionType,
+		func(ctx context.Context) (any, error) {
+			return obj.ActionType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_actionType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_targetType(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_targetType,
+		func(ctx context.Context) (any, error) {
+			return obj.TargetType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_targetType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_targetID(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_targetID,
+		func(ctx context.Context) (any, error) {
+			return obj.TargetID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_targetID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_marketID(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_marketID,
+		func(ctx context.Context) (any, error) {
+			return obj.MarketID, nil
+		},
+		nil,
+		ec.marshalOID2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_marketID(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_message(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_message,
+		func(ctx context.Context) (any, error) {
+			return obj.Message, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ActivityFeedItem_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.ActivityFeedItem) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_ActivityFeedItem_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_ActivityFeedItem_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ActivityFeedItem",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _AuditLogConnection_entries(ctx context.Context, field graphql.CollectedField, obj *model.AuditLogConnection) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
@@ -7242,6 +7679,35 @@ func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_deleteAccount(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Mutation_deleteAccount,
+		func(ctx context.Context) (any, error) {
+			return ec.Resolvers.Mutation().DeleteAccount(ctx)
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteAccount(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_follow(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -8735,6 +9201,8 @@ func (ec *executionContext) fieldContext_Mutation_updateNotificationPreferences(
 				return ec.fieldContext_NotificationPreferences_pushEnabled(ctx, field)
 			case "vendorCheckInAlerts":
 				return ec.fieldContext_NotificationPreferences_vendorCheckInAlerts(ctx, field)
+			case "vendorCheckoutAlerts":
+				return ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts(ctx, field)
 			case "marketUpdateAlerts":
 				return ec.fieldContext_NotificationPreferences_marketUpdateAlerts(ctx, field)
 			case "exceptionAlerts":
@@ -9437,6 +9905,35 @@ func (ec *executionContext) fieldContext_NotificationPreferences_vendorCheckInAl
 	return fc, nil
 }
 
+func (ec *executionContext) _NotificationPreferences_vendorCheckoutAlerts(ctx context.Context, field graphql.CollectedField, obj *model.NotificationPreferences) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts,
+		func(ctx context.Context) (any, error) {
+			return obj.VendorCheckoutAlerts, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_NotificationPreferences_vendorCheckoutAlerts(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "NotificationPreferences",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _NotificationPreferences_marketUpdateAlerts(ctx context.Context, field graphql.CollectedField, obj *model.NotificationPreferences) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -9857,6 +10354,67 @@ func (ec *executionContext) fieldContext_Query_auditLog(ctx context.Context, fie
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_auditLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_myActivityLog(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_myActivityLog,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MyActivityLog(ctx, fc.Args["startDate"].(*string), fc.Args["endDate"].(*string), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		},
+		nil,
+		ec.marshalNAuditLogEntry2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐAuditLogEntryᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_myActivityLog(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AuditLogEntry_id(ctx, field)
+			case "actorID":
+				return ec.fieldContext_AuditLogEntry_actorID(ctx, field)
+			case "actorRole":
+				return ec.fieldContext_AuditLogEntry_actorRole(ctx, field)
+			case "actionType":
+				return ec.fieldContext_AuditLogEntry_actionType(ctx, field)
+			case "targetType":
+				return ec.fieldContext_AuditLogEntry_targetType(ctx, field)
+			case "targetID":
+				return ec.fieldContext_AuditLogEntry_targetID(ctx, field)
+			case "marketID":
+				return ec.fieldContext_AuditLogEntry_marketID(ctx, field)
+			case "timestamp":
+				return ec.fieldContext_AuditLogEntry_timestamp(ctx, field)
+			case "payload":
+				return ec.fieldContext_AuditLogEntry_payload(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AuditLogEntry", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_myActivityLog_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -10781,6 +11339,8 @@ func (ec *executionContext) fieldContext_Query_myNotificationPreferences(_ conte
 				return ec.fieldContext_NotificationPreferences_pushEnabled(ctx, field)
 			case "vendorCheckInAlerts":
 				return ec.fieldContext_NotificationPreferences_vendorCheckInAlerts(ctx, field)
+			case "vendorCheckoutAlerts":
+				return ec.fieldContext_NotificationPreferences_vendorCheckoutAlerts(ctx, field)
 			case "marketUpdateAlerts":
 				return ec.fieldContext_NotificationPreferences_marketUpdateAlerts(ctx, field)
 			case "exceptionAlerts":
@@ -10792,6 +11352,124 @@ func (ec *executionContext) fieldContext_Query_myNotificationPreferences(_ conte
 			}
 			return nil, fmt.Errorf("no field named %q was found under type NotificationPreferences", field.Name)
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_activityFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_activityFeed,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().ActivityFeed(ctx, fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		},
+		nil,
+		ec.marshalNActivityFeedItem2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐActivityFeedItemᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_activityFeed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ActivityFeedItem_id(ctx, field)
+			case "actorID":
+				return ec.fieldContext_ActivityFeedItem_actorID(ctx, field)
+			case "actionType":
+				return ec.fieldContext_ActivityFeedItem_actionType(ctx, field)
+			case "targetType":
+				return ec.fieldContext_ActivityFeedItem_targetType(ctx, field)
+			case "targetID":
+				return ec.fieldContext_ActivityFeedItem_targetID(ctx, field)
+			case "marketID":
+				return ec.fieldContext_ActivityFeedItem_marketID(ctx, field)
+			case "message":
+				return ec.fieldContext_ActivityFeedItem_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ActivityFeedItem_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActivityFeedItem", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_activityFeed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_marketActivityFeed(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Query_marketActivityFeed,
+		func(ctx context.Context) (any, error) {
+			fc := graphql.GetFieldContext(ctx)
+			return ec.Resolvers.Query().MarketActivityFeed(ctx, fc.Args["marketID"].(string), fc.Args["limit"].(*int32), fc.Args["offset"].(*int32))
+		},
+		nil,
+		ec.marshalNActivityFeedItem2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐActivityFeedItemᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Query_marketActivityFeed(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_ActivityFeedItem_id(ctx, field)
+			case "actorID":
+				return ec.fieldContext_ActivityFeedItem_actorID(ctx, field)
+			case "actionType":
+				return ec.fieldContext_ActivityFeedItem_actionType(ctx, field)
+			case "targetType":
+				return ec.fieldContext_ActivityFeedItem_targetType(ctx, field)
+			case "targetID":
+				return ec.fieldContext_ActivityFeedItem_targetID(ctx, field)
+			case "marketID":
+				return ec.fieldContext_ActivityFeedItem_marketID(ctx, field)
+			case "message":
+				return ec.fieldContext_ActivityFeedItem_message(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_ActivityFeedItem_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ActivityFeedItem", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_marketActivityFeed_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -15346,7 +16024,7 @@ func (ec *executionContext) unmarshalInputUpdateNotificationPreferencesInput(ctx
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"pushEnabled", "vendorCheckInAlerts", "marketUpdateAlerts", "exceptionAlerts"}
+	fieldsInOrder := [...]string{"pushEnabled", "vendorCheckInAlerts", "vendorCheckoutAlerts", "marketUpdateAlerts", "exceptionAlerts"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -15367,6 +16045,13 @@ func (ec *executionContext) unmarshalInputUpdateNotificationPreferencesInput(ctx
 				return it, err
 			}
 			it.VendorCheckInAlerts = data
+		case "vendorCheckoutAlerts":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vendorCheckoutAlerts"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.VendorCheckoutAlerts = data
 		case "marketUpdateAlerts":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("marketUpdateAlerts"))
 			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
@@ -15609,6 +16294,77 @@ func (ec *executionContext) unmarshalInputUpdateVendorProfileInput(ctx context.C
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var activityFeedItemImplementors = []string{"ActivityFeedItem"}
+
+func (ec *executionContext) _ActivityFeedItem(ctx context.Context, sel ast.SelectionSet, obj *model.ActivityFeedItem) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, activityFeedItemImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ActivityFeedItem")
+		case "id":
+			out.Values[i] = ec._ActivityFeedItem_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "actorID":
+			out.Values[i] = ec._ActivityFeedItem_actorID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "actionType":
+			out.Values[i] = ec._ActivityFeedItem_actionType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetType":
+			out.Values[i] = ec._ActivityFeedItem_targetType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "targetID":
+			out.Values[i] = ec._ActivityFeedItem_targetID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "marketID":
+			out.Values[i] = ec._ActivityFeedItem_marketID(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._ActivityFeedItem_message(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._ActivityFeedItem_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.Deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.ProcessDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var auditLogConnectionImplementors = []string{"AuditLogConnection"}
 
@@ -16590,6 +17346,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "deleteAccount":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteAccount(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "follow":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_follow(ctx, field)
@@ -16889,6 +17652,11 @@ func (ec *executionContext) _NotificationPreferences(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "vendorCheckoutAlerts":
+			out.Values[i] = ec._NotificationPreferences_vendorCheckoutAlerts(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "marketUpdateAlerts":
 			out.Values[i] = ec._NotificationPreferences_marketUpdateAlerts(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -17031,6 +17799,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_auditLog(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "myActivityLog":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_myActivityLog(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -17355,6 +18145,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_myNotificationPreferences(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "activityFeed":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_activityFeed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "marketActivityFeed":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_marketActivityFeed(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
 				return res
 			}
 
@@ -18391,6 +19225,32 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
+
+func (ec *executionContext) marshalNActivityFeedItem2ᚕᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐActivityFeedItemᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.ActivityFeedItem) graphql.Marshaler {
+	ret := graphql.MarshalSliceConcurrently(ctx, len(v), 0, false, func(ctx context.Context, i int) graphql.Marshaler {
+		fc := graphql.GetFieldContext(ctx)
+		fc.Result = &v[i]
+		return ec.marshalNActivityFeedItem2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐActivityFeedItem(ctx, sel, v[i])
+	})
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNActivityFeedItem2ᚖgithubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐActivityFeedItem(ctx context.Context, sel ast.SelectionSet, v *model.ActivityFeedItem) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ActivityFeedItem(ctx, sel, v)
+}
 
 func (ec *executionContext) unmarshalNAddScheduleInput2githubᚗcomᚋpetryᚑprojectsᚋmarketsᚑapiᚋinternalᚋgraphᚋmodelᚐAddScheduleInput(ctx context.Context, v any) (model.AddScheduleInput, error) {
 	res, err := ec.unmarshalInputAddScheduleInput(ctx, v)

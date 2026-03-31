@@ -7,6 +7,7 @@ type NotificationPreferences {
   userID: ID!
   pushEnabled: Boolean!
   vendorCheckInAlerts: Boolean!
+  vendorCheckoutAlerts: Boolean!
   marketUpdateAlerts: Boolean!
   exceptionAlerts: Boolean!
   createdAt: String!
@@ -24,11 +25,26 @@ type DeviceToken {
 enum Platform {
   IOS
   ANDROID
+  WEB
 }
 
+"""Activity feed item representing an action in the system."""
+type ActivityFeedItem {
+  id: ID!
+  actorID: ID!
+  actionType: String!
+  targetType: String!
+  targetID: ID!
+  marketID: ID
+  message: String!
+  createdAt: String!
+}
+
+"""Input for updating notification preferences."""
 input UpdateNotificationPreferencesInput {
   pushEnabled: Boolean
   vendorCheckInAlerts: Boolean
+  vendorCheckoutAlerts: Boolean
   marketUpdateAlerts: Boolean
   exceptionAlerts: Boolean
 }
@@ -41,6 +57,12 @@ input RegisterDeviceTokenInput {
 extend type Query {
   """Get the authenticated user's notification preferences."""
   myNotificationPreferences: NotificationPreferences
+
+  """Get the authenticated user's activity feed."""
+  activityFeed(limit: Int, offset: Int): [ActivityFeedItem!]!
+
+  """Get a market's activity feed (manager only)."""
+  marketActivityFeed(marketID: ID!, limit: Int, offset: Int): [ActivityFeedItem!]!
 }
 
 extend type Mutation {

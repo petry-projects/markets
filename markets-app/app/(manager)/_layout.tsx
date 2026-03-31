@@ -28,6 +28,11 @@ export default function ManagerLayout() {
           tabBarAccessibilityLabel: 'Your manager profile',
         }}
       />
+      {/* Hide nested screens from tab bar */}
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="activity" options={{ href: null }} />
+      <Tabs.Screen name="markets" options={{ href: null }} />
+      <Tabs.Screen name="settings/activity-log" options={{ href: null, title: 'Activity Log' }} />
     </Tabs>
   );
 }

@@ -34,6 +34,8 @@ jest.mock('lucide-react-native', () => {
     Heart: (props: Record<string, unknown>) => <View {...props} />,
     MapPin: (props: Record<string, unknown>) => <View {...props} />,
     Settings: (props: Record<string, unknown>) => <View {...props} />,
+    FileText: (props: Record<string, unknown>) => <View {...props} />,
+    Trash2: (props: Record<string, unknown>) => <View {...props} />,
     ChevronRight: (props: Record<string, unknown>) => <View {...props} />,
   };
 });
@@ -121,7 +123,8 @@ describe('CustomerProfileScreen', () => {
     render(<CustomerProfileScreen />);
     expect(screen.getByText('Followed Vendors')).toBeTruthy();
     expect(screen.getByText('Followed Markets')).toBeTruthy();
-    expect(screen.getByText('Settings & Preferences')).toBeTruthy();
+    expect(screen.getByText('Activity Log')).toBeTruthy();
+    expect(screen.getByText('Delete Account')).toBeTruthy();
   });
 
   it('renders "Customer" when no display name', () => {

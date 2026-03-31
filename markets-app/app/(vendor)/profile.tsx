@@ -1,7 +1,8 @@
 import React, { useCallback } from 'react';
-import { Alert, FlatList } from 'react-native';
+import { Alert, FlatList, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { FileText, Trash2, ChevronRight } from 'lucide-react-native';
 import { Box } from '@/components/ui/box';
 import { VStack } from '@/components/ui/vstack';
 import { Text } from '@/components/ui/text';
@@ -103,6 +104,39 @@ export default function VendorProfileScreen() {
                 <Text className="text-sm text-primary-600">{profile.websiteURL}</Text>
               )}
             </Box>
+
+            <VStack className="gap-2 mt-4 mb-4">
+              <Pressable
+                onPress={() => {
+                  router.push('/(vendor)/settings/activity-log');
+                }}
+                accessibilityLabel="Activity Log"
+                accessibilityRole="button"
+              >
+                <Box className="flex-row items-center rounded-lg border border-outline-200 bg-background-0 p-4">
+                  <Box className="mr-3">
+                    <FileText size={20} color="#6b7280" />
+                  </Box>
+                  <Text className="flex-1 text-typography-900">Activity Log</Text>
+                  <ChevronRight size={18} color="#9ca3af" />
+                </Box>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  router.push('/(vendor)/settings/delete-account' as never);
+                }}
+                accessibilityLabel="Delete Account"
+                accessibilityRole="button"
+              >
+                <Box className="flex-row items-center rounded-lg border border-outline-200 bg-background-0 p-4">
+                  <Box className="mr-3">
+                    <Trash2 size={20} color="#ef4444" />
+                  </Box>
+                  <Text className="flex-1 text-typography-900">Delete Account</Text>
+                  <ChevronRight size={18} color="#9ca3af" />
+                </Box>
+              </Pressable>
+            </VStack>
 
             <Box className="flex-row items-center justify-between mt-4">
               <Heading className="text-lg text-typography-900">Products</Heading>

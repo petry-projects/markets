@@ -1,0 +1,9 @@
+mutation RegisterDeviceToken($input: RegisterDeviceTokenInput!) {
+  registerDeviceToken(input: $input) {
+    id
+    userID
+    token
+    platform
+    createdAt
+  }
+}

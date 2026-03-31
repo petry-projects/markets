@@ -14,6 +14,7 @@ import (
 	"github.com/petry-projects/markets-api/internal/graph"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 	"github.com/petry-projects/markets-api/internal/market"
+	"github.com/petry-projects/markets-api/internal/vendor"
 )
 
 // --- Mock market repository ---
@@ -252,14 +253,6 @@ func (m *mockMarketRepo) FindRosterEntryByID(_ context.Context, id string) (*mar
 
 func (m *mockMarketRepo) DeleteRosterEntry(_ context.Context, _ string) error { return nil }
 
-func (m *mockMarketRepo) CreateMarketUpdate(_ context.Context, u *market.MarketUpdateRecord) (*market.MarketUpdateRecord, error) {
-	return u, nil
-}
-
-func (m *mockMarketRepo) FindMarketUpdates(_ context.Context, _ domain.MarketID, _, _ int32) ([]*market.MarketUpdateRecord, error) {
-	return []*market.MarketUpdateRecord{}, nil
-}
-
 func (m *mockMarketRepo) GetRosterByDate(_ context.Context, _ domain.MarketID, _ string) ([]*market.RosterEntry, error) {
 	return []*market.RosterEntry{}, nil
 }
@@ -270,6 +263,16 @@ func (m *mockMarketRepo) GetDayPlans(_ context.Context, _ domain.MarketID, _, _ 
 
 func (m *mockMarketRepo) SearchVendors(_ context.Context, _, _ string, _ *int32) ([]market.VendorSummary, error) {
 	return []market.VendorSummary{}, nil
+}
+
+func (m *mockMarketRepo) CreateMarketUpdate(_ context.Context, u *market.MarketUpdateRecord) (*market.MarketUpdateRecord, error) {
+	u.ID = "generated-update-id"
+	u.CreatedAt = time.Now()
+	return u, nil
+}
+
+func (m *mockMarketRepo) FindMarketUpdates(_ context.Context, _ domain.MarketID, _ int32, _ int32) ([]*market.MarketUpdateRecord, error) {
+	return []*market.MarketUpdateRecord{}, nil
 }
 
 func newMarketTestResolver() (*graph.Resolver, *mockMarketRepo, *testEventHandler) {
@@ -764,5 +767,311 @@ func TestMyMarkets_NonManager_Forbidden(t *testing.T) {
 	}
 	if !hasExtensionCode(err, "FORBIDDEN") {
 		t.Errorf("expected FORBIDDEN, got: %v", err)
+	}
+}
+
+// --- Mock vendor repo for market resolver tests (Epic 5) ---
+
+type mockVendorRepoForMarket struct {
+	vendors  []*vendor.VendorRecord
+	checkIns []*vendor.CheckInRecord
+}
+
+func (m *mockVendorRepoForMarket) CreateVendor(_ context.Context, v *vendor.VendorRecord) (*vendor.VendorRecord, error) {
+	return v, nil
+}
+func (m *mockVendorRepoForMarket) UpdateVendor(_ context.Context, v *vendor.VendorRecord) (*vendor.VendorRecord, error) {
+	return v, nil
+}
+func (m *mockVendorRepoForMarket) FindVendorByID(_ context.Context, id domain.VendorID) (*vendor.VendorRecord, error) {
+	for _, v := range m.vendors {
+		if v.ID == id {
+			return v, nil
+		}
+	}
+	return nil, vendor.ErrVendorNotFound
+}
+func (m *mockVendorRepoForMarket) FindVendorByUserID(_ context.Context, userID domain.UserID) (*vendor.VendorRecord, error) {
+	for _, v := range m.vendors {
+		if v.UserID == userID {
+			return v, nil
+		}
+	}
+	return nil, vendor.ErrVendorNotFound
+}
+func (m *mockVendorRepoForMarket) CreateProduct(_ context.Context, p *vendor.ProductRecord) (*vendor.ProductRecord, error) {
+	return p, nil
+}
+func (m *mockVendorRepoForMarket) UpdateProduct(_ context.Context, p *vendor.ProductRecord) (*vendor.ProductRecord, error) {
+	return p, nil
+}
+func (m *mockVendorRepoForMarket) FindProductByID(_ context.Context, _ domain.ProductID) (*vendor.ProductRecord, error) {
+	return nil, vendor.ErrProductNotFound
+}
+func (m *mockVendorRepoForMarket) FindProductsByVendorID(_ context.Context, _ domain.VendorID) ([]*vendor.ProductRecord, error) {
+	return nil, nil
+}
+func (m *mockVendorRepoForMarket) DeleteProduct(_ context.Context, _ domain.ProductID) error {
+	return nil
+}
+func (m *mockVendorRepoForMarket) SearchMarkets(_ context.Context, _ string, _, _, _ *float64, _, _ *int32) ([]vendor.MarketSearchRow, error) {
+	return nil, nil
+}
+func (m *mockVendorRepoForMarket) GetVendorMarketDates(_ context.Context, _ domain.UserID) ([]vendor.VendorMarketDateRow, error) {
+	return nil, nil
+}
+func (m *mockVendorRepoForMarket) CreateCheckIn(_ context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	return c, nil
+}
+func (m *mockVendorRepoForMarket) UpdateCheckIn(_ context.Context, c *vendor.CheckInRecord) (*vendor.CheckInRecord, error) {
+	return c, nil
+}
+func (m *mockVendorRepoForMarket) FindCheckInByID(_ context.Context, _ domain.CheckInID) (*vendor.CheckInRecord, error) {
+	return nil, vendor.ErrCheckInNotFound
+}
+func (m *mockVendorRepoForMarket) FindActiveCheckInsByVendor(_ context.Context, _ domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	return nil, nil
+}
+func (m *mockVendorRepoForMarket) FindCheckInsByVendor(_ context.Context, _ domain.VendorID) ([]*vendor.CheckInRecord, error) {
+	return nil, nil
+}
+func (m *mockVendorRepoForMarket) FindCheckInsByMarketAndDate(_ context.Context, marketID domain.MarketID, _ string) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
+}
+func (m *mockVendorRepoForMarket) FindActiveCheckInsByMarket(_ context.Context, marketID domain.MarketID) ([]*vendor.CheckInRecord, error) {
+	var result []*vendor.CheckInRecord
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID && ci.Status == vendor.StatusCheckedIn {
+			result = append(result, ci)
+		}
+	}
+	return result, nil
+}
+func (m *mockVendorRepoForMarket) BatchCheckOut(_ context.Context, marketID domain.MarketID) (int, error) {
+	count := 0
+	now := time.Now()
+	for _, ci := range m.checkIns {
+		if ci.MarketID == marketID && ci.Status == vendor.StatusCheckedIn {
+			ci.Status = vendor.StatusCheckedOut
+			ci.CheckedOutAt = &now
+			count++
+		}
+	}
+	return count, nil
+}
+
+// --- Full test resolver (market + vendor repos) ---
+
+func newFullTestResolver() (*graph.Resolver, *mockMarketRepo, *mockVendorRepoForMarket, *testEventHandler) {
+	marketRepo := &mockMarketRepo{}
+	vendorRepo := &mockVendorRepoForMarket{}
+	bus := events.NewBus()
+	handler := &testEventHandler{}
+	bus.Subscribe(handler)
+	r := graph.NewResolverWithVendorRepo(nil, bus, &mockUserRepo{}, &mockClaimsSetter{}, marketRepo, vendorRepo)
+	return r, marketRepo, vendorRepo, handler
+}
+
+// --- Epic 5 Tests ---
+
+func TestPublishMarketUpdate_Success(t *testing.T) {
+	r, marketRepo, _, handler := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Mutation().PublishMarketUpdate(ctx, "market-a", "Rain delay, opening at 10am")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if result.ID != "generated-update-id" {
+		t.Errorf("expected generated-update-id, got %q", result.ID)
+	}
+	if result.MarketID != "market-a" {
+		t.Errorf("expected market-a, got %q", result.MarketID)
+	}
+	if result.Message != "Rain delay, opening at 10am" {
+		t.Errorf("unexpected message: %q", result.Message)
+	}
+	if result.SenderID != "mgr-1" {
+		t.Errorf("expected sender mgr-1, got %q", result.SenderID)
+	}
+
+	// Verify event published
+	if len(handler.events) == 0 {
+		t.Fatal("expected MarketUpdatePublished event")
+	}
+	if handler.events[0].EventType() != "market.update_published" {
+		t.Errorf("expected market.update_published event, got %s", handler.events[0].EventType())
+	}
+}
+
+func TestPublishMarketUpdate_NonManager_Forbidden(t *testing.T) {
+	r, _, _, _ := newFullTestResolver()
+	ctx := context.Background()
+	ctx = auth.WithUser(ctx, "customer-1", "customer")
+
+	_, err := r.Mutation().PublishMarketUpdate(ctx, "market-a", "Hello")
+	if err == nil {
+		t.Fatal("expected FORBIDDEN error for non-manager")
+	}
+	if !hasExtensionCode(err, "FORBIDDEN") {
+		t.Errorf("expected FORBIDDEN, got: %v", err)
+	}
+}
+
+func TestPublishMarketUpdate_EmptyMessage(t *testing.T) {
+	r, marketRepo, _, _ := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	_, err := r.Mutation().PublishMarketUpdate(ctx, "market-a", "")
+	if err == nil {
+		t.Fatal("expected validation error for empty message")
+	}
+	if !hasExtensionCode(err, "VALIDATION_ERROR") {
+		t.Errorf("expected VALIDATION_ERROR, got: %v", err)
+	}
+}
+
+func TestRequestVendorConfirmation_Success(t *testing.T) {
+	r, marketRepo, _, handler := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Mutation().RequestVendorConfirmation(ctx, "market-a", []string{"v-1", "v-2"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !result {
+		t.Error("expected true result")
+	}
+
+	// Verify event published
+	if len(handler.events) == 0 {
+		t.Fatal("expected VendorConfirmationRequested event")
+	}
+	if handler.events[0].EventType() != "vendor.confirmation_requested" {
+		t.Errorf("expected vendor.confirmation_requested event, got %s", handler.events[0].EventType())
+	}
+}
+
+func TestRequestVendorConfirmation_EmptyVendorIDs(t *testing.T) {
+	r, marketRepo, _, _ := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	_, err := r.Mutation().RequestVendorConfirmation(ctx, "market-a", []string{})
+	if err == nil {
+		t.Fatal("expected validation error for empty vendor IDs")
+	}
+	if !hasExtensionCode(err, "VALIDATION_ERROR") {
+		t.Errorf("expected VALIDATION_ERROR, got: %v", err)
+	}
+}
+
+func TestAutoCheckoutMarket_Success(t *testing.T) {
+	r, marketRepo, vendorRepo, handler := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	vendorRepo.checkIns = []*vendor.CheckInRecord{
+		{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-a"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+		{ID: domain.CheckInID("ci-2"), VendorID: domain.VendorID("v-2"), MarketID: domain.MarketID("market-a"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+	}
+	ctx := managerCtx("mgr-1")
+
+	count, err := r.Mutation().AutoCheckoutMarket(ctx, "market-a")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if count != 2 {
+		t.Errorf("expected 2 checkouts, got %d", count)
+	}
+
+	// Verify event published
+	if len(handler.events) == 0 {
+		t.Fatal("expected MarketAutoCheckoutCompleted event")
+	}
+	if handler.events[0].EventType() != "market.auto_checkout_completed" {
+		t.Errorf("expected market.auto_checkout_completed event, got %s", handler.events[0].EventType())
+	}
+}
+
+func TestAutoCheckoutMarket_NoActiveCheckIns(t *testing.T) {
+	r, marketRepo, _, handler := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	ctx := managerCtx("mgr-1")
+
+	count, err := r.Mutation().AutoCheckoutMarket(ctx, "market-a")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if count != 0 {
+		t.Errorf("expected 0 checkouts, got %d", count)
+	}
+
+	// No event should be published when count is 0
+	if len(handler.events) != 0 {
+		t.Errorf("expected 0 events when no checkouts, got %d", len(handler.events))
+	}
+}
+
+func TestMarketAttendance_Success(t *testing.T) {
+	r, marketRepo, vendorRepo, _ := newFullTestResolver()
+	marketRepo.assignments = []market.ManagerAssignment{
+		{ManagerID: domain.UserID("mgr-1"), MarketID: domain.MarketID("market-a")},
+	}
+	vendorRepo.checkIns = []*vendor.CheckInRecord{
+		{ID: domain.CheckInID("ci-1"), VendorID: domain.VendorID("v-1"), MarketID: domain.MarketID("market-a"), Status: vendor.StatusCheckedIn, CheckedInAt: time.Now()},
+	}
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Query().MarketAttendance(ctx, "market-a", "2026-03-29")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil attendance result")
+	}
+	if result.MarketID != "market-a" {
+		t.Errorf("expected market-a, got %q", result.MarketID)
+	}
+	if result.Date != "2026-03-29" {
+		t.Errorf("expected 2026-03-29, got %q", result.Date)
+	}
+}
+
+func TestMarketUpdates_Success(t *testing.T) {
+	r, _, _, _ := newFullTestResolver()
+	ctx := managerCtx("mgr-1")
+
+	result, err := r.Query().MarketUpdates(ctx, "market-a", nil, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if result == nil {
+		t.Fatal("expected non-nil result")
+	}
+	if len(result) != 0 {
+		t.Errorf("expected 0 updates from empty repo, got %d", len(result))
 	}
 }

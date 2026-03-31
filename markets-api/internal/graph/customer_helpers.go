@@ -24,6 +24,7 @@ func (r *mutationResolver) getOrCreateCustomer(ctx context.Context, userID domai
 		return nil, gqlerr.Internal("failed to find customer profile")
 	}
 
+	// Auto-create customer profile
 	newCust, err := customer.NewCustomer(customer.NewCustomerParams{
 		UserID: userID,
 	})

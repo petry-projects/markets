@@ -35,6 +35,13 @@ export default function VendorLayout() {
       <Tabs.Screen name="products/[id]/edit" options={{ href: null }} />
       <Tabs.Screen name="markets/search" options={{ href: null }} />
       <Tabs.Screen name="markets/[id]/detail" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="activity" options={{ href: null }} />
+      <Tabs.Screen name="settings/activity-log" options={{ href: null, title: 'Activity Log' }} />
+      <Tabs.Screen
+        name="settings/delete-account"
+        options={{ href: null, title: 'Delete Account' }}
+      />
     </Tabs>
   );
 }

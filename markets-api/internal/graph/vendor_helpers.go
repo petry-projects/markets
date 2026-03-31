@@ -42,7 +42,7 @@ func checkInToModel(c *vendor.CheckInRecord) *model.CheckIn {
 	return ci
 }
 
-// rosterStatusToJoinStatus maps a DB roster status to a VendorMarketJoinStatus enum.
+// rosterStatusToJoinStatus maps a roster status string to the join status enum.
 func rosterStatusToJoinStatus(status string) model.VendorMarketJoinStatus {
 	switch status {
 	case "pending":
@@ -56,7 +56,7 @@ func rosterStatusToJoinStatus(status string) model.VendorMarketJoinStatus {
 	}
 }
 
-// determineJoinStatus picks a single join status from a set of observed statuses.
+// determineJoinStatus calculates the overall status from a set of date statuses.
 func determineJoinStatus(statuses map[string]bool) model.VendorMarketJoinStatus {
 	if len(statuses) == 0 {
 		return model.VendorMarketJoinStatusPending
@@ -69,9 +69,9 @@ func determineJoinStatus(statuses map[string]bool) model.VendorMarketJoinStatus 
 	return model.VendorMarketJoinStatusMixed
 }
 
-// dbStatusToRosterStatus maps a DB status string to a GraphQL VendorRosterStatus.
+// dbStatusToRosterStatus maps lowercase DB status to uppercase GraphQL VendorRosterStatus.
 func dbStatusToRosterStatus(status string) model.VendorRosterStatus {
-	return rosterStatusToModel(status)
+	return model.VendorRosterStatus(strings.ToUpper(status))
 }
 
 // productToModel converts a domain ProductRecord to a GraphQL model Product.

@@ -1,0 +1,3 @@
+mutation RemoveDeviceToken($tokenID: ID!) {
+  removeDeviceToken(tokenID: $tokenID)
+}

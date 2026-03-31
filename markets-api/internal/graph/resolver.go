@@ -3,10 +3,12 @@ package graph
 
 import (
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/petry-projects/markets-api/internal/audit"
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/customer"
 	"github.com/petry-projects/markets-api/internal/events"
 	"github.com/petry-projects/markets-api/internal/market"
+	"github.com/petry-projects/markets-api/internal/notify"
 	"github.com/petry-projects/markets-api/internal/user"
 	"github.com/petry-projects/markets-api/internal/vendor"
 )
@@ -20,7 +22,9 @@ type Resolver struct {
 	MarketRepo   market.Repository
 	VendorRepo   vendor.Repository
 	CustomerRepo customer.Repository
+	NotifyRepo   notify.Repository
 	ClaimsSetter auth.ClaimsSetter
+	AuditQuerier *audit.Querier
 }
 
 // NewResolver creates a new Resolver with the provided dependencies.

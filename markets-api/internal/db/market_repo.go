@@ -129,7 +129,7 @@ func (r *PgMarketRepository) CreateMarket(ctx context.Context, m *market.MarketR
 	if err != nil {
 		return nil, fmt.Errorf("begin transaction: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Set session variables for audit trigger
 	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", managerID.String()); err != nil {

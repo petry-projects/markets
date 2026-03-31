@@ -264,7 +264,6 @@ func (m *mockMarketRepo) SearchVendors(_ context.Context, _, _ string, _ *int32)
 	return []market.VendorSummary{}, nil
 }
 
-
 func newMarketTestResolver() (*graph.Resolver, *mockMarketRepo, *testEventHandler) {
 	marketRepo := &mockMarketRepo{}
 	bus := events.NewBus()
@@ -759,4 +758,3 @@ func TestMyMarkets_NonManager_Forbidden(t *testing.T) {
 		t.Errorf("expected FORBIDDEN, got: %v", err)
 	}
 }
-

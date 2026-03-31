@@ -20,9 +20,9 @@ type CheckInID string
 type AuditLogID string
 
 // String returns the string representation of the ID.
-func (id UserID) String() string    { return string(id) }
-func (id MarketID) String() string  { return string(id) }
-func (id VendorID) String() string  { return string(id) }
-func (id ProductID) String() string { return string(id) }
-func (id CheckInID) String() string { return string(id) }
+func (id UserID) String() string     { return string(id) }
+func (id MarketID) String() string   { return string(id) }
+func (id VendorID) String() string   { return string(id) }
+func (id ProductID) String() string  { return string(id) }
+func (id CheckInID) String() string  { return string(id) }
 func (id AuditLogID) String() string { return string(id) }

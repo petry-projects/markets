@@ -4,8 +4,8 @@ import ProductForm from '../ProductForm';
 
 const mockOnSubmit = jest.fn();
 
-function renderProductForm(props = {}) {
-  render(<ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />);
+function renderForm(props: Partial<React.ComponentProps<typeof ProductForm>> = {}) {
+  return render(<ProductForm mode="create" onSubmit={mockOnSubmit} {...props} />);
 }
 
 beforeEach(() => {
@@ -14,18 +14,18 @@ beforeEach(() => {
 
 describe('ProductForm', () => {
   it('renders create mode heading', () => {
-    renderProductForm();
+    renderForm();
     // "Add Product" appears in both heading and submit button
     expect(screen.getAllByText('Add Product').length).toBeGreaterThan(0);
   });
 
   it('renders edit mode heading', () => {
-    renderProductForm({ mode: 'edit' });
+    renderForm({ mode: 'edit' });
     expect(screen.getByText('Edit Product')).toBeTruthy();
   });
 
   it('shows validation error for empty product name', async () => {
-    renderProductForm();
+    renderForm();
     fireEvent.press(screen.getByLabelText('Add product'));
     await waitFor(() => {
       expect(screen.getByText('Product name is required')).toBeTruthy();
@@ -34,7 +34,7 @@ describe('ProductForm', () => {
   });
 
   it('submits valid form data', async () => {
-    renderProductForm();
+    renderForm();
     fireEvent.changeText(screen.getByLabelText('Product name'), 'Tomatoes');
     fireEvent.changeText(screen.getByLabelText('Product category'), 'Produce');
     fireEvent.press(screen.getByLabelText('Add product'));
@@ -50,7 +50,7 @@ describe('ProductForm', () => {
   });
 
   it('populates initial data in edit mode', () => {
-    renderProductForm({
+    renderForm({
       mode: 'edit',
       initialData: {
         name: 'Existing Product',

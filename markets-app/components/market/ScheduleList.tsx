@@ -134,29 +134,23 @@ function ScheduleCard({ schedule, onEdit, onDelete, isRecurring }: ScheduleCardP
               </Text>
               <Text className="text-xs text-typography-500">
                 {schedule.startTime} - {schedule.endTime}
-                {schedule.frequency !== undefined &&
-                schedule.frequency !== null &&
-                schedule.frequency !== ''
+                {schedule.frequency != null && schedule.frequency !== ''
                   ? ` (${schedule.frequency})`
                   : ''}
               </Text>
-              {schedule.label !== undefined && schedule.label !== null && schedule.label !== '' && (
+              {schedule.label != null && schedule.label !== '' && (
                 <Text className="text-xs text-typography-400 mt-1">{schedule.label}</Text>
               )}
-              {schedule.seasonStart !== undefined &&
-                schedule.seasonStart !== null &&
-                schedule.seasonStart !== '' && (
-                  <Text className="text-xs text-typography-400">
-                    Season: {schedule.seasonStart} to {schedule.seasonEnd}
-                  </Text>
-                )}
+              {schedule.seasonStart != null && schedule.seasonStart !== '' && (
+                <Text className="text-xs text-typography-400">
+                  Season: {schedule.seasonStart} to {schedule.seasonEnd}
+                </Text>
+              )}
             </>
           ) : (
             <>
               <Text className="text-sm font-semibold text-typography-900">
-                {schedule.eventName !== undefined &&
-                schedule.eventName !== null &&
-                schedule.eventName !== ''
+                {schedule.eventName != null && schedule.eventName !== ''
                   ? schedule.eventName
                   : 'Event'}
               </Text>

@@ -114,7 +114,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
     const newErrors: FieldErrors = {};
     for (const field of requiredFields) {
       const error = validateField(field, form[field], mode);
-      if (error !== undefined) newErrors[field] = error;
+      if (error != null) newErrors[field] = error;
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -296,7 +296,7 @@ export function MarketForm({ initialData, mode, loading, onSubmit }: MarketFormP
         <Button
           className="h-14 bg-primary-500 rounded-lg mt-4"
           onPress={handleSubmit}
-          disabled={loading}
+          disabled={loading === true}
           accessibilityLabel={mode === 'create' ? 'Create market' : 'Save changes'}
         >
           {loading === true ? (
@@ -346,7 +346,7 @@ function FormField({
         {required === true && <Text className="text-error-500"> *</Text>}
       </Text>
       <Input
-        className={`rounded-lg border ${error !== undefined && error !== '' ? 'border-error-500' : 'border-outline-200'} bg-background-50`}
+        className={`rounded-lg border ${error != null && error !== '' ? 'border-error-500' : 'border-outline-200'} bg-background-50`}
       >
         <InputField
           className={`px-3 ${multiline === true ? 'h-20 py-2' : 'h-12'} text-typography-900`}
@@ -360,12 +360,10 @@ function FormField({
           accessibilityLabel={label}
         />
       </Input>
-      {hint !== undefined && hint !== '' && (error === undefined || error === '') && (
+      {hint != null && hint !== '' && (error == null || error === '') && (
         <Text className="text-xs text-typography-400">{hint}</Text>
       )}
-      {error !== undefined && error !== '' && (
-        <Text className="text-xs text-error-500">{error}</Text>
-      )}
+      {error != null && error !== '' && <Text className="text-xs text-error-500">{error}</Text>}
     </VStack>
   );
 }

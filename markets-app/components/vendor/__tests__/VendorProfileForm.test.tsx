@@ -4,8 +4,8 @@ import VendorProfileForm from '../VendorProfileForm';
 
 const mockOnSubmit = jest.fn();
 
-function renderProfileForm(props = {}) {
-  render(<VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />);
+function renderForm(props: Partial<React.ComponentProps<typeof VendorProfileForm>> = {}) {
+  return render(<VendorProfileForm mode="create" onSubmit={mockOnSubmit} {...props} />);
 }
 
 beforeEach(() => {
@@ -14,17 +14,17 @@ beforeEach(() => {
 
 describe('VendorProfileForm', () => {
   it('renders create mode heading', () => {
-    renderProfileForm();
+    renderForm();
     expect(screen.getByText('Create Vendor Profile')).toBeTruthy();
   });
 
   it('renders edit mode heading', () => {
-    renderProfileForm({ mode: 'edit' });
+    renderForm({ mode: 'edit' });
     expect(screen.getByText('Edit Profile')).toBeTruthy();
   });
 
   it('shows validation error for empty business name', async () => {
-    renderProfileForm();
+    renderForm();
     fireEvent.press(screen.getByLabelText('Create profile'));
     await waitFor(() => {
       expect(screen.getByText('Business name is required')).toBeTruthy();
@@ -33,7 +33,7 @@ describe('VendorProfileForm', () => {
   });
 
   it('submits valid form data', async () => {
-    renderProfileForm();
+    renderForm();
     fireEvent.changeText(screen.getByLabelText('Business Name'), 'Farm Fresh');
     fireEvent.press(screen.getByLabelText('Create profile'));
 
@@ -47,7 +47,7 @@ describe('VendorProfileForm', () => {
   });
 
   it('populates initial data in edit mode', () => {
-    renderProfileForm({
+    renderForm({
       mode: 'edit',
       initialData: {
         businessName: 'Existing Farm',
@@ -59,7 +59,7 @@ describe('VendorProfileForm', () => {
   });
 
   it('shows spinner when loading', () => {
-    renderProfileForm({ loading: true });
+    renderForm({ loading: true });
     // When loading, the submit button should be present but disabled
     expect(screen.queryByLabelText('Create profile')).toBeTruthy();
   });

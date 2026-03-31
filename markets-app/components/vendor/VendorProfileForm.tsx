@@ -71,7 +71,7 @@ export default function VendorProfileForm({
   const handleSubmit = useCallback(() => {
     const newErrors: FieldErrors = {};
     const error = validateField('businessName', form.businessName);
-    if (error != null && error !== '') newErrors.businessName = error;
+    if (error !== undefined) newErrors.businessName = error;
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

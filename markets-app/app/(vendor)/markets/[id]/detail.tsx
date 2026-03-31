@@ -19,13 +19,13 @@ export default function MarketDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data, loading } = useQuery(GetMarketDocument, {
-    variables: { id },
+    variables: { id: id },
   });
   const [requestJoin, { loading: joinLoading }] = useMutation(RequestToJoinMarketDocument, {
     refetchQueries: [{ query: VendorMarketsDocument }],
   });
 
-  const [selectedDates, setSelectedDates] = useState(new Set<string>());
+  const [selectedDates, setSelectedDates] = useState(new Set());
   const [rulesAcknowledged, setRulesAcknowledged] = useState(false);
 
   const market = data?.market;
@@ -63,8 +63,7 @@ export default function MarketDetailScreen() {
         sched.eventDate != null &&
         sched.eventDate !== ''
       ) {
-        const todayStr = now.toISOString().split('T')[0] ?? '';
-        if (sched.eventDate >= todayStr) {
+        if (sched.eventDate >= (now.toISOString().split('T')[0] ?? '')) {
           dates.push(sched.eventDate);
         }
       }
@@ -99,7 +98,7 @@ export default function MarketDetailScreen() {
       await requestJoin({
         variables: {
           marketID: id,
-          dates: Array.from(selectedDates),
+          dates: Array.from(selectedDates) as string[],
           acknowledgeRules: rulesAcknowledged,
         },
       });
@@ -213,7 +212,6 @@ export default function MarketDetailScreen() {
               }}
               accessibilityLabel={`Select ${date}`}
               accessibilityRole="checkbox"
-              accessibilityState={{ checked: selectedDates.has(date) }}
             >
               <Box
                 className={`rounded-lg border p-3 ${
@@ -255,7 +253,6 @@ export default function MarketDetailScreen() {
             }}
             accessibilityLabel="I acknowledge the market rules"
             accessibilityRole="checkbox"
-            accessibilityState={{ checked: rulesAcknowledged }}
           >
             <Box className="flex-row items-center gap-3">
               <Box

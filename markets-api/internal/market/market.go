@@ -397,3 +397,12 @@ func (m *Market) RemoveManager(managerID domain.UserID) error {
 	m.Managers = remaining
 	return nil
 }
+
+// MarketUpdateRecord represents a market-wide operational update.
+type MarketUpdateRecord struct {
+	ID        string
+	MarketID  domain.MarketID
+	SenderID  domain.UserID
+	Message   string
+	CreatedAt time.Time
+}

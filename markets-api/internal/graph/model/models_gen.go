@@ -69,6 +69,8 @@ type CheckIn struct {
 
 type CheckInInput struct {
 	MarketID string `json:"marketID"`
+	// Optional vendor ID for manager check-in on behalf (Story 5.3).
+	VendorID *string `json:"vendorID,omitempty"`
 }
 
 type CreateMarketInput struct {
@@ -182,6 +184,17 @@ type Market struct {
 	UpdatedAt           string               `json:"updatedAt"`
 }
 
+// Live attendance view for a market on a given day (Story 5.1).
+type MarketAttendance struct {
+	MarketID       string                   `json:"marketID"`
+	Date           string                   `json:"date"`
+	TotalRostered  int32                    `json:"totalRostered"`
+	CheckedInCount int32                    `json:"checkedInCount"`
+	PendingCount   int32                    `json:"pendingCount"`
+	ExceptionCount int32                    `json:"exceptionCount"`
+	Vendors        []*VendorAttendanceEntry `json:"vendors"`
+}
+
 // Planning view for a future market date.
 type MarketDayPlan struct {
 	Date             string               `json:"date"`
@@ -217,6 +230,15 @@ type MarketSearchResult struct {
 	VendorCount int32    `json:"vendorCount"`
 	// The vendor's current status at this market, if any.
 	VendorStatus *VendorMarketJoinStatus `json:"vendorStatus,omitempty"`
+}
+
+// A market-wide operational update (Story 5.4).
+type MarketUpdate struct {
+	ID        string `json:"id"`
+	MarketID  string `json:"marketID"`
+	SenderID  string `json:"senderID"`
+	Message   string `json:"message"`
+	CreatedAt string `json:"createdAt"`
 }
 
 // Root Mutation type - extended by each domain schema.
@@ -361,6 +383,14 @@ type Vendor struct {
 	CheckIns        []*CheckIn `json:"checkIns"`
 	CreatedAt       string     `json:"createdAt"`
 	UpdatedAt       string     `json:"updatedAt"`
+}
+
+// A vendor's attendance status for the attendance dashboard.
+type VendorAttendanceEntry struct {
+	VendorID     string             `json:"vendorID"`
+	Vendor       *Vendor            `json:"vendor"`
+	RosterStatus VendorRosterStatus `json:"rosterStatus"`
+	CheckIn      *CheckIn           `json:"checkIn,omitempty"`
 }
 
 type VendorInvitation struct {

@@ -234,10 +234,27 @@ func (r *mutationResolver) CheckIn(ctx context.Context, input model.CheckInInput
 		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
 	}
 
-	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
-	if err != nil {
-		slog.Error("failed to find vendor", "error", err, "userID", uid)
-		return nil, gqlerr.Internal("vendor profile not found")
+	role := auth.RoleFromContext(ctx)
+
+	// Determine which vendor to check in
+	var v *vendor.VendorRecord
+	var err error
+	if input.VendorID != nil && role == "manager" {
+		// Manager check-in on behalf (Story 5.3)
+		if err := r.checkManagerScope(ctx, domain.MarketID(input.MarketID)); err != nil {
+			return nil, err
+		}
+		v, err = r.VendorRepo.FindVendorByID(ctx, domain.VendorID(*input.VendorID))
+		if err != nil {
+			return nil, gqlerr.NewError(gqlerr.CodeValidationError, "vendor not found")
+		}
+	} else {
+		// Self check-in
+		v, err = r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
+		if err != nil {
+			slog.Error("failed to find vendor", "error", err, "userID", uid)
+			return nil, gqlerr.Internal("vendor profile not found")
+		}
 	}
 
 	// Check for active check-ins to detect conflicts
@@ -395,11 +412,7 @@ func (r *queryResolver) MyVendorProfile(ctx context.Context) (*model.Vendor, err
 
 	v, err := r.VendorRepo.FindVendorByUserID(ctx, domain.UserID(uid))
 	if err != nil {
-		if errors.Is(err, vendor.ErrVendorNotFound) {
-			return nil, nil // no profile yet
-		}
-		slog.Error("failed to load vendor profile", "error", err, "userID", uid)
-		return nil, gqlerr.Internal("failed to load vendor profile")
+		return nil, nil // no profile yet
 	}
 
 	return vendorToModel(v), nil

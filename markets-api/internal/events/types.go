@@ -155,3 +155,33 @@ type VendorExceptionReported struct {
 
 // EventType returns the dotted event type string.
 func (e VendorExceptionReported) EventType() string { return "vendor.exception_reported" }
+
+// MarketUpdatePublished is published when a manager posts a market-wide update.
+type MarketUpdatePublished struct {
+	MarketID string
+	SenderID string
+	Message  string
+}
+
+// EventType returns the dotted event type string.
+func (e MarketUpdatePublished) EventType() string { return "market.update_published" }
+
+// VendorConfirmationRequested is published when a manager requests attendance confirmation.
+type VendorConfirmationRequested struct {
+	MarketID  string
+	VendorIDs []string
+	SenderID  string
+}
+
+// EventType returns the dotted event type string.
+func (e VendorConfirmationRequested) EventType() string { return "vendor.confirmation_requested" }
+
+// MarketAutoCheckoutCompleted is published when auto-checkout runs for a market.
+type MarketAutoCheckoutCompleted struct {
+	MarketID    string
+	VendorCount int
+	Timestamp   time.Time
+}
+
+// EventType returns the dotted event type string.
+func (e MarketAutoCheckoutCompleted) EventType() string { return "market.auto_checkout_completed" }

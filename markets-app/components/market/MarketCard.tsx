@@ -23,7 +23,7 @@ export function MarketCard({ id, name, address, description, onPress }: MarketCa
     >
       <Heading className="text-base text-typography-900">{name}</Heading>
       <Text className="text-sm text-typography-500 mt-1">{address}</Text>
-      {description !== undefined && description !== null && description !== '' ? (
+      {description != null && description !== '' ? (
         <Text className="text-sm text-typography-400 mt-1" numberOfLines={2}>
           {description}
         </Text>

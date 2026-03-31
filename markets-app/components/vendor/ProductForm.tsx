@@ -60,7 +60,7 @@ export default function ProductForm({ initialData, mode, loading, onSubmit }: Pr
   const handleSubmit = useCallback(() => {
     const newErrors: FieldErrors = {};
     const error = validateField('name', form.name);
-    if (error != null && error !== '') newErrors.name = error;
+    if (error !== undefined) newErrors.name = error;
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

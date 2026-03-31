@@ -30,33 +30,34 @@ export default function EditMarketScreen() {
   });
 
   const handleSubmit = useCallback(
-    async (formData: MarketFormData) => {
-      try {
-        await updateMarket({
-          variables: {
-            id: id,
-            input: {
-              name: formData.name,
-              description: formData.description || undefined,
-              address: formData.address,
-              latitude: parseFloat(formData.latitude),
-              longitude: parseFloat(formData.longitude),
-              contactEmail: formData.contactEmail,
-              contactPhone: formData.contactPhone || undefined,
-              socialLinks: {
-                instagram: formData.instagram || undefined,
-                facebook: formData.facebook || undefined,
-                website: formData.website || undefined,
-                twitter: formData.twitter || undefined,
-              },
+    (formData: MarketFormData) => {
+      void updateMarket({
+        variables: {
+          id: id,
+          input: {
+            name: formData.name,
+            description: formData.description || undefined,
+            address: formData.address,
+            latitude: parseFloat(formData.latitude),
+            longitude: parseFloat(formData.longitude),
+            contactEmail: formData.contactEmail,
+            contactPhone: formData.contactPhone || undefined,
+            socialLinks: {
+              instagram: formData.instagram || undefined,
+              facebook: formData.facebook || undefined,
+              website: formData.website || undefined,
+              twitter: formData.twitter || undefined,
             },
           },
+        },
+      })
+        .then(() => {
+          router.back();
+        })
+        .catch((err: unknown) => {
+          const message = err instanceof Error ? err.message : 'An unexpected error occurred';
+          Alert.alert('Error', message);
         });
-        router.back();
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'An unexpected error occurred';
-        Alert.alert('Error', message);
-      }
     },
     [updateMarket, id, router],
   );
@@ -99,7 +100,7 @@ export default function EditMarketScreen() {
       mode="edit"
       initialData={initialData}
       onSubmit={(data) => {
-        void handleSubmit(data);
+        handleSubmit(data);
       }}
       loading={mutationLoading}
     />

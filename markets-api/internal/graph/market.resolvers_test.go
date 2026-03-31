@@ -774,7 +774,6 @@ func TestMyMarkets_NonManager_Forbidden(t *testing.T) {
 
 type mockVendorRepoForMarket struct {
 	vendors  []*vendor.VendorRecord
-	products []*vendor.ProductRecord
 	checkIns []*vendor.CheckInRecord
 }
 

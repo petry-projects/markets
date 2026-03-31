@@ -122,9 +122,9 @@ jobs:
             --region ${{ env.REGION }} \
             --format 'value(status.url)')
           echo "Deployed to: $URL"
-          STATUS=$(curl -sf "${URL}/healthz" | jq -r '.status')
+          STATUS=$(curl -sf "${URL}/health" | jq -r '.status')
           if [ "$STATUS" != "ok" ]; then
             echo "Health check failed!"
             exit 1
           fi
-          echo "Health check passed: $URL/healthz -> ok"
+          echo "Health check passed: $URL/health -> ok"

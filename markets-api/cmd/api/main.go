@@ -125,8 +125,8 @@ func main() {
 	// Build HTTP routes
 	mux := http.NewServeMux()
 
-	// Health check — unauthenticated
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+	// Health check — unauthenticated (no method restriction for Cloud Run probes)
+	mux.HandleFunc("GET /health", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprint(w, `{"status":"ok"}`)

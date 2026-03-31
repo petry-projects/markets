@@ -111,7 +111,12 @@ jobs:
           cache-dependency-path: markets-api/go.sum
 
       - name: Build
-        run: go build ./cmd/api/
+        run: |
+          if [ -d cmd/api ]; then
+            go build ./cmd/api/
+          else
+            go build ./...
+          fi
 
   schema-validate:
     name: Schema Validation

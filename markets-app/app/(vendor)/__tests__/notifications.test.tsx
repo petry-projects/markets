@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import VendorNotificationsScreen from '../notifications';
@@ -86,5 +86,51 @@ describe('VendorNotificationsScreen', () => {
     render(<VendorNotificationsScreen />);
     expect(screen.getByText('Notifications')).toBeTruthy();
     expect(screen.getByText('Push Notifications')).toBeTruthy();
+  });
+
+  // FR43: toggle calls mutation with inverted value
+  it('toggles exceptionAlerts from false to true', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: false,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<VendorNotificationsScreen />);
+    fireEvent(screen.getByLabelText('Exception Alerts toggle'), 'valueChange', true);
+    expect(mockMutate).toHaveBeenCalledWith({
+      variables: { input: { exceptionAlerts: true } },
+    });
+  });
+
+  it('renders all 5 preference labels and descriptions', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: false,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<VendorNotificationsScreen />);
+    expect(screen.getByText('Check-in Alerts')).toBeTruthy();
+    expect(screen.getByText('Checkout Alerts')).toBeTruthy();
+    expect(screen.getByText('Market Updates')).toBeTruthy();
+    expect(screen.getByText('Exception Alerts')).toBeTruthy();
+    expect(screen.getByText('Get notified when vendors check in')).toBeTruthy();
   });
 });

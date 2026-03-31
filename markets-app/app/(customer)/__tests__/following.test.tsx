@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import FollowingScreen from '../following';
@@ -61,6 +61,8 @@ jest.mock('@/components/customer/FeedItem', () => {
   };
 });
 
+const mockRefetch = jest.fn();
+const mockFetchMore = jest.fn();
 const mockUseQuery = jest.fn();
 jest.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args) as unknown,
@@ -79,8 +81,8 @@ describe('FollowingScreen', () => {
     mockUseQuery.mockReturnValue({
       data: null,
       loading: true,
-      refetch: jest.fn(),
-      fetchMore: jest.fn(),
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
     });
 
     render(<FollowingScreen />);
@@ -91,8 +93,8 @@ describe('FollowingScreen', () => {
     mockUseQuery.mockReturnValue({
       data: { followingFeed: [] },
       loading: false,
-      refetch: jest.fn(),
-      fetchMore: jest.fn(),
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
     });
 
     render(<FollowingScreen />);
@@ -116,8 +118,8 @@ describe('FollowingScreen', () => {
         ],
       },
       loading: false,
-      refetch: jest.fn(),
-      fetchMore: jest.fn(),
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
     });
 
     render(<FollowingScreen />);
@@ -129,11 +131,90 @@ describe('FollowingScreen', () => {
     mockUseQuery.mockReturnValue({
       data: { followingFeed: [] },
       loading: false,
-      refetch: jest.fn(),
-      fetchMore: jest.fn(),
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
     });
 
     render(<FollowingScreen />);
     expect(screen.getByLabelText('Go to discover')).toBeTruthy();
+  });
+
+  it('navigates to discover when Discover Markets button pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: { followingFeed: [] },
+      loading: false,
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
+    });
+
+    render(<FollowingScreen />);
+    fireEvent.press(screen.getByLabelText('Go to discover'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/discover');
+  });
+
+  it('calls fetchMore when end reached', () => {
+    const feedItems = [
+      {
+        id: 'f1',
+        type: 'VENDOR_UPDATE',
+        vendor: { id: 'v1', businessName: 'Farm' },
+        market: null,
+        timestamp: new Date().toISOString(),
+        message: 'New products!',
+      },
+    ];
+
+    mockUseQuery.mockReturnValue({
+      data: { followingFeed: feedItems },
+      loading: false,
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
+    });
+
+    render(<FollowingScreen />);
+
+    // The FlatList wires onEndReached to handleLoadMore which calls fetchMore.
+    // Trigger onEndReached via the rendered FlatList's scroll event.
+    const { FlatList } = require('react-native') as typeof import('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const flatList = screen.UNSAFE_queryAllByType(FlatList)[0];
+    expect(flatList).toBeTruthy();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    flatList.props.onEndReached();
+    expect(mockFetchMore).toHaveBeenCalledWith({
+      variables: { offset: feedItems.length },
+    });
+  });
+
+  it('calls refetch on pull-to-refresh', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        followingFeed: [
+          {
+            id: 'f1',
+            type: 'VENDOR_UPDATE',
+            vendor: { id: 'v1', businessName: 'Farm' },
+            market: null,
+            timestamp: new Date().toISOString(),
+            message: 'Update!',
+          },
+        ],
+      },
+      loading: false,
+      refetch: mockRefetch,
+      fetchMore: mockFetchMore,
+    });
+
+    render(<FollowingScreen />);
+
+    // The FlatList has onRefresh={handleRefresh} which calls refetch().
+    const { FlatList: FlatListComponent } =
+      require('react-native') as typeof import('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const flatList = screen.UNSAFE_queryAllByType(FlatListComponent)[0];
+    expect(flatList).toBeTruthy();
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    flatList.props.onRefresh();
+    expect(mockRefetch).toHaveBeenCalled();
   });
 });

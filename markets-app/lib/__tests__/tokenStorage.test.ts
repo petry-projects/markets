@@ -1,7 +1,8 @@
-import { storeToken, getToken, deleteToken } from '../tokenStorage';
+import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
-// Mock expo-secure-store
+import { storeToken, getToken, deleteToken } from '../tokenStorage';
+
 jest.mock('expo-secure-store', () => ({
   setItemAsync: jest.fn(),
   getItemAsync: jest.fn(),
@@ -23,15 +24,57 @@ describe('tokenStorage', () => {
     jest.clearAllMocks();
   });
 
-  // Test case 1.2.10: Successful sign-in stores token in expo-secure-store
-  describe('storeToken', () => {
+  if (Platform.OS === 'web') {
+    // Web platform tests — tokenStorage should use localStorage
+    let spySetItem: jest.SpyInstance;
+    let spyGetItem: jest.SpyInstance;
+    let spyRemoveItem: jest.SpyInstance;
+
+    beforeEach(() => {
+      localStorage.clear();
+      spySetItem = jest.spyOn(Storage.prototype, 'setItem');
+      spyGetItem = jest.spyOn(Storage.prototype, 'getItem');
+      spyRemoveItem = jest.spyOn(Storage.prototype, 'removeItem');
+    });
+
+    afterEach(() => {
+      spySetItem.mockRestore();
+      spyGetItem.mockRestore();
+      spyRemoveItem.mockRestore();
+    });
+
+    it('storeToken uses localStorage instead of SecureStore', async () => {
+      await storeToken('web-token');
+      expect(mockSetItem).not.toHaveBeenCalled();
+      expect(spySetItem).toHaveBeenCalledWith('firebase_jwt', 'web-token');
+    });
+
+    it('getToken uses localStorage instead of SecureStore', async () => {
+      localStorage.setItem('firebase_jwt', 'web-token');
+      spyGetItem.mockClear();
+      const token = await getToken();
+      expect(token).toBe('web-token');
+      expect(mockGetItem).not.toHaveBeenCalled();
+    });
+
+    it('deleteToken uses localStorage instead of SecureStore', async () => {
+      await deleteToken();
+      expect(mockDeleteItem).not.toHaveBeenCalled();
+      expect(spyRemoveItem).toHaveBeenCalledWith('firebase_jwt');
+    });
+
+    it('getToken returns null when no token stored on web', async () => {
+      const token = await getToken();
+      expect(token).toBeNull();
+    });
+  } else {
+    // Native platform tests (ios/android) — tokenStorage should use SecureStore
+    // Test case 1.2.10: Successful sign-in stores token in expo-secure-store
     it('stores the Firebase JWT in secure storage', async () => {
       await storeToken('test-jwt-token');
       expect(mockSetItem).toHaveBeenCalledWith('firebase_jwt', 'test-jwt-token');
     });
-  });
 
-  describe('getToken', () => {
     it('retrieves stored token', async () => {
       mockGetItem.mockResolvedValue('stored-token');
       const token = await getToken();
@@ -44,12 +87,10 @@ describe('tokenStorage', () => {
       const token = await getToken();
       expect(token).toBeNull();
     });
-  });
 
-  describe('deleteToken', () => {
     it('removes token from secure storage on sign-out', async () => {
       await deleteToken();
       expect(mockDeleteItem).toHaveBeenCalledWith('firebase_jwt');
     });
-  });
+  }
 });

@@ -233,4 +233,158 @@ describe('DiscoverScreen', () => {
     fireEvent.press(screen.getByLabelText('Enable location access'));
     expect(mockRequestLocation).toHaveBeenCalled();
   });
+
+  // FR21: Customer can search markets
+  it('filters markets by search term', () => {
+    mockUseAutoLocation.mockReturnValue({
+      location: { latitude: 40.7128, longitude: -74.006 },
+      loading: false,
+      error: null,
+      requestLocation: jest.fn(),
+    });
+    mockUseQuery.mockReturnValue({
+      data: {
+        discoverMarkets: [
+          {
+            id: 'm1',
+            name: 'Farmers Market',
+            address: '100 Main St',
+            latitude: 40.72,
+            longitude: -74.01,
+            description: null,
+            imageURL: null,
+            status: 'ACTIVE',
+          },
+          {
+            id: 'm2',
+            name: 'Craft Fair',
+            address: '200 Oak Ave',
+            latitude: 40.73,
+            longitude: -74.02,
+            description: null,
+            imageURL: null,
+            status: 'ACTIVE',
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<DiscoverScreen />);
+    expect(screen.getByText('Farmers Market')).toBeTruthy();
+    expect(screen.getByText('Craft Fair')).toBeTruthy();
+
+    fireEvent.changeText(screen.getByLabelText('Search markets'), 'Farmers');
+    expect(screen.getByText('Farmers Market')).toBeTruthy();
+    expect(screen.queryByText('Craft Fair')).toBeNull();
+  });
+
+  it('shows search-specific empty state when no results match', () => {
+    mockUseAutoLocation.mockReturnValue({
+      location: { latitude: 40.7128, longitude: -74.006 },
+      loading: false,
+      error: null,
+      requestLocation: jest.fn(),
+    });
+    mockUseQuery.mockReturnValue({
+      data: {
+        discoverMarkets: [
+          {
+            id: 'm1',
+            name: 'Farmers Market',
+            address: '100 Main St',
+            latitude: 40.72,
+            longitude: -74.01,
+            description: null,
+            imageURL: null,
+            status: 'ACTIVE',
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<DiscoverScreen />);
+    fireEvent.changeText(screen.getByLabelText('Search markets'), 'zzzznotfound');
+    expect(screen.getByText('No markets match your search.')).toBeTruthy();
+  });
+
+  it('changes distance filter and re-queries', () => {
+    mockUseAutoLocation.mockReturnValue({
+      location: { latitude: 40.7128, longitude: -74.006 },
+      loading: false,
+      error: null,
+      requestLocation: jest.fn(),
+    });
+    mockUseQuery.mockReturnValue({
+      data: { discoverMarkets: [] },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<DiscoverScreen />);
+    fireEvent.press(screen.getByLabelText('Filter by 5 miles'));
+    // After pressing 5mi, useQuery should be called with radiusMiles: 5
+    const lastCall = mockUseQuery.mock.calls[mockUseQuery.mock.calls.length - 1] as [
+      unknown,
+      { variables: { radiusMiles: number } },
+    ];
+    expect(lastCall[1].variables.radiusMiles).toBe(5);
+  });
+
+  it('navigates to market detail when market card pressed', () => {
+    mockUseAutoLocation.mockReturnValue({
+      location: { latitude: 40.7128, longitude: -74.006 },
+      loading: false,
+      error: null,
+      requestLocation: jest.fn(),
+    });
+    mockUseQuery.mockReturnValue({
+      data: {
+        discoverMarkets: [
+          {
+            id: 'm1',
+            name: 'Test Market',
+            address: '123 St',
+            latitude: 40.72,
+            longitude: -74.01,
+            description: null,
+            imageURL: null,
+            status: 'ACTIVE',
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<DiscoverScreen />);
+    fireEvent.press(screen.getByTestId('market-card-m1'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/market/m1');
+  });
+
+  it('calls refetch on pull-to-refresh', () => {
+    const mockRefetch = jest.fn();
+    mockUseAutoLocation.mockReturnValue({
+      location: { latitude: 40.7128, longitude: -74.006 },
+      loading: false,
+      error: null,
+      requestLocation: jest.fn(),
+    });
+    mockUseQuery.mockReturnValue({
+      data: { discoverMarkets: [] },
+      loading: false,
+      refetch: mockRefetch,
+    });
+
+    render(<DiscoverScreen />);
+    const { FlatList } = require('react-native') as typeof import('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const flatList = screen.UNSAFE_getByType(FlatList);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    flatList.props.onRefresh();
+    expect(mockRefetch).toHaveBeenCalled();
+  });
 });

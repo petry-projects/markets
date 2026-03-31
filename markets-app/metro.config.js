@@ -11,19 +11,31 @@ const config = getDefaultConfig(__dirname);
 // which fails because it can't destructure the default export.
 // Force resolution to the ESM build instead.
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  // Fix tslib CJS/ESM interop on web
-  if (platform === 'web' && moduleName === 'tslib') {
+  // Fix tslib CJS/ESM interop on web — catch both bare 'tslib' imports
+  // and subpath imports like 'tslib/modules/index.js' that use CJS wrappers
+  if (platform === 'web' && (moduleName === 'tslib' || moduleName.startsWith('tslib/'))) {
     return {
       filePath: path.resolve(__dirname, 'node_modules/tslib/tslib.es6.mjs'),
       type: 'sourceFile',
     };
   }
 
-  // Shim @react-native-firebase/* on web — these packages use native modules
-  // that aren't available in the browser
+  // Shim native-only auth packages on web
   if (platform === 'web' && moduleName.startsWith('@react-native-firebase/')) {
     return {
       filePath: path.resolve(__dirname, 'lib/firebase-web-shim.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (platform === 'web' && moduleName === '@react-native-google-signin/google-signin') {
+    return {
+      filePath: path.resolve(__dirname, 'lib/google-signin-web-shim.js'),
+      type: 'sourceFile',
+    };
+  }
+  if (platform === 'web' && moduleName === 'expo-apple-authentication') {
+    return {
+      filePath: path.resolve(__dirname, 'lib/apple-auth-web-shim.js'),
       type: 'sourceFile',
     };
   }

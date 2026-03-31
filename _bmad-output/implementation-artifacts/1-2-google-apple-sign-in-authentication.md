@@ -1,11 +1,11 @@
-# Story 1.2: Google & Apple Sign-In Authentication
+# Story 1.2: Google, Apple & Facebook Sign-In Authentication
 
 Status: review
 
 ## Story
 
 As a user (any role),
-I want to sign in using my Google or Apple account,
+I want to sign in using my Google, Apple, or Facebook account,
 so that I can access the app without managing a password.
 
 ## Acceptance Criteria
@@ -14,30 +14,35 @@ so that I can access the app without managing a password.
 
 2. **Given** an unauthenticated user on the login screen **When** they tap "Sign in with Apple" **Then** the Firebase Auth Apple OAuth flow completes and a Firebase JWT is returned **And** the JWT is stored in expo-secure-store
 
-3. **Given** a valid Firebase JWT in the Authorization header **When** a GraphQL request reaches the Go backend **Then** the auth middleware validates the JWT via Firebase Admin SDK **And** extracts uid and role custom claim into the request context
+3. **Given** an unauthenticated user on the login screen **When** they tap "Sign in with Facebook" **Then** the Firebase Auth Facebook OAuth flow completes and a Firebase JWT is returned **And** the JWT is stored in expo-secure-store
 
-4. **Given** an invalid or expired JWT **When** a GraphQL request is made **Then** the backend returns an UNAUTHENTICATED error code
+4. **Given** a valid Firebase JWT in the Authorization header **When** a GraphQL request reaches the Go backend **Then** the auth middleware validates the JWT via Firebase Admin SDK **And** extracts uid and role custom claim into the request context
+
+5. **Given** an invalid or expired JWT **When** a GraphQL request is made **Then** the backend returns an UNAUTHENTICATED error code
 
 ## Tasks / Subtasks
 
-- [x] Task 1: Firebase Auth configuration (AC: #1, #2)
+- [x] Task 1: Firebase Auth configuration (AC: #1, #2, #3)
   - [x] 1.1 Configure Firebase project with Google Sign-In provider
   - [x] 1.2 Configure Firebase project with Apple Sign-In provider
-  - [x] 1.3 Add `@react-native-firebase/auth` and `expo-auth-session` dependencies
-  - [x] 1.4 Create `lib/firebase.ts` with Firebase Auth initialization
+  - [x] 1.3 Configure Firebase project with Facebook Login provider
+  - [x] 1.4 Add `@react-native-firebase/auth`, `expo-auth-session`, and `expo-web-browser` dependencies
+  - [x] 1.5 Create `lib/firebase.ts` with Firebase Auth initialization
 
-- [x] Task 2: Login screen UI (AC: #1, #2)
+- [x] Task 2: Login screen UI (AC: #1, #2, #3)
   - [x] 2.1 Create `app/(auth)/login.tsx` login screen
   - [x] 2.2 Add "Sign in with Google" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Google"`
   - [x] 2.3 Add "Sign in with Apple" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Apple"`
-  - [x] 2.4 Add loading state indicator during OAuth flow (skeleton/loading, button disabled)
-  - [x] 2.5 Add user-friendly error message display on auth failure (not raw errors)
+  - [x] 2.4 Add "Sign in with Facebook" button using Gluestack `<Button>` + `<ButtonText>` with `accessibilityLabel="Sign in with Facebook"`
+  - [x] 2.5 Add loading state indicator during OAuth flow (skeleton/loading, button disabled)
+  - [x] 2.6 Add user-friendly error message display on auth failure (not raw errors)
 
-- [x] Task 3: Firebase OAuth flow implementation (AC: #1, #2)
+- [x] Task 3: Firebase OAuth flow implementation (AC: #1, #2, #3)
   - [x] 3.1 Create `hooks/useAuth.ts` hook encapsulating sign-in logic
   - [x] 3.2 Implement Google OAuth flow via Firebase Auth SDK
   - [x] 3.3 Implement Apple OAuth flow via Firebase Auth SDK
-  - [x] 3.4 Extract Firebase JWT from successful authentication result
+  - [x] 3.4 Implement Facebook OAuth flow via expo-auth-session + Firebase credential
+  - [x] 3.5 Extract Firebase JWT from successful authentication result
 
 - [x] Task 4: JWT storage in expo-secure-store (AC: #1, #2)
   - [x] 4.1 Add `expo-secure-store` dependency
@@ -63,12 +68,14 @@ so that I can access the app without managing a password.
   - [x] 7.2 Frontend: handle Apollo `onError` for UNAUTHENTICATED responses (redirect to login)
   - [x] 7.3 Frontend: display short, action-oriented error messages to users (never raw errors)
 
-- [x] Task 8: Tests (AC: #1, #2, #3, #4)
+- [x] Task 8: Tests (AC: #1, #2, #3, #4, #5)
   - [x] 8.1 Write Go unit tests for auth middleware (test cases 1.2.1 - 1.2.6)
   - [x] 8.2 Write Go integration test for session variable population (test case 1.2.7)
-  - [x] 8.3 Write React Native component tests for login screen rendering (test cases 1.2.8, 1.2.9)
+  - [x] 8.3 Write React Native component tests for login screen rendering (test cases 1.2.8, 1.2.9, 1.2.14)
   - [x] 8.4 Write React Native hook unit tests for token storage and Apollo config (test cases 1.2.10, 1.2.11)
   - [x] 8.5 Write React Native component tests for error and loading states (test cases 1.2.12, 1.2.13)
+  - [x] 8.6 Write React Native hook unit tests for Facebook sign-in flow (test case 1.2.15)
+  - [x] 8.7 Write React Native component test for Facebook sign-in error handling (test case 1.2.16)
 
 ## Dev Notes
 
@@ -76,7 +83,7 @@ so that I can access the app without managing a password.
 
 The complete auth flow from the architecture document:
 
-1. User taps "Sign in with Google" or "Sign in with Apple"
+1. User taps "Sign in with Google", "Sign in with Apple", or "Sign in with Facebook"
 2. Firebase Auth SDK handles OAuth flow -> returns Firebase JWT
 3. JWT stored in expo-secure-store
 4. Apollo Client attaches JWT as `Authorization: Bearer` header on all requests
@@ -89,8 +96,9 @@ The complete auth flow from the architecture document:
 
 ### Auth Provider Decisions
 
-- **Social-only authentication:** Google + Apple Sign-In only, no passwords
+- **Social-only authentication:** Google + Apple + Facebook Sign-In, no passwords
 - **Apple Sign-In required:** iOS App Store compliance when offering social login
+- **Facebook Login:** Available on all platforms via expo-auth-session OAuth flow + Firebase credential exchange
 - **Token storage:** expo-secure-store (iOS Keychain / Android Keystore) for encrypted, platform-native storage
 - **Role storage:** Firebase custom claim (`role: "customer" | "vendor" | "manager"`), set via Firebase Admin SDK in Go
 - **Market-scope:** Resolved from Cloud SQL at runtime (not in JWT) because market assignments are dynamic
@@ -163,11 +171,14 @@ func (m *Middleware) extractUser(token *auth.Token) (UserID, string, error) {
 | ID | Test Case | Type |
 |----|-----------|------|
 | 1.2.8 | Google sign-in button renders with accessibility label | Component |
-| 1.2.9 | Apple sign-in button renders with accessibility label | Component |
+| 1.2.9 | Apple sign-in button renders with accessibility label (iOS only) | Component |
 | 1.2.10 | Successful Google sign-in stores token in expo-secure-store | Unit (hook) |
 | 1.2.11 | Successful sign-in configures Apollo with Bearer header | Unit (hook) |
 | 1.2.12 | Auth error shows user-friendly message (not raw error) | Component |
 | 1.2.13 | Loading state during sign-in (indicator shown, button disabled) | Component |
+| 1.2.14 | Facebook sign-in button renders with accessibility label | Component |
+| 1.2.15 | Facebook sign-in calls OAuth flow and exchanges credential | Unit (hook) |
+| 1.2.16 | Facebook sign-in handles errors gracefully | Unit (hook) |
 
 [Source: _bmad-output/test-artifacts/epic-1-test-strategy.md#Section 3]
 
@@ -273,3 +284,4 @@ Claude Opus 4.6 (1M context)
 ### Change Log
 
 - 2026-03-28: Implemented Story 1.2 - Google & Apple Sign-In Authentication (all 8 tasks, all ACs satisfied)
+- 2026-03-30: Added Facebook Login as third auth provider (FR45). Updated ACs, tasks, and test cases. Implemented via expo-auth-session OAuth flow + Firebase credential exchange.

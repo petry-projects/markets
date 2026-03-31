@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import VendorMarketsScreen from '../markets';
@@ -114,5 +114,94 @@ describe('VendorMarketsScreen', () => {
     render(<VendorMarketsScreen />);
     expect(screen.getByText('PENDING')).toBeTruthy();
     expect(screen.getByText('2 dates committed')).toBeTruthy();
+  });
+
+  it('navigates to search when Find Markets header button pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        vendorMarkets: [
+          {
+            market: { id: 'm1', name: 'Sunday Market', address: '123 Oak' },
+            status: 'APPROVED',
+            nextUpcomingDate: null,
+            dates: [],
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorMarketsScreen />);
+    fireEvent.press(screen.getByLabelText('Find markets'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/markets/search');
+  });
+
+  it('navigates to market detail when market pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        vendorMarkets: [
+          {
+            market: { id: 'm1', name: 'Sunday Market', address: '123 Oak' },
+            status: 'APPROVED',
+            nextUpcomingDate: null,
+            dates: [],
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorMarketsScreen />);
+    fireEvent.press(screen.getByLabelText('Market: Sunday Market'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/markets/m1/detail');
+  });
+
+  it('navigates to search from empty state', () => {
+    mockUseQuery.mockReturnValue({
+      data: { vendorMarkets: [] },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorMarketsScreen />);
+    fireEvent.press(screen.getByLabelText('Find markets to join'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/markets/search');
+  });
+
+  it('renders APPROVED status badge', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        vendorMarkets: [
+          {
+            market: { id: 'm1', name: 'Market', address: 'Addr' },
+            status: 'APPROVED',
+            nextUpcomingDate: null,
+            dates: [],
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorMarketsScreen />);
+    expect(screen.getByText('APPROVED')).toBeTruthy();
+  });
+
+  it('renders REJECTED status badge', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        vendorMarkets: [
+          {
+            market: { id: 'm1', name: 'Market', address: 'Addr' },
+            status: 'REJECTED',
+            nextUpcomingDate: null,
+            dates: [],
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorMarketsScreen />);
+    expect(screen.getByText('REJECTED')).toBeTruthy();
   });
 });

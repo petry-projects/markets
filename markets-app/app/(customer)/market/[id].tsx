@@ -62,7 +62,7 @@ export default function MarketDetailScreen() {
 
   const handleVendorPress = useCallback(
     (vendorId: string) => {
-      router.push(`/(customer)/vendor/${vendorId}`);
+      router.push(`/(customer)/vendor/${vendorId}` as never);
     },
     [router],
   );

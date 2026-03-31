@@ -5,6 +5,13 @@ import (
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
+// validRoles maps GraphQL Role enum values to lowercase domain role strings.
+var validRoles = map[model.Role]string{
+	model.RoleCustomer: "customer",
+	model.RoleVendor:   "vendor",
+	model.RoleManager:  "manager",
+}
+
 // auditEntryToModel converts an audit.Entry to a GraphQL model AuditLogEntry.
 func auditEntryToModel(e *audit.Entry) *model.AuditLogEntry {
 	return &model.AuditLogEntry{
@@ -18,11 +25,4 @@ func auditEntryToModel(e *audit.Entry) *model.AuditLogEntry {
 		Timestamp:  e.Timestamp,
 		Payload:    e.Payload,
 	}
-}
-
-// validRoles maps GraphQL Role enum values to lowercase domain role strings.
-var validRoles = map[model.Role]string{
-	model.RoleCustomer: "customer",
-	model.RoleVendor:   "vendor",
-	model.RoleManager:  "manager",
 }

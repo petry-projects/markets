@@ -1,4 +1,4 @@
-project_id  = "petry-markets-dev"
+project_id  = "markets-491920"
 region      = "us-central1"
 environment = "dev"
 db_tier     = "db-f1-micro"

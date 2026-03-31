@@ -101,8 +101,8 @@ resource "google_sql_database_instance" "markets" {
     }
 
     ip_configuration {
-      ipv4_enabled = false
-      # Private IP via VPC — Cloud Run uses Cloud SQL Connector
+      ipv4_enabled    = true
+      # Cloud Run connects via Cloud SQL Auth Proxy (unix socket), not IP
     }
 
     database_flags {
@@ -168,10 +168,6 @@ resource "google_cloud_run_v2_service" "api" {
       }
 
       env {
-        name  = "PORT"
-        value = "8080"
-      }
-      env {
         name  = "ENVIRONMENT"
         value = var.environment
       }
@@ -223,6 +219,53 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
   member   = "allUsers"
 }
 
+# ─── Workload Identity Federation (GitHub Actions OIDC) ───
+
+variable "github_repo" {
+  type        = string
+  default     = "petry-projects/markets"
+  description = "GitHub org/repo for Workload Identity Federation"
+}
+
+resource "google_iam_workload_identity_pool" "github" {
+  workload_identity_pool_id = "github-actions"
+  display_name              = "GitHub Actions"
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_iam_workload_identity_pool_provider" "github" {
+  workload_identity_pool_id          = google_iam_workload_identity_pool.github.workload_identity_pool_id
+  workload_identity_pool_provider_id = "github-oidc"
+  display_name                       = "GitHub OIDC"
+
+  attribute_mapping = {
+    "google.subject"       = "assertion.sub"
+    "attribute.actor"      = "assertion.actor"
+    "attribute.repository" = "assertion.repository"
+  }
+
+  attribute_condition = "assertion.repository == '${var.github_repo}'"
+
+  oidc {
+    issuer_uri = "https://token.actions.githubusercontent.com"
+  }
+}
+
+# Allow GitHub Actions to impersonate the API service account
+resource "google_service_account_iam_member" "github_wif" {
+  service_account_id = google_service_account.api.name
+  role               = "roles/iam.workloadIdentityUser"
+  member             = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.repository/${var.github_repo}"
+}
+
+# The API SA also needs to push images to Artifact Registry
+resource "google_project_iam_member" "api_ar_writer" {
+  project = var.project_id
+  role    = "roles/artifactregistry.writer"
+  member  = "serviceAccount:${google_service_account.api.email}"
+}
+
 # ─── Outputs ───
 
 output "api_url" {
@@ -238,4 +281,14 @@ output "db_connection_name" {
 output "artifact_registry" {
   value       = "${var.region}-docker.pkg.dev/${var.project_id}/${google_artifact_registry_repository.markets.repository_id}"
   description = "Docker registry URL"
+}
+
+output "wif_provider" {
+  value       = google_iam_workload_identity_pool_provider.github.name
+  description = "Workload Identity Provider — set as GCP_WORKLOAD_IDENTITY_PROVIDER GitHub secret"
+}
+
+output "wif_service_account" {
+  value       = google_service_account.api.email
+  description = "Service account email — set as GCP_SERVICE_ACCOUNT GitHub secret"
 }

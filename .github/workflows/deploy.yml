@@ -22,8 +22,8 @@ concurrency:
 
 env:
   REGION: us-central1
-  PROJECT_ID: petry-markets-dev
-  REGISTRY: us-central1-docker.pkg.dev/petry-markets-dev/markets
+  PROJECT_ID: markets-491920
+  REGISTRY: us-central1-docker.pkg.dev/markets-491920/markets
   SERVICE_NAME: markets-api-dev
 
 jobs:
@@ -89,11 +89,11 @@ jobs:
           ./cloud-sql-proxy --port 5432 "$INSTANCE_CONNECTION" &
           sleep 5
           docker run --network host \
+            -v "${{ github.workspace }}/markets-api/migrations:/migrations" \
             migrate/migrate:v4.17.0 \
             -path=/migrations \
             -database "postgres://markets:${DB_PASSWORD}@localhost:5432/markets_dev?sslmode=disable" \
             up
-        working-directory: markets-api
 
   deploy:
     name: Deploy to Cloud Run

@@ -123,7 +123,7 @@ export default function VendorProfileScreen() {
               </Pressable>
               <Pressable
                 onPress={() => {
-                  router.push('/(vendor)/settings/delete-account');
+                  router.push('/(vendor)/settings/delete-account' as never);
                 }}
                 accessibilityLabel="Delete Account"
                 accessibilityRole="button"

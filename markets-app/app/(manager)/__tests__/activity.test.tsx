@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import ManagerActivityScreen from '../activity';
+import { MarketActivityFeedDocument, MyMarketsDocument } from '@/graphql/generated/graphql';
 
 type MockProps = Record<string, unknown> & { children?: ReactNode };
 
@@ -62,8 +63,11 @@ jest.mock('@apollo/client/react', () => ({
   useQuery: (...args: unknown[]) => mockUseQuery(...args) as unknown,
 }));
 
+const mockUseLocalSearchParams = jest
+  .fn<Record<string, string>, []>()
+  .mockReturnValue({ marketID: 'm1' });
 jest.mock('expo-router', () => ({
-  useLocalSearchParams: () => ({ marketID: 'm1' }),
+  useLocalSearchParams: () => mockUseLocalSearchParams(),
 }));
 
 jest.mock('@/graphql/generated/graphql', () => ({
@@ -131,5 +135,81 @@ describe('ManagerActivityScreen', () => {
 
     render(<ManagerActivityScreen />);
     expect(screen.getByText('Vendor arrived at market')).toBeTruthy();
+  });
+
+  it('uses marketID from route params when provided', () => {
+    mockUseLocalSearchParams.mockReturnValue({ marketID: 'market-99' });
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<ManagerActivityScreen />);
+
+    // First call is MyMarketsDocument (should be skipped), second is MarketActivityFeedDocument
+    // When marketID param is provided, MyMarketsDocument query should be skipped
+    const myMarketCall = (mockUseQuery.mock.calls as unknown[][]).find(
+      (call) => call[0] === MyMarketsDocument,
+    );
+    expect(myMarketCall?.[1]).toEqual(expect.objectContaining({ skip: true }));
+
+    // MarketActivityFeedDocument should use the param marketID
+    const activityCall = (mockUseQuery.mock.calls as unknown[][]).find(
+      (call) => call[0] === MarketActivityFeedDocument,
+    );
+    expect((activityCall?.[1] as Record<string, unknown> | undefined)?.variables).toEqual(
+      expect.objectContaining({ marketID: 'market-99' }),
+    );
+  });
+
+  it('falls back to first market from MyMarketsDocument when no param', () => {
+    mockUseLocalSearchParams.mockReturnValue({});
+    // First call: MyMarketsDocument returns markets data
+    // Second call: MarketActivityFeedDocument
+    mockUseQuery
+      .mockReturnValueOnce({
+        data: {
+          myMarkets: [
+            { id: 'first-market-id', name: 'First Market' },
+            { id: 'second-market-id', name: 'Second Market' },
+          ],
+        },
+        loading: false,
+        refetch: jest.fn(),
+      })
+      .mockReturnValueOnce({
+        data: undefined,
+        loading: false,
+        refetch: jest.fn(),
+      });
+
+    render(<ManagerActivityScreen />);
+
+    // MyMarketsDocument should NOT be skipped
+    const myMarketCall = (mockUseQuery.mock.calls as unknown[][]).find(
+      (call) => call[0] === MyMarketsDocument,
+    );
+    expect(myMarketCall?.[1]).toEqual(expect.objectContaining({ skip: false }));
+
+    // MarketActivityFeedDocument should use the first market's ID
+    const activityCall = (mockUseQuery.mock.calls as unknown[][]).find(
+      (call) => call[0] === MarketActivityFeedDocument,
+    );
+    expect((activityCall?.[1] as Record<string, unknown> | undefined)?.variables).toEqual(
+      expect.objectContaining({ marketID: 'first-market-id' }),
+    );
+  });
+
+  it('renders activity heading and subtitle', () => {
+    mockUseQuery.mockReturnValue({
+      data: undefined,
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<ManagerActivityScreen />);
+    expect(screen.getByText('Market Activity')).toBeTruthy();
+    expect(screen.getByText('Recent activity across your market')).toBeTruthy();
   });
 });

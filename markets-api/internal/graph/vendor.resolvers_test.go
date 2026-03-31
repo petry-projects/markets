@@ -98,7 +98,7 @@ func (m *mockVendorRepo) SearchMarkets(_ context.Context, _ string, _, _, _ *flo
 	return []vendor.MarketSearchRow{}, nil
 }
 
-func (m *mockVendorRepo) GetVendorMarketDates(_ context.Context, _ domain.VendorID) ([]vendor.VendorMarketDateRow, error) {
+func (m *mockVendorRepo) GetVendorMarketDates(_ context.Context, _ domain.UserID) ([]vendor.VendorMarketDateRow, error) {
 	return []vendor.VendorMarketDateRow{}, nil
 }
 

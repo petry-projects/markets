@@ -281,6 +281,7 @@ func TestRoleEnforcement_ManagerCanCheckInOnBehalf(t *testing.T) {
 		if rec := recover(); rec != nil {
 			// Nil pointer dereference is expected when VendorRepo is nil.
 			// The key assertion is that we got past the role check.
+			_ = rec
 		}
 	}()
 

@@ -126,7 +126,7 @@ export default function VendorProfileScreen() {
             description={item.description}
             isAvailable={item.isAvailable}
             onEdit={(id) => {
-              router.push(`/(vendor)/products/${id}/edit`);
+              router.push(`/(vendor)/products/${id}/edit` as never);
             }}
             onDelete={handleDeleteProduct}
           />

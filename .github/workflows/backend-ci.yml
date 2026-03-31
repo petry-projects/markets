@@ -44,6 +44,23 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: lint
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: markets
+          POSTGRES_PASSWORD: markets_test
+          POSTGRES_DB: markets_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U markets -d markets_test"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://markets:markets_test@localhost:5432/markets_test?sslmode=disable
+      TEST_DATABASE_URL: postgres://markets:markets_test@localhost:5432/markets_test?sslmode=disable
     steps:
       - uses: actions/checkout@v4
 
@@ -52,14 +69,18 @@ jobs:
           go-version-file: markets-api/go.mod
           cache-dependency-path: markets-api/go.sum
 
+      - name: Run migrations
+        run: |
+          go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+          migrate -path=migrations -database "$DATABASE_URL" up
+
       - name: Run unit tests with race detector
         run: |
           go test $(go list ./... | grep -v /generated | grep -v /integration) \
             -short -count=1 -race -coverprofile=coverage.out
 
       - name: Run integration tests
-        if: false  # Skipped until CI database service is configured
-        run: go test ./internal/integration/ -count=1 -race -v
+        run: go test ./internal/integration/ -count=1 -race -v -tags integration
 
       - name: Enforce coverage threshold
         run: |

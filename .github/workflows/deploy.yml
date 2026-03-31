@@ -1,0 +1,130 @@
+name: Deploy API
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [dev, staging, production]
+  push:
+    branches: [main]
+    paths:
+      - 'markets-api/**'
+      - 'infra/**'
+      - '.github/workflows/deploy.yml'
+
+concurrency:
+  group: deploy-${{ github.event.inputs.environment || 'dev' }}
+  cancel-in-progress: false
+
+env:
+  REGION: us-central1
+  PROJECT_ID: petry-markets-dev
+  REGISTRY: us-central1-docker.pkg.dev/petry-markets-dev/markets
+  SERVICE_NAME: markets-api-dev
+
+jobs:
+  build-push:
+    name: Build & Push Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    outputs:
+      image: ${{ steps.meta.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGION }}-docker.pkg.dev --quiet
+
+      - name: Build and push
+        id: meta
+        run: |
+          IMAGE="${{ env.REGISTRY }}/api:${{ github.sha }}"
+          docker build -t "$IMAGE" -t "${{ env.REGISTRY }}/api:latest" markets-api/
+          docker push "$IMAGE"
+          docker push "${{ env.REGISTRY }}/api:latest"
+          echo "image=$IMAGE" >> "$GITHUB_OUTPUT"
+
+  migrate:
+    name: Run Migrations
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Install Cloud SQL Proxy
+        run: |
+          curl -o cloud-sql-proxy https://storage.googleapis.com/cloud-sql-connectors/cloud-sql-proxy/v2.14.3/cloud-sql-proxy.linux.amd64
+          chmod +x cloud-sql-proxy
+
+      - name: Run migrations
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          INSTANCE_CONNECTION: ${{ secrets.CLOUD_SQL_CONNECTION_NAME }}
+        run: |
+          ./cloud-sql-proxy --port 5432 "$INSTANCE_CONNECTION" &
+          sleep 5
+          docker run --network host \
+            migrate/migrate:v4.17.0 \
+            -path=/migrations \
+            -database "postgres://markets:${DB_PASSWORD}@localhost:5432/markets_dev?sslmode=disable" \
+            up
+        working-directory: markets-api
+
+  deploy:
+    name: Deploy to Cloud Run
+    needs: [build-push, migrate]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Deploy to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
+        with:
+          service: ${{ env.SERVICE_NAME }}
+          image: ${{ needs.build-push.outputs.image }}
+          region: ${{ env.REGION }}
+
+      - name: Verify deployment
+        run: |
+          URL=$(gcloud run services describe ${{ env.SERVICE_NAME }} \
+            --region ${{ env.REGION }} \
+            --format 'value(status.url)')
+          echo "Deployed to: $URL"
+          STATUS=$(curl -sf "${URL}/healthz" | jq -r '.status')
+          if [ "$STATUS" != "ok" ]; then
+            echo "Health check failed!"
+            exit 1
+          fi
+          echo "Health check passed: $URL/healthz -> ok"

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   postgres:
     image: postgres:15-alpine
@@ -17,6 +15,22 @@ services:
       timeout: 3s
       retries: 10
 
+  firebase:
+    image: andreysenov/firebase-tools:latest
+    ports:
+      - "9099:9099"   # Auth Emulator
+      - "9199:9199"   # Realtime Database Emulator
+      - "4000:4000"   # Emulator Suite UI
+    volumes:
+      - ./firebase.json:/home/node/firebase.json
+      - firebase-data:/home/node/.firebase
+    command: firebase emulators:start --only auth,database --project markets-dev
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   migrate:
     image: migrate/migrate:v4.17.0
     depends_on:
@@ -28,7 +42,6 @@ services:
       -path=/migrations
       -database=postgres://markets:markets_dev@postgres:5432/markets_dev?sslmode=disable
       up
-    # Runs once and exits — applies all pending migrations
 
   api:
     build:
@@ -37,13 +50,17 @@ services:
     depends_on:
       migrate:
         condition: service_completed_successfully
+      firebase:
+        condition: service_healthy
     environment:
       PORT: "8080"
       DATABASE_URL: "postgres://markets:markets_dev@postgres:5432/markets_dev?sslmode=disable"
       ENVIRONMENT: "development"
-      # FIREBASE_CREDENTIALS: optional — leave empty for dev without Firebase
+      FIREBASE_AUTH_EMULATOR_HOST: "firebase:9099"
+      FIREBASE_DATABASE_EMULATOR_HOST: "firebase:9199"
     ports:
       - "8080:8080"
 
 volumes:
   pgdata:
+  firebase-data:

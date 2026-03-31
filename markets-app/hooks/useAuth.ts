@@ -14,11 +14,10 @@ import { setAuthToken } from '@/lib/apollo';
 
 WebBrowser.maybeCompleteAuthSession();
 
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- CI types process.env as any
-const FACEBOOK_APP_ID = (process.env.EXPO_PUBLIC_FACEBOOK_APP_ID as string | undefined) ?? '';
-// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- CI types process.env as any
+const FACEBOOK_APP_ID =
+  (process.env as Record<string, string | undefined>).EXPO_PUBLIC_FACEBOOK_APP_ID ?? '';
 const GOOGLE_WEB_CLIENT_ID =
-  (process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID as string | undefined) ?? '';
+  (process.env as Record<string, string | undefined>).EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 const UAT_BYPASS_AUTH = process.env.EXPO_PUBLIC_UAT_BYPASS_AUTH === 'true';
 
 export type UserRole = 'customer' | 'vendor' | 'manager' | null;

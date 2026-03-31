@@ -178,9 +178,9 @@ func (e VendorConfirmationRequested) EventType() string { return "vendor.confirm
 
 // MarketAutoCheckoutCompleted is published when auto-checkout runs for a market.
 type MarketAutoCheckoutCompleted struct {
-	MarketID     string
-	VendorCount  int
-	Timestamp    time.Time
+	MarketID    string
+	VendorCount int
+	Timestamp   time.Time
 }
 
 // EventType returns the dotted event type string.

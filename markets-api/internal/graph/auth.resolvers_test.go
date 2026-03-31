@@ -53,9 +53,9 @@ func (m *mockUserRepo) FindByFirebaseUID(_ context.Context, firebaseUID string) 
 }
 
 type mockClaimsSetter struct {
-	mu     sync.Mutex
-	calls  []claimsCall
-	err    error
+	mu    sync.Mutex
+	calls []claimsCall
+	err   error
 }
 
 type claimsCall struct {

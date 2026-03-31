@@ -26,10 +26,11 @@ services:
       - firebase-data:/home/node/.firebase
     command: firebase emulators:start --only auth,database --project markets-dev
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf http://localhost:9099/ || exit 1"]
+      test: ["CMD-SHELL", "node -e \"require('http').get('http://localhost:9099/', r => process.exit(r.statusCode === 200 ? 0 : 1)).on('error', () => process.exit(1))\""]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 15
+      start_period: 10s
 
   migrate:
     image: migrate/migrate:v4.17.0
@@ -58,6 +59,8 @@ services:
       ENVIRONMENT: "development"
       FIREBASE_AUTH_EMULATOR_HOST: "firebase:9099"
       FIREBASE_DATABASE_EMULATOR_HOST: "firebase:9199"
+      GCLOUD_PROJECT: "markets-dev"
+      FIREBASE_PROJECT_ID: "markets-dev"
     ports:
       - "8080:8080"
 

@@ -143,7 +143,7 @@ export default function VendorProfileScreen() {
               <Button
                 className="bg-primary-500 rounded-lg px-4 h-10"
                 onPress={() => {
-                  router.push('/(vendor)/products/create');
+                  router.push('/(vendor)/products/create' as never);
                 }}
                 accessibilityLabel="Add product"
               >
@@ -160,7 +160,7 @@ export default function VendorProfileScreen() {
             description={item.description}
             isAvailable={item.isAvailable}
             onEdit={(id) => {
-              router.push(`/(vendor)/products/${id}/edit`);
+              router.push(`/(vendor)/products/${id}/edit` as never);
             }}
             onDelete={handleDeleteProduct}
           />

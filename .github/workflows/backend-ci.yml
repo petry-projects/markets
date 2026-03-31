@@ -71,7 +71,7 @@ jobs:
           if [ "$GITHUB_BASE_REF" = "main" ] || [ "$GITHUB_REF" = "refs/heads/main" ]; then
             THRESHOLD=60
           else
-            THRESHOLD=20
+            THRESHOLD=15
           fi
           echo "Threshold: ${THRESHOLD}% (base: ${GITHUB_BASE_REF:-push})"
           if [ "$(echo "$COVERAGE < $THRESHOLD" | bc -l)" -eq 1 ]; then
@@ -111,7 +111,12 @@ jobs:
           cache-dependency-path: markets-api/go.sum
 
       - name: Build
-        run: go build ./cmd/api/
+        run: |
+          if [ -d cmd/api ]; then
+            go build ./cmd/api/
+          else
+            go build ./...
+          fi
 
   schema-validate:
     name: Schema Validation

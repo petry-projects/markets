@@ -5,10 +5,22 @@
 import { firebase } from '@react-native-firebase/auth';
 
 export const firebaseConfig = {
-  apiKey: (process.env['EXPO_PUBLIC_FIREBASE_API_KEY'] as string | undefined) ?? '',
-  authDomain: (process.env['EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN'] as string | undefined) ?? '',
-  projectId: (process.env['EXPO_PUBLIC_FIREBASE_PROJECT_ID'] as string | undefined) ?? '',
-  databaseURL: (process.env['EXPO_PUBLIC_FIREBASE_DATABASE_URL'] as string | undefined) ?? '',
+  apiKey:
+    typeof process.env.EXPO_PUBLIC_FIREBASE_API_KEY === 'string'
+      ? process.env.EXPO_PUBLIC_FIREBASE_API_KEY
+      : '',
+  authDomain:
+    typeof process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN === 'string'
+      ? process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN
+      : '',
+  projectId:
+    typeof process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID === 'string'
+      ? process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID
+      : '',
+  databaseURL:
+    typeof process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL === 'string'
+      ? process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL
+      : '',
 };
 
 /**

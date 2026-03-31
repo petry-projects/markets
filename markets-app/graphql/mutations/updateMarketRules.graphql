@@ -1,0 +1,8 @@
+mutation UpdateMarketRules($marketID: ID!, $rulesText: String!) {
+  updateMarketRules(marketID: $marketID, rulesText: $rulesText) {
+    id
+    rulesText
+    rulesUpdatedAt
+    updatedAt
+  }
+}

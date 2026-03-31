@@ -1,0 +1,18 @@
+mutation AddMarketSchedule($input: AddScheduleInput!) {
+  addMarketSchedule(input: $input) {
+    id
+    marketID
+    scheduleType
+    dayOfWeek
+    frequency
+    seasonStart
+    seasonEnd
+    eventName
+    eventDate
+    startTime
+    endTime
+    label
+    createdAt
+    updatedAt
+  }
+}

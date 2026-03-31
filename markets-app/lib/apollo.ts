@@ -6,7 +6,9 @@ import { ErrorLink } from '@apollo/client/link/error';
 import { router } from 'expo-router';
 
 const apiUrl: string =
-  (process.env['EXPO_PUBLIC_API_URL'] as string | undefined) ?? 'http://localhost:8080/query';
+  typeof process.env.EXPO_PUBLIC_API_URL === 'string'
+    ? process.env.EXPO_PUBLIC_API_URL
+    : 'http://localhost:8080/query';
 
 const httpLink = new HttpLink({
   uri: apiUrl,

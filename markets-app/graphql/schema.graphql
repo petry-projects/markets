@@ -1,3 +1,745 @@
+"""
+Audit log query types (read-only, no mutations).
+Audit writes are handled exclusively by PostgreSQL triggers.
+"""
+type AuditLogEntry {
+  id: ID!
+  actorID: String!
+  actorRole: String!
+  actionType: String!
+  targetType: String!
+  targetID: String!
+  marketID: String
+  timestamp: String!
+  payload: String
+}
+
+type AuditLogConnection {
+  entries: [AuditLogEntry!]!
+  totalCount: Int!
+  hasMore: Boolean!
+}
+
+input AuditLogFilter {
+  actorID: String
+  actionType: String
+  targetType: String
+  targetID: String
+  marketID: String
+  startDate: String
+  endDate: String
+}
+
+"""
+Root Query type - extended by each domain schema.
+"""
 type Query {
-  health: Boolean!
+  """
+  Query audit log entries (Manager only, read-only).
+  """
+  auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
+}
+
+"""
+Root Mutation type - extended by each domain schema.
+No audit mutations exist; audit writes are DB trigger-only.
+"""
+type Mutation {
+  """
+  Placeholder - no audit mutations. Audit writes are PostgreSQL trigger-only.
+  """
+  _empty: Boolean
+}
+"""
+Authentication types and mutations.
+Handles Firebase Auth login/signup flows and role management.
+"""
+enum Role {
+  CUSTOMER
+  VENDOR
+  MANAGER
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type User {
+  id: ID!
+  firebaseUID: String!
+  email: String!
+  displayName: String!
+  role: Role!
+  createdAt: String!
+  updatedAt: String!
+}
+
+input LoginInput {
+  firebaseToken: String!
+}
+
+input SignUpInput {
+  firebaseToken: String!
+  displayName: String!
+  role: Role!
+}
+
+input CreateUserInput {
+  role: Role!
+  name: String!
+}
+
+type CreateUserPayload {
+  user: User!
+}
+
+extend type Query {
+  """
+  Returns the currently authenticated user.
+  """
+  me: User!
+}
+
+extend type Mutation {
+  """
+  Login with a Firebase ID token.
+  """
+  login(input: LoginInput!): AuthPayload!
+
+  """
+  Sign up a new user with a Firebase ID token and role selection.
+  """
+  signUp(input: SignUpInput!): AuthPayload!
+
+  """
+  Create user record after role selection. Requires authentication.
+  """
+  createUser(input: CreateUserInput!): CreateUserPayload!
+}
+"""
+Customer profile, follows, and discovery queries.
+"""
+type CustomerProfile {
+  id: ID!
+  userID: ID!
+  displayName: String!
+  followedVendors: [Vendor!]!
+  followedMarkets: [Market!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Follow {
+  id: ID!
+  customerID: ID!
+  targetType: FollowTargetType!
+  targetID: ID!
+  createdAt: String!
+}
+
+enum FollowTargetType {
+  VENDOR
+  MARKET
+}
+
+extend type Query {
+  """
+  Get the authenticated customer's profile.
+  """
+  myCustomerProfile: CustomerProfile
+
+  """
+  Discover markets near a location.
+  """
+  discoverMarkets(
+    latitude: Float!
+    longitude: Float!
+    radiusMiles: Float!
+    limit: Int
+    offset: Int
+  ): [Market!]!
+
+  """
+  Discover vendors at a specific market.
+  """
+  discoverVendors(marketID: ID!, limit: Int, offset: Int): [Vendor!]!
+
+  """
+  Get the customer's followed vendors and markets activity feed.
+  """
+  followingFeed(limit: Int, offset: Int): [FollowingFeedItem!]!
+}
+
+type FollowingFeedItem {
+  id: ID!
+  type: String!
+  vendor: Vendor
+  market: Market
+  timestamp: String!
+  message: String!
+}
+
+extend type Mutation {
+  """
+  Follow a vendor or market (Customer only).
+  """
+  follow(targetType: FollowTargetType!, targetID: ID!): Follow!
+
+  """
+  Unfollow a vendor or market (Customer only).
+  """
+  unfollow(targetType: FollowTargetType!, targetID: ID!): Boolean!
+}
+"""
+Market profile, schedule, and roster types.
+Managed by Market Managers.
+"""
+type Market {
+  id: ID!
+  name: String!
+  description: String
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  contactEmail: String!
+  contactPhone: String
+  socialLinks: SocialLinks
+  imageURL: String
+  rulesText: String
+  rulesUpdatedAt: String
+  status: MarketStatus!
+  cancellationReason: String
+  cancellationMessage: String
+  cancelledAt: String
+  managers: [User!]!
+  schedule: [MarketSchedule!]!
+  vendors: [VendorRosterEntry!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum MarketStatus {
+  ACTIVE
+  CANCELLED
+  ENDED_EARLY
+}
+
+enum CancellationReason {
+  WEATHER
+  EMERGENCY
+  LOW_ATTENDANCE
+  OTHER
+}
+
+type VendorNotification {
+  id: ID!
+  marketID: ID!
+  senderID: ID!
+  message: String!
+  sentAt: String!
+}
+
+type SocialLinks {
+  instagram: String
+  facebook: String
+  website: String
+  twitter: String
+}
+
+type MarketSchedule {
+  id: ID!
+  marketID: ID!
+  scheduleType: ScheduleType!
+  """
+  Day of week (0=Sunday, 6=Saturday). Only for RECURRING.
+  """
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  """
+  Event name. Only for ONE_TIME.
+  """
+  eventName: String
+  """
+  Specific date. Only for ONE_TIME.
+  """
+  eventDate: String
+  startTime: String!
+  endTime: String!
+  label: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum ScheduleType {
+  RECURRING
+  ONE_TIME
+}
+
+type VendorRosterEntry {
+  id: ID!
+  marketID: ID!
+  vendorID: ID!
+  vendor: Vendor!
+  status: VendorRosterStatus!
+  date: String!
+  invitedBy: ID
+  rejectionReason: String
+  rulesAcknowledged: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum VendorRosterStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  INVITED
+  COMMITTED
+  NOT_ATTENDING
+}
+
+type VendorInvitation {
+  id: ID!
+  marketID: ID!
+  vendorID: ID!
+  invitedBy: ID!
+  status: InvitationStatus!
+  targetDates: [String!]
+  message: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+"""
+Planning view for a future market date.
+"""
+type MarketDayPlan {
+  date: String!
+  vendorCount: Int!
+  committedVendors: [VendorRosterEntry!]!
+  pendingRequests: [VendorRosterEntry!]!
+}
+
+input CreateMarketInput {
+  name: String!
+  description: String
+  address: String!
+  latitude: Float!
+  longitude: Float!
+  contactEmail: String!
+  contactPhone: String
+  socialLinks: SocialLinksInput
+  imageURL: String
+  """
+  Recovery contact for the creating manager (email or phone). Required per FR41b.
+  """
+  recoveryContact: String!
+}
+
+input UpdateMarketInput {
+  name: String
+  description: String
+  address: String
+  latitude: Float
+  longitude: Float
+  contactEmail: String
+  contactPhone: String
+  socialLinks: SocialLinksInput
+  imageURL: String
+}
+
+input SocialLinksInput {
+  instagram: String
+  facebook: String
+  website: String
+  twitter: String
+}
+
+input AddScheduleInput {
+  marketID: ID!
+  scheduleType: ScheduleType!
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  eventName: String
+  eventDate: String
+  startTime: String!
+  endTime: String!
+  label: String
+}
+
+input UpdateScheduleInput {
+  dayOfWeek: Int
+  frequency: String
+  seasonStart: String
+  seasonEnd: String
+  eventName: String
+  eventDate: String
+  startTime: String
+  endTime: String
+  label: String
+}
+
+extend type Query {
+  """
+  Get a market by ID.
+  """
+  market(id: ID!): Market
+
+  """
+  List all markets, optionally filtered by proximity.
+  """
+  markets(
+    latitude: Float
+    longitude: Float
+    radiusMiles: Float
+    limit: Int
+    offset: Int
+  ): [Market!]!
+
+  """
+  List markets managed by the current user (Manager only).
+  """
+  myMarkets: [Market!]!
+
+  """
+  Get the vendor roster for a market on a specific date (Manager only).
+  """
+  marketRoster(marketID: ID!, date: String!): [VendorRosterEntry!]!
+
+  """
+  Get planning view for a range of future market dates (Manager only).
+  """
+  marketDayPlans(marketID: ID!, startDate: String!, endDate: String!): [MarketDayPlan!]!
+
+  """
+  List invitations for the current vendor.
+  """
+  myInvitations: [VendorInvitation!]!
+
+  """
+  Search vendors by name or category (Manager only).
+  """
+  searchVendors(query: String!, category: String, limit: Int): [Vendor!]!
+}
+
+extend type Mutation {
+  """
+  Create a new market (Manager only).
+  """
+  createMarket(input: CreateMarketInput!): Market!
+
+  """
+  Update an existing market (Manager only).
+  """
+  updateMarket(id: ID!, input: UpdateMarketInput!): Market!
+
+  """
+  Add a schedule entry to a market (Manager only).
+  """
+  addMarketSchedule(input: AddScheduleInput!): MarketSchedule!
+
+  """
+  Update a schedule entry (Manager only).
+  """
+  updateMarketSchedule(id: ID!, input: UpdateScheduleInput!): MarketSchedule!
+
+  """
+  Delete a schedule entry (Manager only).
+  """
+  deleteMarketSchedule(id: ID!): Boolean!
+
+  """
+  Update market rules text (Manager only).
+  """
+  updateMarketRules(marketID: ID!, rulesText: String!): Market!
+
+  """
+  Send a notification to all rostered vendors (Manager only).
+  """
+  sendVendorNotification(marketID: ID!, message: String!): VendorNotification!
+
+  """
+  Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled.
+  """
+  cancelMarket(
+    marketID: ID!
+    reason: CancellationReason!
+    message: String
+    endEarly: Boolean
+  ): Market!
+
+  """
+  Reactivate a cancelled market (Manager only).
+  """
+  reactivateMarket(marketID: ID!): Market!
+
+  """
+  Invite a vendor to a market (Manager only).
+  """
+  inviteVendor(
+    marketID: ID!
+    vendorID: ID!
+    targetDates: [String!]
+    message: String
+  ): VendorInvitation!
+
+  """
+  Respond to an invitation (Vendor only).
+  """
+  respondToInvitation(invitationID: ID!, accept: Boolean!): VendorInvitation!
+
+  """
+  Request to join a market roster for specific dates (Vendor only).
+  """
+  requestToJoinMarket(
+    marketID: ID!
+    dates: [String!]!
+    acknowledgeRules: Boolean!
+  ): [VendorRosterEntry!]!
+
+  """
+  Approve a vendor roster request (Manager only).
+  """
+  approveRosterRequest(id: ID!): VendorRosterEntry!
+
+  """
+  Reject a vendor roster request with optional reason (Manager only).
+  """
+  rejectRosterRequest(id: ID!, reason: String): VendorRosterEntry!
+
+  """
+  Add a vendor directly to the roster (Manager only).
+  """
+  addVendorToRoster(marketID: ID!, vendorID: ID!, dates: [String!]!): [VendorRosterEntry!]!
+
+  """
+  Remove a vendor from the roster (Manager only).
+  """
+  removeVendorFromRoster(id: ID!): Boolean!
+
+  """
+  Approve or reject a vendor roster request (Manager only). @deprecated Use approveRosterRequest/rejectRosterRequest instead.
+  """
+  updateRosterStatus(id: ID!, status: VendorRosterStatus!): VendorRosterEntry!
+
+  """
+  Assign a manager to a market (Admin only).
+  """
+  assignManager(managerID: ID!, marketID: ID!): Boolean!
+
+  """
+  Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers.
+  """
+  removeManager(managerID: ID!, marketID: ID!): Boolean!
+}
+"""
+Notification preferences and device token management.
+"""
+type NotificationPreferences {
+  id: ID!
+  userID: ID!
+  pushEnabled: Boolean!
+  vendorCheckInAlerts: Boolean!
+  marketUpdateAlerts: Boolean!
+  exceptionAlerts: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type DeviceToken {
+  id: ID!
+  userID: ID!
+  token: String!
+  platform: Platform!
+  createdAt: String!
+}
+
+enum Platform {
+  IOS
+  ANDROID
+}
+
+input UpdateNotificationPreferencesInput {
+  pushEnabled: Boolean
+  vendorCheckInAlerts: Boolean
+  marketUpdateAlerts: Boolean
+  exceptionAlerts: Boolean
+}
+
+input RegisterDeviceTokenInput {
+  token: String!
+  platform: Platform!
+}
+
+extend type Query {
+  """
+  Get the authenticated user's notification preferences.
+  """
+  myNotificationPreferences: NotificationPreferences
+}
+
+extend type Mutation {
+  """
+  Update notification preferences.
+  """
+  updateNotificationPreferences(
+    input: UpdateNotificationPreferencesInput!
+  ): NotificationPreferences!
+
+  """
+  Register a device token for push notifications.
+  """
+  registerDeviceToken(input: RegisterDeviceTokenInput!): DeviceToken!
+
+  """
+  Remove a device token.
+  """
+  removeDeviceToken(tokenID: ID!): Boolean!
+}
+"""
+Vendor profile, product catalog, and check-in types.
+"""
+type Vendor {
+  id: ID!
+  userID: ID!
+  businessName: String!
+  description: String
+  imageURL: String
+  products: [Product!]!
+  checkIns: [CheckIn!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Product {
+  id: ID!
+  vendorID: ID!
+  name: String!
+  description: String
+  category: String
+  imageURL: String
+  isAvailable: Boolean!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type CheckIn {
+  id: ID!
+  vendorID: ID!
+  marketID: ID!
+  status: CheckInStatus!
+  checkedInAt: String!
+  checkedOutAt: String
+}
+
+enum CheckInStatus {
+  CHECKED_IN
+  CHECKED_OUT
+  EXCEPTION
+}
+
+input CreateVendorProfileInput {
+  businessName: String!
+  description: String
+  imageURL: String
+}
+
+input UpdateVendorProfileInput {
+  businessName: String
+  description: String
+  imageURL: String
+}
+
+input CreateProductInput {
+  name: String!
+  description: String
+  category: String
+  imageURL: String
+}
+
+input UpdateProductInput {
+  name: String
+  description: String
+  category: String
+  imageURL: String
+  isAvailable: Boolean
+}
+
+input CheckInInput {
+  marketID: ID!
+}
+
+input ExceptionStatusInput {
+  checkInID: ID!
+  reason: String!
+}
+
+extend type Query {
+  """
+  Get a vendor by ID.
+  """
+  vendor(id: ID!): Vendor
+
+  """
+  Get vendor profile for the authenticated vendor user.
+  """
+  myVendorProfile: Vendor
+
+  """
+  List products for a vendor.
+  """
+  vendorProducts(vendorID: ID!): [Product!]!
+}
+
+extend type Mutation {
+  """
+  Create a vendor profile (Vendor only).
+  """
+  createVendorProfile(input: CreateVendorProfileInput!): Vendor!
+
+  """
+  Update vendor profile (Vendor only).
+  """
+  updateVendorProfile(input: UpdateVendorProfileInput!): Vendor!
+
+  """
+  Create a product (Vendor only).
+  """
+  createProduct(input: CreateProductInput!): Product!
+
+  """
+  Update a product (Vendor only).
+  """
+  updateProduct(id: ID!, input: UpdateProductInput!): Product!
+
+  """
+  Delete a product (soft delete, Vendor only).
+  """
+  deleteProduct(id: ID!): Boolean!
+
+  """
+  Check in to a market (Vendor only).
+  """
+  checkIn(input: CheckInInput!): CheckIn!
+
+  """
+  Check out from a market (Vendor only).
+  """
+  checkOut(checkInID: ID!): CheckIn!
+
+  """
+  Report an exception status (Vendor only).
+  """
+  reportException(input: ExceptionStatusInput!): CheckIn!
 }

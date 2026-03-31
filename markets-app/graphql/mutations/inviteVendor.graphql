@@ -1,0 +1,12 @@
+mutation InviteVendor($marketID: ID!, $vendorID: ID!, $targetDates: [String!], $message: String) {
+  inviteVendor(
+    marketID: $marketID
+    vendorID: $vendorID
+    targetDates: $targetDates
+    message: $message
+  ) {
+    id
+    status
+    createdAt
+  }
+}

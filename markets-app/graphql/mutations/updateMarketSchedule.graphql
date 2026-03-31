@@ -1,0 +1,18 @@
+mutation UpdateMarketSchedule($id: ID!, $input: UpdateScheduleInput!) {
+  updateMarketSchedule(id: $id, input: $input) {
+    id
+    marketID
+    scheduleType
+    dayOfWeek
+    frequency
+    seasonStart
+    seasonEnd
+    eventName
+    eventDate
+    startTime
+    endTime
+    label
+    createdAt
+    updatedAt
+  }
+}

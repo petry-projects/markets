@@ -1,0 +1,21 @@
+mutation UpdateMarket($id: ID!, $input: UpdateMarketInput!) {
+  updateMarket(id: $id, input: $input) {
+    id
+    name
+    description
+    address
+    latitude
+    longitude
+    contactEmail
+    contactPhone
+    socialLinks {
+      instagram
+      facebook
+      website
+      twitter
+    }
+    imageURL
+    createdAt
+    updatedAt
+  }
+}

@@ -242,17 +242,17 @@ func scheduleToModel(s *market.ScheduleRecord) *model.MarketSchedule {
 // rosterEntryToModel converts a domain RosterEntry to a GraphQL model.
 func rosterEntryToModel(e *market.RosterEntry) *model.VendorRosterEntry {
 	return &model.VendorRosterEntry{
-		ID:                 e.ID,
-		MarketID:           e.MarketID.String(),
-		VendorID:           e.VendorID.String(),
-		Vendor:             &model.Vendor{ID: e.VendorID.String()},
-		Status:             rosterStatusToModel(e.Status),
-		Date:               e.Date,
-		InvitedBy:          stringToPtr(e.InvitedBy),
-		RejectionReason:    stringToPtr(e.RejectionReason),
-		RulesAcknowledged:  e.RulesAcknowledged,
-		CreatedAt:          e.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt:          e.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		ID:                e.ID,
+		MarketID:          e.MarketID.String(),
+		VendorID:          e.VendorID.String(),
+		Vendor:            &model.Vendor{ID: e.VendorID.String()},
+		Status:            rosterStatusToModel(e.Status),
+		Date:              e.Date,
+		InvitedBy:         stringToPtr(e.InvitedBy),
+		RejectionReason:   stringToPtr(e.RejectionReason),
+		RulesAcknowledged: e.RulesAcknowledged,
+		CreatedAt:         e.CreatedAt.Format("2006-01-02T15:04:05Z07:00"),
+		UpdatedAt:         e.UpdatedAt.Format("2006-01-02T15:04:05Z07:00"),
 	}
 }
 

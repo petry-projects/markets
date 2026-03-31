@@ -14,8 +14,8 @@ import { setAuthToken } from '@/lib/apollo';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const FACEBOOK_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? '';
-const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+const FACEBOOK_APP_ID: string = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? '';
+const GOOGLE_WEB_CLIENT_ID: string = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
 const UAT_BYPASS_AUTH = process.env.EXPO_PUBLIC_UAT_BYPASS_AUTH === 'true';
 
 export type UserRole = 'customer' | 'vendor' | 'manager' | null;
@@ -138,13 +138,15 @@ export function useAuth(): AuthState & AuthActions {
       if (Platform.OS === 'web') {
         // Web: use expo-auth-session OAuth flow (native Google Sign-In SDK not available)
         const redirectUri = AuthSession.makeRedirectUri();
-        const request = new AuthSession.AuthRequest({
+        const request: AuthSession.AuthRequest = new AuthSession.AuthRequest({
           clientId: GOOGLE_WEB_CLIENT_ID,
           redirectUri,
           responseType: AuthSession.ResponseType.Token,
           scopes: ['openid', 'profile', 'email'],
         });
-        const discovery = { authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth' };
+        const discovery: AuthSession.DiscoveryDocument = {
+          authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth',
+        };
         const result = await request.promptAsync(discovery);
 
         if (result.type !== 'success') {
@@ -225,13 +227,15 @@ export function useAuth(): AuthState & AuthActions {
       }
 
       const redirectUri = AuthSession.makeRedirectUri();
-      const request = new AuthSession.AuthRequest({
+      const request: AuthSession.AuthRequest = new AuthSession.AuthRequest({
         clientId: FACEBOOK_APP_ID,
         redirectUri,
         responseType: AuthSession.ResponseType.Token,
         scopes: ['public_profile', 'email'],
       });
-      const discovery = { authorizationEndpoint: 'https://www.facebook.com/v19.0/dialog/oauth' };
+      const discovery: AuthSession.DiscoveryDocument = {
+        authorizationEndpoint: 'https://www.facebook.com/v19.0/dialog/oauth',
+      };
       const result = await request.promptAsync(discovery);
 
       if (result.type !== 'success') {

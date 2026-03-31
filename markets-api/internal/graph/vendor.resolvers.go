@@ -409,9 +409,9 @@ func (r *queryResolver) VendorMarkets(ctx context.Context) ([]*model.VendorMarke
 
 	// Group by market
 	type marketGroup struct {
-		dates          []*model.VendorMarketDate
-		statuses       map[string]bool
-		nextUpcoming   string
+		dates        []*model.VendorMarketDate
+		statuses     map[string]bool
+		nextUpcoming string
 	}
 	groups := make(map[domain.MarketID]*marketGroup)
 	var orderedMarkets []domain.MarketID

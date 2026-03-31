@@ -226,7 +226,7 @@ func (q *Querier) QueryForManagedMarkets(ctx context.Context, marketIDs []string
 // QueryByActor retrieves audit log entries for a specific actor with optional date filters.
 // Used for the myActivityLog query (user-facing activity history).
 func (q *Querier) QueryByActor(ctx context.Context, actorID string, startDate, endDate *string, limit, offset int) ([]Entry, error) {
-	conditions := []string{fmt.Sprintf("actor_id = $1")}
+	conditions := []string{"actor_id = $1"}
 	args := []interface{}{actorID}
 	argIdx := 2
 

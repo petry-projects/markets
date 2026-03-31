@@ -1076,4 +1076,3 @@ func TestMarketUpdates_Success(t *testing.T) {
 		t.Errorf("expected 0 updates from empty repo, got %d", len(result))
 	}
 }
-

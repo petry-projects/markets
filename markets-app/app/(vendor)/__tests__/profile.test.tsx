@@ -1,5 +1,6 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import VendorProfileScreen from '../profile';
@@ -49,10 +50,22 @@ jest.mock('lucide-react-native', () => {
 });
 
 jest.mock('@/components/vendor/ProductCard', () => {
-  const { Text } = require('react-native') as typeof import('react-native');
+  const { Text, Pressable } = require('react-native') as typeof import('react-native');
   return {
     __esModule: true,
-    default: ({ name }: { name: string }) => <Text testID="product-card">{name}</Text>,
+    default: ({
+      name,
+      id,
+      onDelete,
+    }: {
+      name: string;
+      id: string;
+      onDelete?: (id: string) => void;
+    }) => (
+      <Pressable testID="product-card" onPress={() => onDelete?.(id)}>
+        <Text>{name}</Text>
+      </Pressable>
+    ),
   };
 });
 
@@ -144,5 +157,126 @@ describe('VendorProfileScreen', () => {
     });
     render(<VendorProfileScreen />);
     expect(screen.getByText('No products yet. Add your first product!')).toBeTruthy();
+  });
+
+  it('navigates to create profile from empty state', () => {
+    mockUseQuery.mockReturnValue({
+      data: { myVendorProfile: null },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByLabelText('Create vendor profile'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/profile/create');
+  });
+
+  it('navigates to edit profile when Edit pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myVendorProfile: {
+          businessName: 'Farm Fresh',
+          description: null,
+          contactInfo: null,
+          instagramHandle: null,
+          websiteURL: null,
+          products: [],
+        },
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByLabelText('Edit profile'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/profile/edit');
+  });
+
+  it('navigates to add product when Add Product pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myVendorProfile: {
+          businessName: 'Farm Fresh',
+          description: null,
+          contactInfo: null,
+          instagramHandle: null,
+          websiteURL: null,
+          products: [],
+        },
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByLabelText('Add product'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/products/create');
+  });
+
+  it('shows delete confirmation alert when product delete pressed', () => {
+    const alertSpy = jest.spyOn(Alert, 'alert');
+    mockUseQuery.mockReturnValue({
+      data: {
+        myVendorProfile: {
+          businessName: 'Farm Fresh',
+          description: null,
+          contactInfo: null,
+          instagramHandle: null,
+          websiteURL: null,
+          products: [
+            {
+              id: 'p1',
+              name: 'Tomatoes',
+              category: 'Produce',
+              description: null,
+              isAvailable: true,
+            },
+          ],
+        },
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByTestId('product-card'));
+    expect(alertSpy).toHaveBeenCalledWith('Delete Product', 'Are you sure?', expect.any(Array));
+    alertSpy.mockRestore();
+  });
+
+  it('navigates to activity log', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myVendorProfile: {
+          businessName: 'Farm Fresh',
+          description: null,
+          contactInfo: null,
+          instagramHandle: null,
+          websiteURL: null,
+          products: [],
+        },
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByLabelText('Activity Log'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/settings/activity-log');
+  });
+
+  it('navigates to delete account', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myVendorProfile: {
+          businessName: 'Farm Fresh',
+          description: null,
+          contactInfo: null,
+          instagramHandle: null,
+          websiteURL: null,
+          products: [],
+        },
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+    render(<VendorProfileScreen />);
+    fireEvent.press(screen.getByLabelText('Delete Account'));
+    expect(mockPush).toHaveBeenCalledWith('/(vendor)/settings/delete-account');
   });
 });

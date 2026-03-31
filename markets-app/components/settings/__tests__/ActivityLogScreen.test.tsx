@@ -125,4 +125,61 @@ describe('ActivityLogScreen', () => {
     render(<ActivityLogScreen />);
     expect(screen.getByText('Your recent account activity')).toBeTruthy();
   });
+
+  // FR35-36: Audit log error handling
+  it('renders error state when query fails', () => {
+    mockUseQuery.mockReturnValue({
+      data: null,
+      loading: false,
+      error: new Error('Network error'),
+      refetch: jest.fn(),
+    });
+
+    render(<ActivityLogScreen />);
+    expect(screen.getByText('Failed to load activity log. Pull down to retry.')).toBeTruthy();
+  });
+
+  // FR36: Audit entries include actor identity, action type, target
+  it('formats action types from snake_case to Title Case', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myActivityLog: [
+          {
+            id: '1',
+            actorID: 'user-1',
+            actorRole: 'CUSTOMER',
+            actionType: 'VENDOR_CHECK_IN',
+            targetType: 'Vendor',
+            targetID: 'v-1',
+            marketID: 'm-1',
+            timestamp: '2026-03-15T10:30:00Z',
+            payload: null,
+          },
+        ],
+      },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<ActivityLogScreen />);
+    expect(screen.getByText('Vendor check in')).toBeTruthy();
+    expect(screen.getByText('Vendor v-1')).toBeTruthy();
+  });
+
+  it('wires up pull-to-refresh to refetch', () => {
+    const mockRefetch = jest.fn();
+    mockUseQuery.mockReturnValue({
+      data: { myActivityLog: [] },
+      loading: false,
+      refetch: mockRefetch,
+    });
+
+    render(<ActivityLogScreen />);
+    const { FlatList } = require('react-native') as typeof import('react-native');
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const flatList = screen.UNSAFE_getByType(FlatList);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+    flatList.props.onRefresh();
+    expect(mockRefetch).toHaveBeenCalled();
+  });
 });

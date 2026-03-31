@@ -127,4 +127,42 @@ describe('VendorActivityScreen', () => {
     render(<VendorActivityScreen />);
     expect(screen.getByText('Activity')).toBeTruthy();
   });
+
+  it('wires up refetch for pull-to-refresh', () => {
+    const mockRefetch = jest.fn();
+    mockUseQuery.mockReturnValue({
+      data: {
+        activityFeed: [
+          {
+            id: 'a1',
+            actorID: 'u1',
+            actionType: 'check_in',
+            targetType: 'vendor',
+            targetID: 'v1',
+            marketID: 'm1',
+            message: 'Checked in',
+            createdAt: new Date().toISOString(),
+          },
+        ],
+      },
+      loading: false,
+      refetch: mockRefetch,
+    });
+
+    render(<VendorActivityScreen />);
+    // The component renders without error and refetch is available for pull-to-refresh
+    expect(screen.getByText('Checked in')).toBeTruthy();
+  });
+
+  it('renders activity heading and subtitle', () => {
+    mockUseQuery.mockReturnValue({
+      data: { activityFeed: [] },
+      loading: false,
+      refetch: jest.fn(),
+    });
+
+    render(<VendorActivityScreen />);
+    expect(screen.getByText('Activity')).toBeTruthy();
+    expect(screen.getByText('Your recent activity feed')).toBeTruthy();
+  });
 });

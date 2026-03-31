@@ -8,7 +8,8 @@ import { VStack } from '@/components/ui/vstack';
 import { useAuth } from '@/hooks/useAuth';
 
 export default function LoginScreen() {
-  const { isLoading, error, signInWithGoogle, signInWithApple, clearError } = useAuth();
+  const { isLoading, error, signInWithGoogle, signInWithApple, signInWithFacebook, clearError } =
+    useAuth();
 
   return (
     <Box className="flex-1 items-center justify-center bg-background-0 px-6">
@@ -60,6 +61,17 @@ export default function LoginScreen() {
               </ButtonText>
             </Button>
           )}
+
+          <Button
+            className="w-full rounded-lg bg-blue-600 px-4 py-3"
+            onPress={() => void signInWithFacebook()}
+            accessibilityLabel="Sign in with Facebook"
+            disabled={isLoading}
+          >
+            <ButtonText className="text-center text-base font-semibold text-white">
+              {isLoading ? 'Signing in...' : 'Sign in with Facebook'}
+            </ButtonText>
+          </Button>
         </VStack>
 
         {isLoading && (

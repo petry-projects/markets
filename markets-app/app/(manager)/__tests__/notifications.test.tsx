@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import ManagerNotificationsScreen from '../notifications';
@@ -87,5 +87,50 @@ describe('ManagerNotificationsScreen', () => {
     expect(screen.getByText('Notifications')).toBeTruthy();
     expect(screen.getByText('Push Notifications')).toBeTruthy();
     expect(screen.getByText('Check-in Alerts')).toBeTruthy();
+  });
+
+  // FR43: toggle calls mutation with inverted value
+  it('toggles marketUpdateAlerts from true to false', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: true,
+          vendorCheckInAlerts: true,
+          vendorCheckoutAlerts: true,
+          marketUpdateAlerts: true,
+          exceptionAlerts: true,
+        },
+      },
+      loading: false,
+    });
+
+    render(<ManagerNotificationsScreen />);
+    fireEvent(screen.getByLabelText('Market Updates toggle'), 'valueChange', false);
+    expect(mockMutate).toHaveBeenCalledWith({
+      variables: { input: { marketUpdateAlerts: false } },
+    });
+  });
+
+  it('renders all preference descriptions', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: false,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<ManagerNotificationsScreen />);
+    expect(screen.getByText('Enable push notifications on this device')).toBeTruthy();
+    expect(screen.getByText('Get notified when vendors check in')).toBeTruthy();
+    expect(screen.getByText('Receive market news and schedule changes')).toBeTruthy();
+    expect(screen.getByText('Get notified about vendor exceptions')).toBeTruthy();
   });
 });

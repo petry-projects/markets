@@ -7,6 +7,7 @@ import LoginScreen from '../login';
 // Mock useAuth hook
 const mockSignInWithGoogle = jest.fn();
 const mockSignInWithApple = jest.fn();
+const mockSignInWithFacebook = jest.fn();
 const mockClearError = jest.fn();
 
 const defaultAuthState = {
@@ -17,6 +18,7 @@ const defaultAuthState = {
   uid: null,
   signInWithGoogle: mockSignInWithGoogle,
   signInWithApple: mockSignInWithApple,
+  signInWithFacebook: mockSignInWithFacebook,
   signOut: jest.fn(),
   clearError: mockClearError,
 };
@@ -39,35 +41,63 @@ describe('LoginScreen', () => {
     mockAuthReturn = { ...defaultAuthState };
   });
 
-  // Test case 1.2.8: Google sign-in button renders with accessibility label
+  // Test case 1.2.8: Google sign-in button renders on all platforms
   it('renders Google sign-in button with correct accessibility label', () => {
     const { getByLabelText } = render(<LoginScreen />);
     const googleButton = getByLabelText('Sign in with Google');
     expect(googleButton).toBeTruthy();
   });
 
-  // Test case 1.2.9: Apple sign-in button renders with accessibility label
-  it('renders Apple sign-in button with correct accessibility label on iOS', () => {
-    const originalPlatform = Platform.OS;
-    Object.defineProperty(Platform, 'OS', { get: () => 'ios' });
-
+  // Test case 1.2.14: Facebook sign-in button renders on all platforms
+  it('renders Facebook sign-in button with correct accessibility label', () => {
     const { getByLabelText } = render(<LoginScreen />);
-    const appleButton = getByLabelText('Sign in with Apple');
-    expect(appleButton).toBeTruthy();
-
-    Object.defineProperty(Platform, 'OS', { get: () => originalPlatform });
+    const facebookButton = getByLabelText('Sign in with Facebook');
+    expect(facebookButton).toBeTruthy();
   });
 
-  it('does not render Apple sign-in button on Android', () => {
-    const originalPlatform = Platform.OS;
-    Object.defineProperty(Platform, 'OS', { get: () => 'android' });
-
-    const { queryByLabelText } = render(<LoginScreen />);
-    const appleButton = queryByLabelText('Sign in with Apple');
-    expect(appleButton).toBeNull();
-
-    Object.defineProperty(Platform, 'OS', { get: () => originalPlatform });
+  it('calls signInWithFacebook when Facebook button is pressed', () => {
+    const { getByLabelText } = render(<LoginScreen />);
+    const facebookButton = getByLabelText('Sign in with Facebook');
+    fireEvent.press(facebookButton);
+    expect(mockSignInWithFacebook).toHaveBeenCalled();
   });
+
+  // Test case 1.2.9: Apple sign-in button — platform-dependent
+  if (Platform.OS === 'ios') {
+    it('renders Apple sign-in button on iOS', () => {
+      const { getByLabelText } = render(<LoginScreen />);
+      const appleButton = getByLabelText('Sign in with Apple');
+      expect(appleButton).toBeTruthy();
+    });
+
+    it('renders Google, Apple, and Facebook buttons on iOS', () => {
+      const { getByLabelText } = render(<LoginScreen />);
+      expect(getByLabelText('Sign in with Google')).toBeTruthy();
+      expect(getByLabelText('Sign in with Apple')).toBeTruthy();
+      expect(getByLabelText('Sign in with Facebook')).toBeTruthy();
+    });
+
+    it('calls signInWithApple when Apple button is pressed on iOS', () => {
+      const { getByLabelText } = render(<LoginScreen />);
+      const appleButton = getByLabelText('Sign in with Apple');
+      fireEvent.press(appleButton);
+      expect(mockSignInWithApple).toHaveBeenCalled();
+    });
+  } else {
+    // Android (and web if these tests ran there)
+    it('does not render Apple sign-in button on non-iOS', () => {
+      const { queryByLabelText } = render(<LoginScreen />);
+      const appleButton = queryByLabelText('Sign in with Apple');
+      expect(appleButton).toBeNull();
+    });
+
+    it('renders Google and Facebook but not Apple on non-iOS', () => {
+      const { getByLabelText, queryByLabelText } = render(<LoginScreen />);
+      expect(getByLabelText('Sign in with Google')).toBeTruthy();
+      expect(getByLabelText('Sign in with Facebook')).toBeTruthy();
+      expect(queryByLabelText('Sign in with Apple')).toBeNull();
+    });
+  }
 
   // Test case 1.2.12: Auth error shows user-friendly message (not raw error)
   it('displays user-friendly error message on auth failure', () => {
@@ -121,6 +151,12 @@ describe('LoginScreen', () => {
     expect(
       googleButton.props.accessibilityState?.disabled ?? googleButton.props.disabled,
     ).toBeTruthy();
+
+    // Facebook button should be disabled
+    const facebookButton = getByLabelText('Sign in with Facebook');
+    expect(
+      facebookButton.props.accessibilityState?.disabled ?? facebookButton.props.disabled,
+    ).toBeTruthy();
   });
 
   it('shows "Signing in..." text on buttons during loading', () => {
@@ -130,9 +166,9 @@ describe('LoginScreen', () => {
     };
 
     const { getAllByText } = render(<LoginScreen />);
-    // At least one button should show "Signing in..."
+    // At least two buttons should show "Signing in..." (Google + Facebook, Apple on iOS)
     const signingInTexts = getAllByText('Signing in...');
-    expect(signingInTexts.length).toBeGreaterThan(0);
+    expect(signingInTexts.length).toBeGreaterThanOrEqual(2);
   });
 
   it('calls signInWithGoogle when Google button is pressed', () => {

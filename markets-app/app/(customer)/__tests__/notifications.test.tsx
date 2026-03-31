@@ -143,4 +143,72 @@ describe('CustomerNotificationsScreen', () => {
     render(<CustomerNotificationsScreen />);
     expect(screen.getByText('Notifications')).toBeTruthy();
   });
+
+  // FR43: toggle inverts current value
+  it('toggles pushEnabled from true to false', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: true,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<CustomerNotificationsScreen />);
+    fireEvent(screen.getByLabelText('Push Notifications toggle'), 'valueChange', false);
+    expect(mockMutate).toHaveBeenCalledWith({
+      variables: { input: { pushEnabled: false } },
+    });
+  });
+
+  it('toggles vendorCheckInAlerts from false to true', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: false,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<CustomerNotificationsScreen />);
+    fireEvent(screen.getByLabelText('Check-in Alerts toggle'), 'valueChange', true);
+    expect(mockMutate).toHaveBeenCalledWith({
+      variables: { input: { vendorCheckInAlerts: true } },
+    });
+  });
+
+  it('renders all preference descriptions', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myNotificationPreferences: {
+          id: 'np1',
+          pushEnabled: false,
+          vendorCheckInAlerts: false,
+          vendorCheckoutAlerts: false,
+          marketUpdateAlerts: false,
+          exceptionAlerts: false,
+        },
+      },
+      loading: false,
+    });
+
+    render(<CustomerNotificationsScreen />);
+    expect(screen.getByText('Enable push notifications on this device')).toBeTruthy();
+    expect(screen.getByText('Get notified when vendors check in')).toBeTruthy();
+    expect(screen.getByText('Get notified when vendors check out')).toBeTruthy();
+    expect(screen.getByText('Receive market news and schedule changes')).toBeTruthy();
+    expect(screen.getByText('Get notified about vendor exceptions')).toBeTruthy();
+  });
 });

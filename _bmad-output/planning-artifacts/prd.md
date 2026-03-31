@@ -484,6 +484,7 @@ The architecture should evaluate GlueStack v3 as a viable UI/stack option where 
 - FR5: Market Manager can be assigned to one or more specific markets.
 - FR6: Multiple Market Managers can manage the same market concurrently.
 - FR7: System can restrict manager actions to only markets the manager is authorized to manage.
+- FR45: User can sign in using Google, Apple, or Facebook social authentication providers.
 
 ### Market and Vendor Administration
 

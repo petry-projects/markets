@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import CustomerProfileScreen from '../profile';
@@ -53,6 +53,22 @@ jest.mock('@apollo/client/react', () => ({
 jest.mock('@/graphql/generated/graphql', () => ({
   MyCustomerProfileDocument: { kind: 'Document' },
 }));
+
+/** Helper that sets up a loaded profile state for navigation tests. */
+function renderWithProfile() {
+  mockUseQuery.mockReturnValue({
+    data: {
+      myCustomerProfile: {
+        displayName: 'Jane',
+        followedVendors: [],
+        followedMarkets: [],
+      },
+    },
+    loading: false,
+    refetch: jest.fn(),
+  });
+  return render(<CustomerProfileScreen />);
+}
 
 describe('CustomerProfileScreen', () => {
   beforeEach(() => {
@@ -138,5 +154,29 @@ describe('CustomerProfileScreen', () => {
 
     render(<CustomerProfileScreen />);
     expect(screen.getByText('Customer')).toBeTruthy();
+  });
+
+  it('navigates to following when Followed Vendors pressed', () => {
+    renderWithProfile();
+    fireEvent.press(screen.getByLabelText('Followed Vendors'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/following');
+  });
+
+  it('navigates to following when Followed Markets pressed', () => {
+    renderWithProfile();
+    fireEvent.press(screen.getByLabelText('Followed Markets'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/following');
+  });
+
+  it('navigates to activity log when Activity Log pressed', () => {
+    renderWithProfile();
+    fireEvent.press(screen.getByLabelText('Activity Log'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/settings/activity-log');
+  });
+
+  it('navigates to delete account when Delete Account pressed', () => {
+    renderWithProfile();
+    fireEvent.press(screen.getByLabelText('Delete Account'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/settings/delete-account');
   });
 });

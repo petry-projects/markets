@@ -1,13 +1,22 @@
 /**
  * Authentication hook encapsulating Firebase sign-in/sign-out logic.
- * Handles Google and Apple OAuth flows, JWT storage, and auth state.
+ * Handles Google, Apple, and Facebook OAuth flows, JWT storage, and auth state.
  */
 import { useState, useEffect, useCallback } from 'react';
+import { Platform } from 'react-native';
 import auth, { type FirebaseAuthTypes } from '@react-native-firebase/auth';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as AuthSession from 'expo-auth-session';
+import * as WebBrowser from 'expo-web-browser';
 import { storeToken, deleteToken } from '@/lib/tokenStorage';
 import { setAuthToken } from '@/lib/apollo';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const FACEBOOK_APP_ID = process.env.EXPO_PUBLIC_FACEBOOK_APP_ID ?? '';
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '';
+const UAT_BYPASS_AUTH = process.env.EXPO_PUBLIC_UAT_BYPASS_AUTH === 'true';
 
 export type UserRole = 'customer' | 'vendor' | 'manager' | null;
 
@@ -22,6 +31,7 @@ export interface AuthState {
 export interface AuthActions {
   signInWithGoogle: () => Promise<void>;
   signInWithApple: () => Promise<void>;
+  signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -34,6 +44,17 @@ async function persistToken(user: FirebaseAuthTypes.User): Promise<string> {
   await storeToken(idToken);
   setAuthToken(idToken);
   return idToken;
+}
+
+/**
+ * UAT bypass: skip OAuth and go straight to signInWithCredential
+ * (the web shim returns a mock user when EXPO_PUBLIC_UAT_BYPASS_AUTH=true).
+ * Returns true if bypass was performed.
+ */
+async function tryUatBypass(): Promise<FirebaseAuthTypes.UserCredential | null> {
+  if (!UAT_BYPASS_AUTH || Platform.OS !== 'web') return null;
+  const credential = auth.GoogleAuthProvider.credential('uat-bypass');
+  return auth().signInWithCredential(credential);
 }
 
 /**
@@ -106,13 +127,47 @@ export function useAuth(): AuthState & AuthActions {
   const signInWithGoogle = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
-      await GoogleSignin.hasPlayServices();
-      const signInResult = await GoogleSignin.signIn();
-      const idToken = signInResult.data?.idToken;
-      if (idToken == null || idToken === '') {
-        throw new Error('No ID token returned from Google Sign-In');
+      const uatResult = await tryUatBypass();
+      if (uatResult) {
+        await persistToken(uatResult.user);
+        return;
       }
-      const credential = auth.GoogleAuthProvider.credential(idToken);
+
+      let credential;
+
+      if (Platform.OS === 'web') {
+        // Web: use expo-auth-session OAuth flow (native Google Sign-In SDK not available)
+        const redirectUri = AuthSession.makeRedirectUri();
+        const request = new AuthSession.AuthRequest({
+          clientId: GOOGLE_WEB_CLIENT_ID,
+          redirectUri,
+          responseType: AuthSession.ResponseType.Token,
+          scopes: ['openid', 'profile', 'email'],
+        });
+        const discovery = { authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth' };
+        const result = await request.promptAsync(discovery);
+
+        if (result.type !== 'success') {
+          throw new Error('Google sign-in was cancelled');
+        }
+
+        const accessToken = result.params['access_token'];
+        if (accessToken == null || accessToken === '') {
+          throw new Error('No access token returned from Google');
+        }
+
+        credential = auth.GoogleAuthProvider.credential(null, accessToken);
+      } else {
+        // Native: use @react-native-google-signin SDK
+        await GoogleSignin.hasPlayServices();
+        const signInResult = await GoogleSignin.signIn();
+        const idToken = signInResult.data?.idToken;
+        if (idToken == null || idToken === '') {
+          throw new Error('No ID token returned from Google Sign-In');
+        }
+        credential = auth.GoogleAuthProvider.credential(idToken);
+      }
+
       const userCredential = await auth().signInWithCredential(credential);
       await persistToken(userCredential.user);
     } catch (error: unknown) {
@@ -127,6 +182,12 @@ export function useAuth(): AuthState & AuthActions {
   const signInWithApple = useCallback(async () => {
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
     try {
+      const uatResult = await tryUatBypass();
+      if (uatResult) {
+        await persistToken(uatResult.user);
+        return;
+      }
+
       const appleCredential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -143,6 +204,46 @@ export function useAuth(): AuthState & AuthActions {
         identityToken,
         appleCredential.authorizationCode ?? undefined,
       );
+      const userCredential = await auth().signInWithCredential(credential);
+      await persistToken(userCredential.user);
+    } catch (error: unknown) {
+      setState((prev) => ({
+        ...prev,
+        isLoading: false,
+        error: toUserFriendlyError(error),
+      }));
+    }
+  }, []);
+
+  const signInWithFacebook = useCallback(async () => {
+    setState((prev) => ({ ...prev, isLoading: true, error: null }));
+    try {
+      const uatResult = await tryUatBypass();
+      if (uatResult) {
+        await persistToken(uatResult.user);
+        return;
+      }
+
+      const redirectUri = AuthSession.makeRedirectUri();
+      const request = new AuthSession.AuthRequest({
+        clientId: FACEBOOK_APP_ID,
+        redirectUri,
+        responseType: AuthSession.ResponseType.Token,
+        scopes: ['public_profile', 'email'],
+      });
+      const discovery = { authorizationEndpoint: 'https://www.facebook.com/v19.0/dialog/oauth' };
+      const result = await request.promptAsync(discovery);
+
+      if (result.type !== 'success') {
+        throw new Error('Facebook sign-in was cancelled');
+      }
+
+      const accessToken = result.params['access_token'];
+      if (accessToken == null || accessToken === '') {
+        throw new Error('No access token returned from Facebook');
+      }
+
+      const credential = auth.FacebookAuthProvider.credential(accessToken);
       const userCredential = await auth().signInWithCredential(credential);
       await persistToken(userCredential.user);
     } catch (error: unknown) {
@@ -184,6 +285,7 @@ export function useAuth(): AuthState & AuthActions {
     ...state,
     signInWithGoogle,
     signInWithApple,
+    signInWithFacebook,
     signOut,
     clearError,
   };

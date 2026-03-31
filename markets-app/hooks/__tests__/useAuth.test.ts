@@ -230,10 +230,6 @@ describe('useAuth', () => {
   // Test case 1.2.15: Facebook sign-in calls OAuth flow and exchanges credential
   it('signInWithFacebook calls auth session and exchanges credential', async () => {
     const { result } = renderHook(() => useAuth());
-    const AuthSessionMock = require('expo-auth-session') as {
-      startAsync: jest.Mock;
-      makeRedirectUri: jest.Mock;
-    };
     const authMock = require('@react-native-firebase/auth') as {
       default: { FacebookAuthProvider: { credential: jest.Mock } };
     };
@@ -242,7 +238,7 @@ describe('useAuth', () => {
       await result.current.signInWithFacebook();
     });
 
-    expect(AuthSessionMock.startAsync).toHaveBeenCalled();
+    expect(mockPromptAsync).toHaveBeenCalled();
     expect(authMock.default.FacebookAuthProvider.credential).toHaveBeenCalledWith(
       'fb-access-token',
     );
@@ -250,8 +246,7 @@ describe('useAuth', () => {
 
   // Test case 1.2.16: Facebook sign-in handles errors gracefully
   it('signInWithFacebook handles cancelled flow', async () => {
-    const AuthSessionMock = require('expo-auth-session') as { startAsync: jest.Mock };
-    AuthSessionMock.startAsync.mockResolvedValueOnce({ type: 'dismiss' });
+    mockPromptAsync.mockResolvedValueOnce({ type: 'dismiss' });
 
     const { result } = renderHook(() => useAuth());
 
@@ -264,8 +259,7 @@ describe('useAuth', () => {
   });
 
   it('signInWithFacebook handles network error', async () => {
-    const AuthSessionMock = require('expo-auth-session') as { startAsync: jest.Mock };
-    AuthSessionMock.startAsync.mockRejectedValueOnce(new Error('network error'));
+    mockPromptAsync.mockRejectedValueOnce(new Error('network error'));
 
     const { result } = renderHook(() => useAuth());
 
@@ -278,8 +272,7 @@ describe('useAuth', () => {
 
   it('signInWithGoogle handles errors gracefully', async () => {
     if (Platform.OS === 'web') {
-      const AuthSessionMock = require('expo-auth-session') as { startAsync: jest.Mock };
-      AuthSessionMock.startAsync.mockResolvedValueOnce({ type: 'dismiss' });
+      mockPromptAsync.mockResolvedValueOnce({ type: 'dismiss' });
     } else {
       const { GoogleSignin } = require('@react-native-google-signin/google-signin') as {
         GoogleSignin: { signIn: jest.Mock };

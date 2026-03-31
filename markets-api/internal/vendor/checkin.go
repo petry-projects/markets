@@ -17,10 +17,10 @@ const (
 )
 
 var (
-	ErrAlreadyCheckedIn    = errors.New("vendor is already checked in at this market")
-	ErrConflictCheckIn     = errors.New("vendor is already checked in at another market")
-	ErrCheckInNotFound     = errors.New("check-in not found")
-	ErrNotCheckedIn        = errors.New("vendor is not currently checked in")
+	ErrAlreadyCheckedIn       = errors.New("vendor is already checked in at this market")
+	ErrConflictCheckIn        = errors.New("vendor is already checked in at another market")
+	ErrCheckInNotFound        = errors.New("check-in not found")
+	ErrNotCheckedIn           = errors.New("vendor is not currently checked in")
 	ErrInvalidExceptionReason = errors.New("exception reason is required")
 )
 

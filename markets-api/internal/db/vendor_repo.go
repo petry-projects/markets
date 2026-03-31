@@ -33,7 +33,7 @@ func (r *PgVendorRepository) CreateVendor(ctx context.Context, v *vendor.VendorR
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", v.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
@@ -74,7 +74,7 @@ func (r *PgVendorRepository) UpdateVendor(ctx context.Context, v *vendor.VendorR
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", v.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
@@ -169,7 +169,7 @@ func (r *PgVendorRepository) CreateProduct(ctx context.Context, p *vendor.Produc
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Look up user_id from vendor for audit
 	var userID string
@@ -210,7 +210,7 @@ func (r *PgVendorRepository) UpdateProduct(ctx context.Context, p *vendor.Produc
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Look up user_id from vendor for audit
 	var userID string
@@ -305,7 +305,7 @@ func (r *PgVendorRepository) DeleteProduct(ctx context.Context, id domain.Produc
 	if err != nil {
 		return fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	// Look up user_id from vendor for audit
 	var userID string

@@ -32,7 +32,7 @@ func (h *Handler) Handle(ctx context.Context, event events.Event) error {
 	case events.VendorCheckedIn:
 		topic := fmt.Sprintf("market-%s", e.MarketID)
 		title := "Vendor Checked In"
-		body := fmt.Sprintf("A vendor has checked in at the market")
+		body := "A vendor has checked in at the market"
 		data := map[string]string{
 			"vendor_id": e.VendorID,
 			"market_id": e.MarketID,

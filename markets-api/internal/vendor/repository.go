@@ -40,6 +40,21 @@ type Repository interface {
 
 	// GetVendorMarketDates returns roster entries for a vendor (by user ID, since vendor_roster references users).
 	GetVendorMarketDates(ctx context.Context, userID domain.UserID) ([]VendorMarketDateRow, error)
+
+	// CreateCheckIn inserts a new check-in record.
+	CreateCheckIn(ctx context.Context, c *CheckInRecord) (*CheckInRecord, error)
+
+	// UpdateCheckIn persists changes to a check-in record (status, checked_out_at, exception_reason).
+	UpdateCheckIn(ctx context.Context, c *CheckInRecord) (*CheckInRecord, error)
+
+	// FindCheckInByID returns a check-in by its ID.
+	FindCheckInByID(ctx context.Context, id domain.CheckInID) (*CheckInRecord, error)
+
+	// FindActiveCheckInsByVendor returns all active (status=checked_in) check-ins for a vendor.
+	FindActiveCheckInsByVendor(ctx context.Context, vendorID domain.VendorID) ([]*CheckInRecord, error)
+
+	// FindCheckInsByVendor returns all check-ins for a vendor (for the Vendor.checkIns field).
+	FindCheckInsByVendor(ctx context.Context, vendorID domain.VendorID) ([]*CheckInRecord, error)
 }
 
 // MarketSearchRow is a database result for market search queries.

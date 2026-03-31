@@ -12,7 +12,8 @@ const UAT_BYPASS =
   process.env &&
   process.env.EXPO_PUBLIC_UAT_BYPASS_AUTH === 'true';
 
-const UAT_ROLE = (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_UAT_ROLE) || 'customer';
+const UAT_ROLE =
+  (typeof process !== 'undefined' && process.env && process.env.EXPO_PUBLIC_UAT_ROLE) || 'customer';
 
 let authStateListener = null;
 

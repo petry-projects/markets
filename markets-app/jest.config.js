@@ -53,11 +53,7 @@ module.exports = {
     // bridge so component/screen tests (app/, components/) cannot run on web.
     // Only pure-logic and hook tests run here.
     mergePreset(getWebPreset(), {
-      testPathIgnorePatterns: [
-        '/node_modules/',
-        '<rootDir>/app/',
-        '<rootDir>/components/',
-      ],
+      testPathIgnorePatterns: ['/node_modules/', '<rootDir>/app/', '<rootDir>/components/'],
     }),
   ],
 };

@@ -281,6 +281,7 @@ func TestRoleEnforcement_ManagerCanCheckInOnBehalf(t *testing.T) {
 		if rec := recover(); rec != nil {
 			// Nil pointer dereference is expected when VendorRepo is nil.
 			// The key assertion is that we got past the role check.
+			_ = rec
 		}
 	}()
 
@@ -314,7 +315,7 @@ func TestRoleEnforcement_CustomerCallingAddMarketSchedule_Forbidden(t *testing.T
 	ctx := contextWithRole("customer")
 
 	_, err := r.Mutation().AddMarketSchedule(ctx, model.AddScheduleInput{
-		MarketID:  "m1",
+		MarketID:     "m1",
 		ScheduleType: model.ScheduleTypeRecurring, DayOfWeek: int32Ptr(1),
 		StartTime: "08:00",
 		EndTime:   "14:00",

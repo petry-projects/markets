@@ -774,7 +774,6 @@ func TestMyMarkets_NonManager_Forbidden(t *testing.T) {
 
 type mockVendorRepoForMarket struct {
 	vendors  []*vendor.VendorRecord
-	products []*vendor.ProductRecord
 	checkIns []*vendor.CheckInRecord
 }
 
@@ -1076,4 +1075,3 @@ func TestMarketUpdates_Success(t *testing.T) {
 		t.Errorf("expected 0 updates from empty repo, got %d", len(result))
 	}
 }
-

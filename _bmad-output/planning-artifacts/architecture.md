@@ -198,7 +198,7 @@ markets-api/
 ### Decision Priority Analysis
 
 **Critical Decisions (Block Implementation):**
-- Social-only authentication (Google + Apple Sign-In) via Firebase Auth
+- Social-only authentication (Google + Apple + Facebook Sign-In) via Firebase Auth
 - Role stored as Firebase custom claim; market-scope resolved from Cloud SQL at runtime
 - GraphQL schema split by domain (6 schema files)
 - Firebase Realtime for status propagation (not GraphQL subscriptions)
@@ -253,7 +253,7 @@ audit_log            # Append-only audit entries (immutable)
 | Decision | Choice | Rationale |
 |---|---|---|
 | **Auth provider** | Firebase Authentication | GCP-native; social providers; JWT-based |
-| **Auth methods** | Google Sign-In + Apple Sign-In only | No passwords. Simplifies auth flow, eliminates password reset/credential storage. Apple Sign-In required for iOS App Store compliance when offering social login |
+| **Auth methods** | Google Sign-In + Apple Sign-In + Facebook Login | No passwords. Simplifies auth flow, eliminates password reset/credential storage. Apple Sign-In required for iOS App Store compliance when offering social login. Facebook Login broadens sign-in options across all platforms (FR45) |
 | **Role storage** | Firebase custom claim (`role: "customer" \| "vendor" \| "manager"`) | Set via Firebase Admin SDK in Go when role is assigned; read from JWT in middleware |
 | **Market-scope** | Resolved from Cloud SQL at runtime (not in JWT) | Market assignments are dynamic and potentially numerous; querying DB avoids stale JWT claims |
 | **Auth middleware** | Go HTTP middleware validates Firebase JWT on every request | Extracts user ID + role from token; attaches to request context for resolver access |
@@ -264,7 +264,7 @@ audit_log            # Append-only audit entries (immutable)
 **Auth Flow:**
 
 ```
-1. User taps "Sign in with Google" or "Sign in with Apple"
+1. User taps "Sign in with Google", "Sign in with Apple", or "Sign in with Facebook"
 2. Firebase Auth SDK handles OAuth flow → returns Firebase JWT
 3. JWT stored in expo-secure-store
 4. Apollo Client attaches JWT as Authorization: Bearer header on all requests
@@ -770,7 +770,7 @@ app/
 │   ├── +not-found.tsx
 │   ├── (auth)/
 │   │   ├── _layout.tsx
-│   │   ├── login.tsx                # Social login (Google + Apple)
+│   │   ├── login.tsx                # Social login (Google + Apple + Facebook)
 │   │   └── role-select.tsx          # First-login role selection
 │   ├── (customer)/
 │   │   ├── _layout.tsx              # Customer tab bar
@@ -933,7 +933,7 @@ app/
 - Cloud Scheduler → Backend: HTTPS POST to internal endpoint
 
 **External Integrations:**
-- Firebase Auth: OAuth provider (Google, Apple) — client SDK for flow, Admin SDK for JWT validation
+- Firebase Auth: OAuth provider (Google, Apple, Facebook) — client SDK for flow, Admin SDK for JWT validation
 - Google Maps / Location: `expo-location` for radius search coordinates (client-side)
 - App Store / Play Store: EAS Submit for distribution
 

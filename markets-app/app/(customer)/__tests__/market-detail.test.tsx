@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import MarketDetailScreen from '../market/[id]';
@@ -48,17 +48,27 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
+const mockPush = jest.fn();
+const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(() => ({ id: 'market-1' })),
-  useRouter: jest.fn(() => ({ push: jest.fn(), back: jest.fn() })),
+  useRouter: jest.fn(() => ({ push: mockPush, back: mockBack })),
 }));
 
 jest.mock('@/components/customer/VendorDiscoverCard', () => {
-  const { Text } = require('react-native') as typeof import('react-native');
+  const { Pressable, Text } = require('react-native') as typeof import('react-native');
   return {
     __esModule: true,
-    default: ({ vendor }: { vendor: { businessName: string } }) => (
-      <Text testID="vendor-card">{vendor.businessName}</Text>
+    default: ({
+      vendor,
+      onPress,
+    }: {
+      vendor: { id: string; businessName: string };
+      onPress?: (id: string) => void;
+    }) => (
+      <Pressable testID="vendor-card" onPress={() => onPress?.(vendor.id)}>
+        <Text>{vendor.businessName}</Text>
+      </Pressable>
     ),
   };
 });
@@ -94,6 +104,41 @@ jest.mock('@/hooks/useFollow', () => ({
   useFollow: () => ({ toggleFollow: jest.fn(), loading: false }),
 }));
 
+/** Helper to set up mockUseQuery for the three queries the screen makes. */
+function setupQueries(options: {
+  market?: Record<string, unknown> | null;
+  marketLoading?: boolean;
+  vendors?: Record<string, unknown>[];
+  vendorsLoading?: boolean;
+  profile?: Record<string, unknown> | null;
+}) {
+  const callCount = { current: 0 };
+  mockUseQuery.mockImplementation(() => {
+    callCount.current += 1;
+    if (callCount.current === 1) {
+      return {
+        data: options.market !== undefined ? { market: options.market } : null,
+        loading: options.marketLoading ?? false,
+      };
+    }
+    if (callCount.current === 2) {
+      return {
+        data: { discoverVendors: options.vendors ?? [] },
+        loading: options.vendorsLoading ?? false,
+      };
+    }
+    return {
+      data: {
+        myCustomerProfile: options.profile ?? {
+          followedMarkets: [],
+          followedVendors: [],
+        },
+      },
+      loading: false,
+    };
+  });
+}
+
 describe('MarketDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -120,43 +165,93 @@ describe('MarketDetailScreen', () => {
   });
 
   it('renders market details when data is available', () => {
-    const callCount = { current: 0 };
-    mockUseQuery.mockImplementation(() => {
-      callCount.current += 1;
-      if (callCount.current === 1) {
-        return {
-          data: {
-            market: {
-              id: 'market-1',
-              name: 'Downtown Market',
-              address: '123 Main St',
-              description: 'A great market',
-              schedule: [],
-            },
-          },
-          loading: false,
-        };
-      }
-      if (callCount.current === 2) {
-        return {
-          data: { discoverVendors: [] },
-          loading: false,
-        };
-      }
-      return {
-        data: {
-          myCustomerProfile: {
-            followedMarkets: [],
-            followedVendors: [],
-          },
-        },
-        loading: false,
-      };
+    setupQueries({
+      market: {
+        id: 'market-1',
+        name: 'Downtown Market',
+        address: '123 Main St',
+        description: 'A great market',
+        schedule: [],
+      },
     });
 
     render(<MarketDetailScreen />);
     expect(screen.getByText('Downtown Market')).toBeTruthy();
     expect(screen.getByText('123 Main St')).toBeTruthy();
     expect(screen.getByText('A great market')).toBeTruthy();
+  });
+
+  it('navigates back when back button pressed', () => {
+    setupQueries({
+      market: {
+        id: 'market-1',
+        name: 'Downtown Market',
+        address: '123 Main St',
+        description: '',
+        schedule: [],
+      },
+    });
+
+    render(<MarketDetailScreen />);
+    fireEvent.press(screen.getByLabelText('Go back'));
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('navigates to vendor detail when vendor card pressed', () => {
+    setupQueries({
+      market: {
+        id: 'market-1',
+        name: 'Downtown Market',
+        address: '123 Main St',
+        description: '',
+        schedule: [],
+      },
+      vendors: [{ id: 'vendor-42', businessName: 'Fresh Farms', products: [], checkIns: [] }],
+    });
+
+    render(<MarketDetailScreen />);
+    fireEvent.press(screen.getByTestId('vendor-card'));
+    expect(mockPush).toHaveBeenCalledWith('/(customer)/vendor/vendor-42');
+  });
+
+  it('shows follow button with correct state for followed market', () => {
+    setupQueries({
+      market: {
+        id: 'market-1',
+        name: 'Downtown Market',
+        address: '123 Main St',
+        description: '',
+        schedule: [],
+      },
+      profile: {
+        followedMarkets: [{ id: 'market-1' }],
+        followedVendors: [],
+      },
+    });
+
+    render(<MarketDetailScreen />);
+    expect(screen.getByTestId('follow-button')).toBeTruthy();
+    expect(screen.getByText('Following')).toBeTruthy();
+  });
+
+  it('renders vendor cards when vendors are available', () => {
+    setupQueries({
+      market: {
+        id: 'market-1',
+        name: 'Downtown Market',
+        address: '123 Main St',
+        description: '',
+        schedule: [],
+      },
+      vendors: [
+        { id: 'v1', businessName: 'Farm A', products: [], checkIns: [] },
+        { id: 'v2', businessName: 'Farm B', products: [], checkIns: [] },
+      ],
+    });
+
+    render(<MarketDetailScreen />);
+    expect(screen.getAllByTestId('vendor-card')).toHaveLength(2);
+    expect(screen.getByText('Farm A')).toBeTruthy();
+    expect(screen.getByText('Farm B')).toBeTruthy();
   });
 });

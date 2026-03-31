@@ -244,10 +244,10 @@ So that backend development can begin and all write operations are logged from t
 **And** CI workflow exists for backend (lint, test, build)
 **And** a test runner is configured (Go test) and a smoke test passes
 
-### Story 1.2: Google & Apple Sign-In Authentication
+### Story 1.2: Google, Apple & Facebook Sign-In Authentication
 
 As a user (any role),
-I want to sign in using my Google or Apple account,
+I want to sign in using my Google, Apple, or Facebook account,
 So that I can access the app without managing a password.
 
 **Acceptance Criteria:**
@@ -261,6 +261,11 @@ So that I can access the app without managing a password.
 **Given** an unauthenticated user on the login screen
 **When** they tap "Sign in with Apple"
 **Then** the Firebase Auth Apple OAuth flow completes and a Firebase JWT is returned
+**And** the JWT is stored in expo-secure-store
+
+**Given** an unauthenticated user on the login screen
+**When** they tap "Sign in with Facebook"
+**Then** the Firebase Auth Facebook OAuth flow completes and a Firebase JWT is returned
 **And** the JWT is stored in expo-secure-store
 
 **Given** a valid Firebase JWT in the Authorization header

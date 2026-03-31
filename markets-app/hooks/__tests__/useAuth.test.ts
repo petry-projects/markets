@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-native';
+import { Platform } from 'react-native';
 
 import { useAuth } from '../useAuth';
 
@@ -25,6 +26,7 @@ jest.mock('@react-native-firebase/auth', () => {
   });
   authFn.GoogleAuthProvider = { credential: jest.fn().mockReturnValue('google-cred') };
   authFn.AppleAuthProvider = { credential: jest.fn().mockReturnValue('apple-cred') };
+  authFn.FacebookAuthProvider = { credential: jest.fn().mockReturnValue('facebook-cred') };
   return { __esModule: true, default: authFn };
 });
 
@@ -41,6 +43,24 @@ jest.mock('expo-apple-authentication', () => ({
     authorizationCode: 'apple-auth-code',
   }),
   AppleAuthenticationScope: { FULL_NAME: 0, EMAIL: 1 },
+}));
+
+const mockPromptAsync = jest.fn().mockResolvedValue({
+  type: 'success',
+  params: { access_token: 'fb-access-token' },
+});
+
+jest.mock('expo-auth-session', () => ({
+  makeRedirectUri: jest.fn().mockReturnValue('https://redirect.test'),
+  AuthRequest: jest.fn().mockImplementation(() => ({
+    promptAsync: mockPromptAsync,
+  })),
+  ResponseType: { Token: 'token' },
+  DiscoveryDocument: {},
+}));
+
+jest.mock('expo-web-browser', () => ({
+  maybeCompleteAuthSession: jest.fn(),
 }));
 
 const mockStoreToken = jest.fn().mockResolvedValue(undefined);
@@ -157,19 +177,44 @@ describe('useAuth', () => {
     expect(result.current.isAuthenticated).toBe(true);
   });
 
-  it('signInWithGoogle calls google signin flow', async () => {
-    const { result } = renderHook(() => useAuth());
-    const { GoogleSignin } = require('@react-native-google-signin/google-signin') as {
-      GoogleSignin: { hasPlayServices: jest.Mock; signIn: jest.Mock };
-    };
+  if (Platform.OS === 'web') {
+    it('signInWithGoogle uses auth session on web', async () => {
+      // Provide a Google-specific response for promptAsync
+      mockPromptAsync.mockResolvedValueOnce({
+        type: 'success',
+        params: { access_token: 'google-web-access-token' },
+      });
 
-    await act(async () => {
-      await result.current.signInWithGoogle();
+      const { result } = renderHook(() => useAuth());
+      const authMock = require('@react-native-firebase/auth') as {
+        default: { GoogleAuthProvider: { credential: jest.Mock } };
+      };
+
+      await act(async () => {
+        await result.current.signInWithGoogle();
+      });
+
+      expect(mockPromptAsync).toHaveBeenCalled();
+      expect(authMock.default.GoogleAuthProvider.credential).toHaveBeenCalledWith(
+        null,
+        'google-web-access-token',
+      );
     });
+  } else {
+    it('signInWithGoogle calls native google signin flow', async () => {
+      const { result } = renderHook(() => useAuth());
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin') as {
+        GoogleSignin: { hasPlayServices: jest.Mock; signIn: jest.Mock };
+      };
 
-    expect(GoogleSignin.hasPlayServices).toHaveBeenCalled();
-    expect(GoogleSignin.signIn).toHaveBeenCalled();
-  });
+      await act(async () => {
+        await result.current.signInWithGoogle();
+      });
+
+      expect(GoogleSignin.hasPlayServices).toHaveBeenCalled();
+      expect(GoogleSignin.signIn).toHaveBeenCalled();
+    });
+  }
 
   it('signInWithApple calls apple authentication flow', async () => {
     const { result } = renderHook(() => useAuth());
@@ -182,11 +227,58 @@ describe('useAuth', () => {
     expect(AppleAuth.signInAsync).toHaveBeenCalled();
   });
 
-  it('signInWithGoogle handles errors gracefully', async () => {
-    const { GoogleSignin } = require('@react-native-google-signin/google-signin') as {
-      GoogleSignin: { signIn: jest.Mock };
+  // Test case 1.2.15: Facebook sign-in calls OAuth flow and exchanges credential
+  it('signInWithFacebook calls auth session and exchanges credential', async () => {
+    const { result } = renderHook(() => useAuth());
+    const authMock = require('@react-native-firebase/auth') as {
+      default: { FacebookAuthProvider: { credential: jest.Mock } };
     };
-    GoogleSignin.signIn.mockRejectedValueOnce(new Error('cancelled by user'));
+
+    await act(async () => {
+      await result.current.signInWithFacebook();
+    });
+
+    expect(mockPromptAsync).toHaveBeenCalled();
+    expect(authMock.default.FacebookAuthProvider.credential).toHaveBeenCalledWith(
+      'fb-access-token',
+    );
+  });
+
+  // Test case 1.2.16: Facebook sign-in handles errors gracefully
+  it('signInWithFacebook handles cancelled flow', async () => {
+    mockPromptAsync.mockResolvedValueOnce({ type: 'dismiss' });
+
+    const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      await result.current.signInWithFacebook();
+    });
+
+    expect(result.current.error).toBe('Sign-in was cancelled. Please try again.');
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('signInWithFacebook handles network error', async () => {
+    mockPromptAsync.mockRejectedValueOnce(new Error('network error'));
+
+    const { result } = renderHook(() => useAuth());
+
+    await act(async () => {
+      await result.current.signInWithFacebook();
+    });
+
+    expect(result.current.error).toBe('Network error. Please check your connection and try again.');
+  });
+
+  it('signInWithGoogle handles errors gracefully', async () => {
+    if (Platform.OS === 'web') {
+      mockPromptAsync.mockResolvedValueOnce({ type: 'dismiss' });
+    } else {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin') as {
+        GoogleSignin: { signIn: jest.Mock };
+      };
+      GoogleSignin.signIn.mockRejectedValueOnce(new Error('cancelled by user'));
+    }
 
     const { result } = renderHook(() => useAuth());
 

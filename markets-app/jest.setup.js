@@ -15,6 +15,11 @@ if (typeof globalThis.__ExpoImportMetaRegistry === 'undefined') {
   });
 }
 
+// Ensure global fetch exists for Apollo HttpLink (web/jsdom may not have it)
+if (typeof globalThis.fetch === 'undefined') {
+  globalThis.fetch = () => Promise.resolve(new Response());
+}
+
 // Mock react-native-safe-area-context for NativeWind CSS interop
 jest.mock('react-native-safe-area-context', () => {
   const SafeAreaProvider = ({ children }) => children;

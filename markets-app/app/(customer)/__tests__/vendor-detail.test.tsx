@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import VendorDetailScreen from '../vendor/[id]';
@@ -48,9 +48,11 @@ jest.mock('lucide-react-native', () => {
   };
 });
 
+const mockPush = jest.fn();
+const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
   useLocalSearchParams: jest.fn(() => ({ id: 'vendor-1' })),
-  useRouter: jest.fn(() => ({ push: jest.fn(), back: jest.fn() })),
+  useRouter: jest.fn(() => ({ push: mockPush, back: mockBack })),
 }));
 
 jest.mock('@/components/customer/FollowButton', () => {
@@ -80,6 +82,33 @@ jest.mock('@/hooks/useFollow', () => ({
   useFollow: () => ({ toggleFollow: jest.fn(), loading: false }),
 }));
 
+/** Helper to set up mockUseQuery for the two queries the screen makes. */
+function setupQueries(options: {
+  vendor?: Record<string, unknown> | null;
+  vendorLoading?: boolean;
+  profile?: Record<string, unknown> | null;
+}) {
+  const callCount = { current: 0 };
+  mockUseQuery.mockImplementation(() => {
+    callCount.current += 1;
+    if (callCount.current === 1) {
+      return {
+        data: options.vendor !== undefined ? { vendor: options.vendor } : null,
+        loading: options.vendorLoading ?? false,
+      };
+    }
+    return {
+      data: {
+        myCustomerProfile: options.profile ?? {
+          followedVendors: [],
+          followedMarkets: [],
+        },
+      },
+      loading: false,
+    };
+  });
+}
+
 describe('VendorDetailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -106,42 +135,24 @@ describe('VendorDetailScreen', () => {
   });
 
   it('renders vendor details when data is available', () => {
-    const callCount = { current: 0 };
-    mockUseQuery.mockImplementation(() => {
-      callCount.current += 1;
-      if (callCount.current === 1) {
-        return {
-          data: {
-            vendor: {
-              id: 'vendor-1',
-              businessName: 'Farm Fresh',
-              description: 'Organic produce',
-              instagramHandle: 'farmfresh',
-              websiteURL: 'https://farmfresh.com',
-              checkIns: [],
-              products: [
-                {
-                  id: 'p1',
-                  name: 'Tomatoes',
-                  category: 'Produce',
-                  description: 'Red tomatoes',
-                  isAvailable: true,
-                },
-              ],
-            },
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: 'Organic produce',
+        instagramHandle: 'farmfresh',
+        websiteURL: 'https://farmfresh.com',
+        checkIns: [],
+        products: [
+          {
+            id: 'p1',
+            name: 'Tomatoes',
+            category: 'Produce',
+            description: 'Red tomatoes',
+            isAvailable: true,
           },
-          loading: false,
-        };
-      }
-      return {
-        data: {
-          myCustomerProfile: {
-            followedVendors: [],
-            followedMarkets: [],
-          },
-        },
-        loading: false,
-      };
+        ],
+      },
     });
 
     render(<VendorDetailScreen />);
@@ -152,37 +163,116 @@ describe('VendorDetailScreen', () => {
   });
 
   it('renders vendor with active check-in', () => {
-    const callCount = { current: 0 };
-    mockUseQuery.mockImplementation(() => {
-      callCount.current += 1;
-      if (callCount.current === 1) {
-        return {
-          data: {
-            vendor: {
-              id: 'vendor-1',
-              businessName: 'Farm Fresh',
-              description: null,
-              instagramHandle: null,
-              websiteURL: null,
-              checkIns: [{ status: 'CHECKED_IN', id: 'c1' }],
-              products: [],
-            },
-          },
-          loading: false,
-        };
-      }
-      return {
-        data: {
-          myCustomerProfile: {
-            followedVendors: [],
-            followedMarkets: [],
-          },
-        },
-        loading: false,
-      };
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: null,
+        websiteURL: null,
+        checkIns: [{ status: 'CHECKED_IN', id: 'c1' }],
+        products: [],
+      },
     });
 
     render(<VendorDetailScreen />);
     expect(screen.getByText('Currently at market')).toBeTruthy();
+  });
+
+  it('navigates back when back button pressed', () => {
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: null,
+        websiteURL: null,
+        checkIns: [],
+        products: [],
+      },
+    });
+
+    render(<VendorDetailScreen />);
+    fireEvent.press(screen.getByLabelText('Go back'));
+    expect(mockBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows follow state when vendor is followed', () => {
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: null,
+        websiteURL: null,
+        checkIns: [],
+        products: [],
+      },
+      profile: {
+        followedVendors: [{ id: 'vendor-1' }],
+        followedMarkets: [],
+      },
+    });
+
+    render(<VendorDetailScreen />);
+    expect(screen.getByTestId('follow-button')).toBeTruthy();
+    expect(screen.getByText('Following')).toBeTruthy();
+  });
+
+  it('renders product availability badge', () => {
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: null,
+        websiteURL: null,
+        checkIns: [],
+        products: [
+          { id: 'p1', name: 'Tomatoes', category: 'Produce', description: null, isAvailable: true },
+          { id: 'p2', name: 'Corn', category: 'Produce', description: null, isAvailable: false },
+        ],
+      },
+    });
+
+    render(<VendorDetailScreen />);
+    expect(screen.getByText('Available')).toBeTruthy();
+    expect(screen.getByText('Unavailable')).toBeTruthy();
+  });
+
+  it('renders social links when present', () => {
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: 'farmfresh',
+        websiteURL: 'https://farmfresh.com',
+        checkIns: [],
+        products: [],
+      },
+    });
+
+    render(<VendorDetailScreen />);
+    expect(screen.getByText('@farmfresh')).toBeTruthy();
+    expect(screen.getByText('https://farmfresh.com')).toBeTruthy();
+  });
+
+  it('does not render social links when null', () => {
+    setupQueries({
+      vendor: {
+        id: 'vendor-1',
+        businessName: 'Farm Fresh',
+        description: null,
+        instagramHandle: null,
+        websiteURL: null,
+        checkIns: [],
+        products: [],
+      },
+    });
+
+    render(<VendorDetailScreen />);
+    expect(screen.queryByText(/@/)).toBeNull();
+    expect(screen.queryByText(/https?:\/\//)).toBeNull();
   });
 });

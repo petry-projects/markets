@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import type { ReactNode } from 'react';
 
 import MyMarketsScreen from '../markets/index';
@@ -36,9 +36,21 @@ jest.mock('@/components/ui/spinner', () => {
 });
 
 jest.mock('@/components/market/MarketCard', () => {
-  const { Text } = require('react-native') as typeof import('react-native');
+  const { Pressable, Text } = require('react-native') as typeof import('react-native');
   return {
-    MarketCard: ({ name }: { name: string }) => <Text testID="market-card">{name}</Text>,
+    MarketCard: ({
+      name,
+      id,
+      onPress,
+    }: {
+      name: string;
+      id: string;
+      onPress?: (id: string) => void;
+    }) => (
+      <Pressable testID="market-card" onPress={() => onPress?.(id)}>
+        <Text>{name}</Text>
+      </Pressable>
+    ),
   };
 });
 
@@ -104,5 +116,49 @@ describe('MyMarketsScreen', () => {
     render(<MyMarketsScreen />);
     expect(screen.getByText('My Markets')).toBeTruthy();
     expect(screen.getByText('Downtown Market')).toBeTruthy();
+  });
+
+  it('navigates to create market when Create button pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myMarkets: [
+          { id: 'm1', name: 'Downtown Market', address: '123 Main', description: 'A market' },
+        ],
+      },
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+    render(<MyMarketsScreen />);
+    fireEvent.press(screen.getByLabelText('Create new market'));
+    expect(mockPush).toHaveBeenCalledWith('/(manager)/markets/create');
+  });
+
+  it('navigates to edit market when market card pressed', () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        myMarkets: [
+          { id: 'm1', name: 'Downtown Market', address: '123 Main', description: 'A market' },
+        ],
+      },
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+    render(<MyMarketsScreen />);
+    fireEvent.press(screen.getByTestId('market-card'));
+    expect(mockPush).toHaveBeenCalledWith('/(manager)/markets/m1/edit');
+  });
+
+  it('navigates to create from empty state', () => {
+    mockUseQuery.mockReturnValue({
+      data: { myMarkets: [] },
+      loading: false,
+      error: null,
+      refetch: jest.fn(),
+    });
+    render(<MyMarketsScreen />);
+    fireEvent.press(screen.getByLabelText('Create your first market'));
+    expect(mockPush).toHaveBeenCalledWith('/(manager)/markets/create');
   });
 });

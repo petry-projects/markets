@@ -252,6 +252,14 @@ func (m *mockMarketRepo) FindRosterEntryByID(_ context.Context, id string) (*mar
 
 func (m *mockMarketRepo) DeleteRosterEntry(_ context.Context, _ string) error { return nil }
 
+func (m *mockMarketRepo) CreateMarketUpdate(_ context.Context, u *market.MarketUpdateRecord) (*market.MarketUpdateRecord, error) {
+	return u, nil
+}
+
+func (m *mockMarketRepo) FindMarketUpdates(_ context.Context, _ domain.MarketID, _, _ int32) ([]*market.MarketUpdateRecord, error) {
+	return []*market.MarketUpdateRecord{}, nil
+}
+
 func (m *mockMarketRepo) GetRosterByDate(_ context.Context, _ domain.MarketID, _ string) ([]*market.RosterEntry, error) {
 	return []*market.RosterEntry{}, nil
 }

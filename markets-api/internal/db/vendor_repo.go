@@ -415,15 +415,15 @@ func (r *PgVendorRepository) SearchMarkets(ctx context.Context, searchTerm strin
 	return results, nil
 }
 
-// GetVendorMarketDates returns roster entries for a vendor.
-func (r *PgVendorRepository) GetVendorMarketDates(ctx context.Context, vendorID domain.VendorID) ([]vendor.VendorMarketDateRow, error) {
+// GetVendorMarketDates returns roster entries for a vendor (by user ID, since vendor_roster references users).
+func (r *PgVendorRepository) GetVendorMarketDates(ctx context.Context, userID domain.UserID) ([]vendor.VendorMarketDateRow, error) {
 	query := `
 		SELECT vr.id, vr.market_id, vr.date::text, vr.status
 		FROM vendor_roster vr
 		WHERE vr.vendor_id = $1 AND vr.deleted_at IS NULL
 		ORDER BY vr.market_id, vr.date
 	`
-	rows, err := r.pool.Query(ctx, query, vendorID.String())
+	rows, err := r.pool.Query(ctx, query, userID.String())
 	if err != nil {
 		return nil, fmt.Errorf("get vendor market dates: %w", err)
 	}

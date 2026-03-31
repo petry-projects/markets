@@ -7,9 +7,13 @@ package graph
 
 import (
 	"context"
-	"fmt"
+	"errors"
+	"log/slog"
 
 	"github.com/petry-projects/markets-api/internal/auth"
+	"github.com/petry-projects/markets-api/internal/customer"
+	"github.com/petry-projects/markets-api/internal/domain"
+	"github.com/petry-projects/markets-api/internal/gqlerr"
 	"github.com/petry-projects/markets-api/internal/graph/model"
 )
 
@@ -18,7 +22,33 @@ func (r *mutationResolver) Follow(ctx context.Context, targetType model.FollowTa
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: Follow - follow"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.CustomerRepo == nil {
+		return nil, gqlerr.Internal("customer repository not configured")
+	}
+
+	// Get or create customer profile
+	cust, err := r.getOrCreateCustomer(ctx, domain.UserID(uid))
+	if err != nil {
+		return nil, err
+	}
+
+	dbTargetType := followTargetTypeToDB(targetType)
+	follow, err := r.CustomerRepo.Follow(ctx, cust.ID, dbTargetType, targetID)
+	if err != nil {
+		if errors.Is(err, customer.ErrAlreadyFollowing) {
+			return nil, gqlerr.Conflict("already following this target")
+		}
+		slog.Error("failed to follow", "error", err, "userID", uid, "targetType", dbTargetType, "targetID", targetID)
+		return nil, gqlerr.Internal("failed to follow")
+	}
+
+	return followToModel(follow), nil
 }
 
 // Unfollow is the resolver for the unfollow field.
@@ -26,7 +56,36 @@ func (r *mutationResolver) Unfollow(ctx context.Context, targetType model.Follow
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return false, err
 	}
-	panic(fmt.Errorf("not implemented: Unfollow - unfollow"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return false, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.CustomerRepo == nil {
+		return false, gqlerr.Internal("customer repository not configured")
+	}
+
+	cust, err := r.CustomerRepo.FindCustomerByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		if errors.Is(err, customer.ErrCustomerNotFound) {
+			return false, gqlerr.NewError(gqlerr.CodeValidationError, "customer profile not found")
+		}
+		slog.Error("failed to find customer", "error", err, "userID", uid)
+		return false, gqlerr.Internal("failed to find customer profile")
+	}
+
+	dbTargetType := followTargetTypeToDB(targetType)
+	err = r.CustomerRepo.Unfollow(ctx, cust.ID, dbTargetType, targetID)
+	if err != nil {
+		if errors.Is(err, customer.ErrNotFollowing) {
+			return false, gqlerr.NewError(gqlerr.CodeValidationError, "not following this target")
+		}
+		slog.Error("failed to unfollow", "error", err, "userID", uid, "targetType", dbTargetType, "targetID", targetID)
+		return false, gqlerr.Internal("failed to unfollow")
+	}
+
+	return true, nil
 }
 
 // MyCustomerProfile is the resolver for the myCustomerProfile field.
@@ -34,7 +93,32 @@ func (r *queryResolver) MyCustomerProfile(ctx context.Context) (*model.CustomerP
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: MyCustomerProfile - myCustomerProfile"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.CustomerRepo == nil {
+		return nil, gqlerr.Internal("customer repository not configured")
+	}
+
+	cust, err := r.CustomerRepo.FindCustomerByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		if errors.Is(err, customer.ErrCustomerNotFound) {
+			return nil, nil // No profile yet, return null
+		}
+		slog.Error("failed to find customer", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to load customer profile")
+	}
+
+	follows, err := r.CustomerRepo.GetFollows(ctx, cust.ID)
+	if err != nil {
+		slog.Error("failed to get follows", "error", err, "customerID", cust.ID)
+		return nil, gqlerr.Internal("failed to load follows")
+	}
+
+	return customerToModel(cust, follows), nil
 }
 
 // DiscoverMarkets is the resolver for the discoverMarkets field.
@@ -42,7 +126,45 @@ func (r *queryResolver) DiscoverMarkets(ctx context.Context, latitude float64, l
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: DiscoverMarkets - discoverMarkets"))
+
+	if r.CustomerRepo == nil {
+		return nil, gqlerr.Internal("customer repository not configured")
+	}
+
+	lim := int32(20)
+	if limit != nil {
+		lim = *limit
+	}
+	off := int32(0)
+	if offset != nil {
+		off = *offset
+	}
+
+	discovered, err := r.CustomerRepo.DiscoverMarkets(ctx, latitude, longitude, radiusMiles, lim, off)
+	if err != nil {
+		slog.Error("failed to discover markets", "error", err)
+		return nil, gqlerr.Internal("failed to discover markets")
+	}
+
+	// Load full market records for each discovered market
+	var markets []*model.Market
+	for _, dm := range discovered {
+		if r.MarketRepo == nil {
+			continue
+		}
+		rec, err := r.MarketRepo.FindMarketByID(ctx, dm.ID)
+		if err != nil {
+			slog.Error("failed to load market", "error", err, "marketID", dm.ID)
+			continue
+		}
+		markets = append(markets, marketToModel(rec))
+	}
+
+	if markets == nil {
+		markets = []*model.Market{}
+	}
+
+	return markets, nil
 }
 
 // DiscoverVendors is the resolver for the discoverVendors field.
@@ -50,7 +172,36 @@ func (r *queryResolver) DiscoverVendors(ctx context.Context, marketID string, li
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: DiscoverVendors - discoverVendors"))
+
+	if r.CustomerRepo == nil {
+		return nil, gqlerr.Internal("customer repository not configured")
+	}
+
+	lim := int32(20)
+	if limit != nil {
+		lim = *limit
+	}
+	off := int32(0)
+	if offset != nil {
+		off = *offset
+	}
+
+	discovered, err := r.CustomerRepo.DiscoverVendors(ctx, domain.MarketID(marketID), lim, off)
+	if err != nil {
+		slog.Error("failed to discover vendors", "error", err, "marketID", marketID)
+		return nil, gqlerr.Internal("failed to discover vendors")
+	}
+
+	var vendors []*model.Vendor
+	for _, dv := range discovered {
+		vendors = append(vendors, discoveredVendorToModel(dv))
+	}
+
+	if vendors == nil {
+		vendors = []*model.Vendor{}
+	}
+
+	return vendors, nil
 }
 
 // FollowingFeed is the resolver for the followingFeed field.
@@ -58,5 +209,48 @@ func (r *queryResolver) FollowingFeed(ctx context.Context, limit *int32, offset 
 	if err := auth.RequireRole(ctx, "customer"); err != nil {
 		return nil, err
 	}
-	panic(fmt.Errorf("not implemented: FollowingFeed - followingFeed"))
+
+	uid := auth.UserIDFromContext(ctx)
+	if uid == "" {
+		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	}
+
+	if r.CustomerRepo == nil {
+		return nil, gqlerr.Internal("customer repository not configured")
+	}
+
+	cust, err := r.CustomerRepo.FindCustomerByUserID(ctx, domain.UserID(uid))
+	if err != nil {
+		if errors.Is(err, customer.ErrCustomerNotFound) {
+			return []*model.FollowingFeedItem{}, nil
+		}
+		slog.Error("failed to find customer", "error", err, "userID", uid)
+		return nil, gqlerr.Internal("failed to find customer profile")
+	}
+
+	lim := int32(20)
+	if limit != nil {
+		lim = *limit
+	}
+	off := int32(0)
+	if offset != nil {
+		off = *offset
+	}
+
+	items, err := r.CustomerRepo.GetFollowingFeed(ctx, cust.ID, lim, off)
+	if err != nil {
+		slog.Error("failed to get following feed", "error", err, "customerID", cust.ID)
+		return nil, gqlerr.Internal("failed to load following feed")
+	}
+
+	var result []*model.FollowingFeedItem
+	for _, item := range items {
+		result = append(result, feedItemToModel(item))
+	}
+
+	if result == nil {
+		result = []*model.FollowingFeedItem{}
+	}
+
+	return result, nil
 }

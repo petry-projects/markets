@@ -1,0 +1,30 @@
+query Vendor($id: ID!) {
+  vendor(id: $id) {
+    id
+    userID
+    businessName
+    description
+    contactInfo
+    instagramHandle
+    facebookURL
+    websiteURL
+    imageURL
+    products {
+      id
+      name
+      description
+      category
+      imageURL
+      isAvailable
+    }
+    checkIns {
+      id
+      marketID
+      status
+      checkedInAt
+      checkedOutAt
+    }
+    createdAt
+    updatedAt
+  }
+}

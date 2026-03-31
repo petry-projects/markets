@@ -1,0 +1,14 @@
+query DiscoverVendors($marketID: ID!, $limit: Int, $offset: Int) {
+  discoverVendors(marketID: $marketID, limit: $limit, offset: $offset) {
+    id
+    businessName
+    description
+    imageURL
+    products {
+      id
+      name
+      category
+      isAvailable
+    }
+  }
+}

@@ -28,7 +28,7 @@ func (r *PgCustomerRepository) CreateCustomer(ctx context.Context, c *customer.C
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", c.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
@@ -96,7 +96,7 @@ func (r *PgCustomerRepository) UpdateCustomer(ctx context.Context, c *customer.C
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }()
 
 	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", c.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)

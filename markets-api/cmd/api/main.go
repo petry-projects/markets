@@ -13,6 +13,8 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/extension"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
+	firebaseauth "firebase.google.com/go/v4/auth"
+	"firebase.google.com/go/v4/messaging"
 	"github.com/petry-projects/markets-api/internal/audit"
 	"github.com/petry-projects/markets-api/internal/auth"
 	"github.com/petry-projects/markets-api/internal/config"
@@ -44,23 +46,38 @@ func main() {
 	}
 	defer pool.Close()
 
-	// Initialize Firebase
+	// Initialize Firebase (optional in development — server starts without it)
+	var authClient *firebaseauth.Client
+	var msgClient *messaging.Client
+
 	fbApp, err := fbinit.InitApp(ctx, cfg.FirebaseCredentials)
 	if err != nil {
-		slog.Error("failed to initialize Firebase", "error", err)
-		os.Exit(1)
-	}
+		if cfg.Environment == "development" {
+			slog.Warn("Firebase unavailable — auth middleware disabled", "error", err)
+		} else {
+			slog.Error("failed to initialize Firebase", "error", err)
+			os.Exit(1)
+		}
+	} else {
+		authClient, err = fbinit.AuthClient(ctx, fbApp)
+		if err != nil {
+			if cfg.Environment == "development" {
+				slog.Warn("Firebase Auth unavailable — auth middleware disabled", "error", err)
+			} else {
+				slog.Error("failed to create Firebase auth client", "error", err)
+				os.Exit(1)
+			}
+		}
 
-	authClient, err := fbinit.AuthClient(ctx, fbApp)
-	if err != nil {
-		slog.Error("failed to create Firebase auth client", "error", err)
-		os.Exit(1)
-	}
-
-	msgClient, err := fbinit.MessagingClient(ctx, fbApp)
-	if err != nil {
-		slog.Error("failed to create Firebase messaging client", "error", err)
-		os.Exit(1)
+		msgClient, err = fbinit.MessagingClient(ctx, fbApp)
+		if err != nil {
+			if cfg.Environment == "development" {
+				slog.Warn("Firebase Messaging unavailable — notifications disabled", "error", err)
+			} else {
+				slog.Error("failed to create Firebase messaging client", "error", err)
+				os.Exit(1)
+			}
+		}
 	}
 
 	// Create repositories
@@ -74,9 +91,13 @@ func main() {
 	// Create event bus and subscribe handlers
 	eventBus := events.NewBus()
 
-	fcmAdapter := &fbinit.FCMAdapter{Client: msgClient}
-	notifyHandler := notify.NewHandlerWithRepo(fcmAdapter, notifyRepo)
-	eventBus.Subscribe(notifyHandler)
+	if msgClient != nil {
+		fcmAdapter := &fbinit.FCMAdapter{Client: msgClient}
+		notifyHandler := notify.NewHandlerWithRepo(fcmAdapter, notifyRepo)
+		eventBus.Subscribe(notifyHandler)
+	} else {
+		slog.Warn("FCM notifications disabled — no messaging client")
+	}
 
 	// Firebase Realtime DB — use a no-op client if not configured
 	// (Realtime DB requires additional setup beyond the Admin SDK)
@@ -112,8 +133,14 @@ func main() {
 	})
 
 	// GraphQL endpoint — with middleware chain
-	authMW := auth.NewMiddleware(authClient)
-	gqlWithMiddleware := middleware.CORS(middleware.RequestLogger(authMW(gqlHandler)))
+	var gqlWithMiddleware http.Handler
+	if authClient != nil {
+		authMW := auth.NewMiddleware(authClient)
+		gqlWithMiddleware = middleware.CORS(middleware.RequestLogger(authMW(gqlHandler)))
+	} else {
+		slog.Warn("Auth middleware disabled — all requests are unauthenticated")
+		gqlWithMiddleware = middleware.CORS(middleware.RequestLogger(gqlHandler))
+	}
 	mux.Handle("POST /query", gqlWithMiddleware)
 
 	// Also handle OPTIONS for CORS preflight on /query

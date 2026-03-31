@@ -35,7 +35,7 @@
 # - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
 
 generated: 2026-03-28
-last_updated: 2026-03-30  # Epic 9 done — server bootstrap + integration tests
+last_updated: 2026-03-31  # All epics merged; remaining: test coverage, DEV infra, E2E
 project: markets
 project_key: NOKEY
 tracking_system: file-system
@@ -122,3 +122,35 @@ development_status:
   9-3-integration-tests: done
   9-4-ci-enhancements: done
   epic-9-retrospective: optional
+
+# ══════════════════════════════════════════════════════
+# REMAINING WORK — Post-Epic Implementation
+# ══════════════════════════════════════════════════════
+# All 9 epics are feature-complete. The items below track
+# infrastructure, test coverage, and deployment readiness.
+
+remaining_work:
+
+  # ── DEV Infrastructure ──
+  dev-infra-docker-compose: in-progress        # docker-compose.yml for local Postgres + API
+  dev-infra-dockerfile-go-version: in-progress  # Dockerfile still references Go 1.23, needs 1.26
+  dev-infra-migration-runner: in-progress       # golang-migrate wired into startup or compose
+  dev-infra-firebase-emulator: backlog          # Firebase Emulator Suite for authenticated testing
+
+  # ── CI Improvements ──
+  ci-integration-tests-db-service: backlog      # Add Postgres service to GitHub Actions for integration tests
+  ci-coverage-threshold-increase: backlog       # Raise from 15% → 60% as tests are added
+
+  # ── E2E Test Framework ──
+  e2e-framework-setup: backlog                  # Playwright or Detox setup (62 scenarios planned in test-design-qa.md)
+  e2e-critical-path-tests: backlog              # P0 tests: auth, audit, soft-delete, conflict detection
+
+  # ── Test Coverage Gaps (28 FRs with zero test coverage) ──
+  # See _bmad-output/test-artifacts/test-coverage-gaps.md for full FR mapping
+  test-gap-epic2-market-admin: backlog          # FR10a-e: invitations, rules, cancel, roster (5 FRs)
+  test-gap-epic3-vendor-join: backlog           # FR13/13a: market join requests (1 FR)
+  test-gap-epic4-market-day: backlog            # FR15-16, FR33: exception status, availability, freshness (3 FRs)
+  test-gap-epic5-dashboard: backlog             # FR18, FR20, FR20a-d, FR44: confirmation, propagation, attribution (6 FRs)
+  test-gap-epic6-discovery: backlog             # FR22-23, FR28: vendor search, product intent, alternatives (3 FRs)
+  test-gap-epic7-notifications: backlog         # FR30-31, FR43: status notifications, manager alerts, prefs (3 FRs)
+  test-gap-epic8-governance: backlog            # FR38-41a, FR42a: recovery, deletion, 2-mgr min, role switch (7 FRs)

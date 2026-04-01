@@ -42,6 +42,13 @@ func SoftDeleteFilter(alias string) string {
 	return "deleted_at IS NULL"
 }
 
+// SetActorSQL is the parameterized SQL to set the audit session variable.
+// Uses set_config() instead of SET LOCAL because SET doesn't support $1 parameters.
+const SetActorSQL = "SELECT set_config('app.actor_id', $1, true)"
+
+// SetRoleSQL sets the actor role session variable.
+const SetRoleSQL = "SELECT set_config('app.actor_role', $1, true)"
+
 // PaginationClause returns a SQL LIMIT/OFFSET clause.
 //
 // Safety: limit and offset are Go int values formatted with %d, which guarantees

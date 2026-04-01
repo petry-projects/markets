@@ -1,2 +1,7 @@
+# Environment variables (secrets — never commit)
+.env
+.env.local
+.env.*.local
+
 # Claude Code machine-specific project memory
 .claude/projects/-home-*

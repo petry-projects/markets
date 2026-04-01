@@ -27,6 +27,46 @@ env:
   SERVICE_NAME: markets-api-dev
 
 jobs:
+  infra:
+    name: Apply Infrastructure
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Init
+        working-directory: infra
+        run: terraform init -backend-config=environments/dev/backend.hcl
+
+      - name: Terraform Apply
+        working-directory: infra
+        env:
+          TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
+          TF_VAR_api_image: ${{ env.REGISTRY }}/api:latest
+          TF_VAR_google_oauth_client_id: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          TF_VAR_google_oauth_client_secret: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          TF_VAR_apple_oauth_client_id: ${{ secrets.APPLE_OAUTH_CLIENT_ID }}
+          TF_VAR_apple_oauth_client_secret: ${{ secrets.APPLE_OAUTH_CLIENT_SECRET }}
+          TF_VAR_facebook_oauth_app_id: ${{ secrets.FACEBOOK_OAUTH_APP_ID }}
+          TF_VAR_facebook_oauth_app_secret: ${{ secrets.FACEBOOK_OAUTH_APP_SECRET }}
+        run: |
+          terraform plan \
+            -var-file=environments/dev/terraform.tfvars \
+            -out=tfplan
+          terraform apply -auto-approve tfplan
+
   build-push:
     name: Build & Push Image
     runs-on: ubuntu-latest
@@ -97,7 +137,7 @@ jobs:
 
   deploy:
     name: Deploy to Cloud Run
-    needs: [build-push, migrate]
+    needs: [infra, build-push, migrate]
     runs-on: ubuntu-latest
     permissions:
       contents: read

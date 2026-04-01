@@ -27,9 +27,9 @@ func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateM
 		return nil, err
 	}
 
-	uid := auth.UserIDFromContext(ctx)
-	if uid == "" {
-		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	userID, err := r.resolveUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	// Build domain aggregate with validation
@@ -59,16 +59,16 @@ func (r *mutationResolver) CreateMarket(ctx context.Context, input model.CreateM
 	}
 
 	// Persist market and assign creating manager atomically
-	created, err := r.MarketRepo.CreateMarket(ctx, m, domain.UserID(uid), input.RecoveryContact)
+	created, err := r.MarketRepo.CreateMarket(ctx, m, userID, input.RecoveryContact)
 	if err != nil {
-		slog.Error("failed to create market", "error", err, "userID", uid)
+		slog.Error("failed to create market", "error", err, "userID", userID)
 		return nil, gqlerr.Internal("failed to create market")
 	}
 
 	// Publish domain event after successful DB write
 	r.EventBus.Publish(ctx, events.MarketCreated{
 		MarketID:  created.ID.String(),
-		ManagerID: uid,
+		ManagerID: userID.String(),
 	})
 
 	return marketToModel(created), nil
@@ -739,14 +739,14 @@ func (r *queryResolver) MyMarkets(ctx context.Context) ([]*model.Market, error) 
 		return nil, err
 	}
 
-	uid := auth.UserIDFromContext(ctx)
-	if uid == "" {
-		return nil, gqlerr.NewError(gqlerr.CodeUnauthenticated, "authentication required")
+	userID, err := r.resolveUserID(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	markets, err := r.MarketRepo.FindMarketsByManagerID(ctx, domain.UserID(uid))
+	markets, err := r.MarketRepo.FindMarketsByManagerID(ctx, userID)
 	if err != nil {
-		slog.Error("failed to find markets by manager", "error", err, "userID", uid)
+		slog.Error("failed to find markets by manager", "error", err, "userID", userID)
 		return nil, gqlerr.Internal("failed to load markets")
 	}
 

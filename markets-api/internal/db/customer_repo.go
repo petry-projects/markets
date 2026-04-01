@@ -30,10 +30,10 @@ func (r *PgCustomerRepository) CreateCustomer(ctx context.Context, c *customer.C
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", c.UserID.String()); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, c.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'customer'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "customer"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 
@@ -98,10 +98,10 @@ func (r *PgCustomerRepository) UpdateCustomer(ctx context.Context, c *customer.C
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", c.UserID.String()); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, c.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'customer'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "customer"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 

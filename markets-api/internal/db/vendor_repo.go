@@ -35,10 +35,10 @@ func (r *PgVendorRepository) CreateVendor(ctx context.Context, v *vendor.VendorR
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", v.UserID.String()); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, v.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'vendor'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "vendor"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 
@@ -76,10 +76,10 @@ func (r *PgVendorRepository) UpdateVendor(ctx context.Context, v *vendor.VendorR
 	}
 	defer func() { _ = tx.Rollback(ctx) }()
 
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", v.UserID.String()); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, v.UserID.String()); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'vendor'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "vendor"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 
@@ -176,10 +176,10 @@ func (r *PgVendorRepository) CreateProduct(ctx context.Context, p *vendor.Produc
 	if err := tx.QueryRow(ctx, "SELECT user_id FROM vendors WHERE id = $1", p.VendorID.String()).Scan(&userID); err != nil {
 		return nil, fmt.Errorf("lookup vendor user_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", userID); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, userID); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'vendor'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "vendor"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 
@@ -217,10 +217,10 @@ func (r *PgVendorRepository) UpdateProduct(ctx context.Context, p *vendor.Produc
 	if err := tx.QueryRow(ctx, "SELECT v.user_id FROM vendors v JOIN vendor_products vp ON vp.vendor_id = v.id WHERE vp.id = $1", p.ID.String()).Scan(&userID); err != nil {
 		return nil, fmt.Errorf("lookup vendor user_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", userID); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, userID); err != nil {
 		return nil, fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'vendor'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "vendor"); err != nil {
 		return nil, fmt.Errorf("set actor_role: %w", err)
 	}
 
@@ -315,10 +315,10 @@ func (r *PgVendorRepository) DeleteProduct(ctx context.Context, id domain.Produc
 		}
 		return fmt.Errorf("lookup vendor user_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_id = $1", userID); err != nil {
+	if _, err := tx.Exec(ctx, SetActorSQL, userID); err != nil {
 		return fmt.Errorf("set actor_id: %w", err)
 	}
-	if _, err := tx.Exec(ctx, "SET LOCAL app.actor_role = 'vendor'"); err != nil {
+	if _, err := tx.Exec(ctx, SetRoleSQL, "vendor"); err != nil {
 		return fmt.Errorf("set actor_role: %w", err)
 	}
 

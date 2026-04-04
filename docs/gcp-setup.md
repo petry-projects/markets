@@ -185,7 +185,7 @@ Or push to `main` — the deploy workflow runs automatically on push to main whe
 
 ```bash
 API_URL=$(terraform output -raw api_url)
-curl -sf "${API_URL}/healthz"
+curl -sf "${API_URL}/health"
 # → {"status":"ok"}
 ```
 

@@ -29,6 +29,7 @@ env:
 jobs:
   infra:
     name: Apply Infrastructure
+    needs: build-push
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -48,13 +49,13 @@ jobs:
 
       - name: Terraform Init
         working-directory: infra
-        run: terraform init -backend-config=environments/dev/backend.hcl
+        run: terraform init -backend-config=environments/${{ github.event.inputs.environment || 'dev' }}/backend.hcl
 
       - name: Terraform Apply
         working-directory: infra
         env:
           TF_VAR_db_password: ${{ secrets.DB_PASSWORD }}
-          TF_VAR_api_image: ${{ env.REGISTRY }}/api:latest
+          TF_VAR_api_image: ${{ needs.build-push.outputs.image }}
           TF_VAR_google_oauth_client_id: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
           TF_VAR_google_oauth_client_secret: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
           TF_VAR_apple_oauth_client_id: ${{ secrets.APPLE_OAUTH_CLIENT_ID }}
@@ -63,7 +64,7 @@ jobs:
           TF_VAR_facebook_oauth_app_secret: ${{ secrets.FACEBOOK_OAUTH_APP_SECRET }}
         run: |
           terraform plan \
-            -var-file=environments/dev/terraform.tfvars \
+            -var-file=environments/${{ github.event.inputs.environment || 'dev' }}/terraform.tfvars \
             -out=tfplan
           terraform apply -auto-approve tfplan
 

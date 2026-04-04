@@ -2,7 +2,6 @@
 Audit log query types (read-only, no mutations).
 Audit writes are handled exclusively by PostgreSQL triggers.
 """
-
 type AuditLogEntry {
   id: ID!
   actorID: String!
@@ -35,10 +34,14 @@ input AuditLogFilter {
 Root Query type - extended by each domain schema.
 """
 type Query {
-  """Query audit log entries (Manager only, read-only). Scoped to managed markets."""
+  """
+  Query audit log entries (Manager only, read-only). Scoped to managed markets.
+  """
   auditLog(filter: AuditLogFilter, limit: Int, offset: Int): AuditLogConnection!
 
-  """Get the authenticated user's activity history."""
+  """
+  Get the authenticated user's activity history.
+  """
   myActivityLog(startDate: String, endDate: String, limit: Int, offset: Int): [AuditLogEntry!]!
 }
 
@@ -47,14 +50,15 @@ Root Mutation type - extended by each domain schema.
 No audit mutations exist; audit writes are DB trigger-only.
 """
 type Mutation {
-  """Placeholder - no audit mutations. Audit writes are PostgreSQL trigger-only."""
+  """
+  Placeholder - no audit mutations. Audit writes are PostgreSQL trigger-only.
+  """
   _empty: Boolean
 }
 """
 Authentication types and mutations.
 Handles Firebase Auth login/signup flows and role management.
 """
-
 enum Role {
   CUSTOMER
   VENDOR
@@ -96,27 +100,36 @@ type CreateUserPayload {
 }
 
 extend type Query {
-  """Returns the currently authenticated user."""
+  """
+  Returns the currently authenticated user.
+  """
   me: User!
 }
 
 extend type Mutation {
-  """Login with a Firebase ID token."""
+  """
+  Login with a Firebase ID token.
+  """
   login(input: LoginInput!): AuthPayload!
 
-  """Sign up a new user with a Firebase ID token and role selection."""
+  """
+  Sign up a new user with a Firebase ID token and role selection.
+  """
   signUp(input: SignUpInput!): AuthPayload!
 
-  """Create user record after role selection. Requires authentication."""
+  """
+  Create user record after role selection. Requires authentication.
+  """
   createUser(input: CreateUserInput!): CreateUserPayload!
 
-  """Delete the authenticated user's account (soft-delete). Customer/Vendor only."""
+  """
+  Delete the authenticated user's account (soft-delete). Customer/Vendor only.
+  """
   deleteAccount: Boolean!
 }
 """
 Customer profile, follows, and discovery queries.
 """
-
 type CustomerProfile {
   id: ID!
   userID: ID!
@@ -141,16 +154,30 @@ enum FollowTargetType {
 }
 
 extend type Query {
-  """Get the authenticated customer's profile."""
+  """
+  Get the authenticated customer's profile.
+  """
   myCustomerProfile: CustomerProfile
 
-  """Discover markets near a location."""
-  discoverMarkets(latitude: Float!, longitude: Float!, radiusMiles: Float!, limit: Int, offset: Int): [Market!]!
+  """
+  Discover markets near a location.
+  """
+  discoverMarkets(
+    latitude: Float!
+    longitude: Float!
+    radiusMiles: Float!
+    limit: Int
+    offset: Int
+  ): [Market!]!
 
-  """Discover vendors at a specific market."""
+  """
+  Discover vendors at a specific market.
+  """
   discoverVendors(marketID: ID!, limit: Int, offset: Int): [Vendor!]!
 
-  """Get the customer's followed vendors and markets activity feed."""
+  """
+  Get the customer's followed vendors and markets activity feed.
+  """
   followingFeed(limit: Int, offset: Int): [FollowingFeedItem!]!
 }
 
@@ -164,17 +191,20 @@ type FollowingFeedItem {
 }
 
 extend type Mutation {
-  """Follow a vendor or market (Customer only)."""
+  """
+  Follow a vendor or market (Customer only).
+  """
   follow(targetType: FollowTargetType!, targetID: ID!): Follow!
 
-  """Unfollow a vendor or market (Customer only)."""
+  """
+  Unfollow a vendor or market (Customer only).
+  """
   unfollow(targetType: FollowTargetType!, targetID: ID!): Boolean!
 }
 """
 Market profile, schedule, and roster types.
 Managed by Market Managers.
 """
-
 type Market {
   id: ID!
   name: String!
@@ -231,14 +261,20 @@ type MarketSchedule {
   id: ID!
   marketID: ID!
   scheduleType: ScheduleType!
-  """Day of week (0=Sunday, 6=Saturday). Only for RECURRING."""
+  """
+  Day of week (0=Sunday, 6=Saturday). Only for RECURRING.
+  """
   dayOfWeek: Int
   frequency: String
   seasonStart: String
   seasonEnd: String
-  """Event name. Only for ONE_TIME."""
+  """
+  Event name. Only for ONE_TIME.
+  """
   eventName: String
-  """Specific date. Only for ONE_TIME."""
+  """
+  Specific date. Only for ONE_TIME.
+  """
   eventDate: String
   startTime: String!
   endTime: String!
@@ -293,7 +329,9 @@ enum InvitationStatus {
   DECLINED
 }
 
-"""Live attendance view for a market on a given day (Story 5.1)."""
+"""
+Live attendance view for a market on a given day (Story 5.1).
+"""
 type MarketAttendance {
   marketID: ID!
   date: String!
@@ -304,7 +342,9 @@ type MarketAttendance {
   vendors: [VendorAttendanceEntry!]!
 }
 
-"""A vendor's attendance status for the attendance dashboard."""
+"""
+A vendor's attendance status for the attendance dashboard.
+"""
 type VendorAttendanceEntry {
   vendorID: ID!
   vendor: Vendor!
@@ -312,7 +352,9 @@ type VendorAttendanceEntry {
   checkIn: CheckIn
 }
 
-"""A market-wide operational update (Story 5.4)."""
+"""
+A market-wide operational update (Story 5.4).
+"""
 type MarketUpdate {
   id: ID!
   marketID: ID!
@@ -321,7 +363,9 @@ type MarketUpdate {
   createdAt: String!
 }
 
-"""Planning view for a future market date."""
+"""
+Planning view for a future market date.
+"""
 type MarketDayPlan {
   date: String!
   vendorCount: Int!
@@ -339,7 +383,9 @@ input CreateMarketInput {
   contactPhone: String
   socialLinks: SocialLinksInput
   imageURL: String
-  """Recovery contact for the creating manager (email or phone). Required per FR41b."""
+  """
+  Recovery contact for the creating manager (email or phone). Required per FR41b.
+  """
   recoveryContact: String!
 }
 
@@ -389,105 +435,186 @@ input UpdateScheduleInput {
 }
 
 extend type Query {
-  """Get a market by ID."""
+  """
+  Get a market by ID.
+  """
   market(id: ID!): Market
 
-  """List all markets, optionally filtered by proximity."""
-  markets(latitude: Float, longitude: Float, radiusMiles: Float, limit: Int, offset: Int): [Market!]!
+  """
+  List all markets, optionally filtered by proximity.
+  """
+  markets(
+    latitude: Float
+    longitude: Float
+    radiusMiles: Float
+    limit: Int
+    offset: Int
+  ): [Market!]!
 
-  """List markets managed by the current user (Manager only)."""
+  """
+  List markets managed by the current user (Manager only).
+  """
   myMarkets: [Market!]!
 
-  """Get the vendor roster for a market on a specific date (Manager only)."""
+  """
+  Get the vendor roster for a market on a specific date (Manager only).
+  """
   marketRoster(marketID: ID!, date: String!): [VendorRosterEntry!]!
 
-  """Get planning view for a range of future market dates (Manager only)."""
+  """
+  Get planning view for a range of future market dates (Manager only).
+  """
   marketDayPlans(marketID: ID!, startDate: String!, endDate: String!): [MarketDayPlan!]!
 
-  """List invitations for the current vendor."""
+  """
+  List invitations for the current vendor.
+  """
   myInvitations: [VendorInvitation!]!
 
-  """Search vendors by name or category (Manager only)."""
+  """
+  Search vendors by name or category (Manager only).
+  """
   searchVendors(query: String!, category: String, limit: Int): [Vendor!]!
 
-  """Get live attendance for a market on a given date (Manager only, Story 5.1)."""
+  """
+  Get live attendance for a market on a given date (Manager only, Story 5.1).
+  """
   marketAttendance(marketID: ID!, date: String!): MarketAttendance!
 
-  """List market updates for a market (any authenticated role)."""
+  """
+  List market updates for a market (any authenticated role).
+  """
   marketUpdates(marketID: ID!, limit: Int, offset: Int): [MarketUpdate!]!
 }
 
 extend type Mutation {
-  """Create a new market (Manager only)."""
+  """
+  Create a new market (Manager only).
+  """
   createMarket(input: CreateMarketInput!): Market!
 
-  """Update an existing market (Manager only)."""
+  """
+  Update an existing market (Manager only).
+  """
   updateMarket(id: ID!, input: UpdateMarketInput!): Market!
 
-  """Add a schedule entry to a market (Manager only)."""
+  """
+  Add a schedule entry to a market (Manager only).
+  """
   addMarketSchedule(input: AddScheduleInput!): MarketSchedule!
 
-  """Update a schedule entry (Manager only)."""
+  """
+  Update a schedule entry (Manager only).
+  """
   updateMarketSchedule(id: ID!, input: UpdateScheduleInput!): MarketSchedule!
 
-  """Delete a schedule entry (Manager only)."""
+  """
+  Delete a schedule entry (Manager only).
+  """
   deleteMarketSchedule(id: ID!): Boolean!
 
-  """Update market rules text (Manager only)."""
+  """
+  Update market rules text (Manager only).
+  """
   updateMarketRules(marketID: ID!, rulesText: String!): Market!
 
-  """Send a notification to all rostered vendors (Manager only)."""
+  """
+  Send a notification to all rostered vendors (Manager only).
+  """
   sendVendorNotification(marketID: ID!, message: String!): VendorNotification!
 
-  """Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled."""
-  cancelMarket(marketID: ID!, reason: CancellationReason!, message: String, endEarly: Boolean): Market!
+  """
+  Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled.
+  """
+  cancelMarket(
+    marketID: ID!
+    reason: CancellationReason!
+    message: String
+    endEarly: Boolean
+  ): Market!
 
-  """Reactivate a cancelled market (Manager only)."""
+  """
+  Reactivate a cancelled market (Manager only).
+  """
   reactivateMarket(marketID: ID!): Market!
 
-  """Invite a vendor to a market (Manager only)."""
-  inviteVendor(marketID: ID!, vendorID: ID!, targetDates: [String!], message: String): VendorInvitation!
+  """
+  Invite a vendor to a market (Manager only).
+  """
+  inviteVendor(
+    marketID: ID!
+    vendorID: ID!
+    targetDates: [String!]
+    message: String
+  ): VendorInvitation!
 
-  """Respond to an invitation (Vendor only)."""
+  """
+  Respond to an invitation (Vendor only).
+  """
   respondToInvitation(invitationID: ID!, accept: Boolean!): VendorInvitation!
 
-  """Request to join a market roster for specific dates (Vendor only)."""
-  requestToJoinMarket(marketID: ID!, dates: [String!]!, acknowledgeRules: Boolean!): [VendorRosterEntry!]!
+  """
+  Request to join a market roster for specific dates (Vendor only).
+  """
+  requestToJoinMarket(
+    marketID: ID!
+    dates: [String!]!
+    acknowledgeRules: Boolean!
+  ): [VendorRosterEntry!]!
 
-  """Approve a vendor roster request (Manager only)."""
+  """
+  Approve a vendor roster request (Manager only).
+  """
   approveRosterRequest(id: ID!): VendorRosterEntry!
 
-  """Reject a vendor roster request with optional reason (Manager only)."""
+  """
+  Reject a vendor roster request with optional reason (Manager only).
+  """
   rejectRosterRequest(id: ID!, reason: String): VendorRosterEntry!
 
-  """Add a vendor directly to the roster (Manager only)."""
+  """
+  Add a vendor directly to the roster (Manager only).
+  """
   addVendorToRoster(marketID: ID!, vendorID: ID!, dates: [String!]!): [VendorRosterEntry!]!
 
-  """Remove a vendor from the roster (Manager only)."""
+  """
+  Remove a vendor from the roster (Manager only).
+  """
   removeVendorFromRoster(id: ID!): Boolean!
 
-  """Approve or reject a vendor roster request (Manager only). @deprecated Use approveRosterRequest/rejectRosterRequest instead."""
+  """
+  Approve or reject a vendor roster request (Manager only). @deprecated Use approveRosterRequest/rejectRosterRequest instead.
+  """
   updateRosterStatus(id: ID!, status: VendorRosterStatus!): VendorRosterEntry!
 
-  """Assign a manager to a market (Admin only)."""
+  """
+  Assign a manager to a market (Admin only).
+  """
   assignManager(managerID: ID!, marketID: ID!): Boolean!
 
-  """Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers."""
+  """
+  Remove a manager from a market (Admin only). Fails if it would leave fewer than 2 managers.
+  """
   removeManager(managerID: ID!, marketID: ID!): Boolean!
 
-  """Publish a market-wide operational update (Manager only, Story 5.4)."""
+  """
+  Publish a market-wide operational update (Manager only, Story 5.4).
+  """
   publishMarketUpdate(marketID: ID!, message: String!): MarketUpdate!
 
-  """Request attendance confirmation from unconfirmed vendors (Manager only, Story 5.2)."""
+  """
+  Request attendance confirmation from unconfirmed vendors (Manager only, Story 5.2).
+  """
   requestVendorConfirmation(marketID: ID!, vendorIDs: [ID!]!): Boolean!
 
-  """Batch auto-checkout for all checked-in vendors at a market (internal/scheduler, Story 5.5)."""
+  """
+  Batch auto-checkout for all checked-in vendors at a market (internal/scheduler, Story 5.5).
+  """
   autoCheckoutMarket(marketID: ID!): Int!
 }
 """
 Notification preferences and device token management.
 """
-
 type NotificationPreferences {
   id: ID!
   userID: ID!
@@ -514,7 +641,9 @@ enum Platform {
   WEB
 }
 
-"""Activity feed item representing an action in the system."""
+"""
+Activity feed item representing an action in the system.
+"""
 type ActivityFeedItem {
   id: ID!
   actorID: ID!
@@ -526,7 +655,9 @@ type ActivityFeedItem {
   createdAt: String!
 }
 
-"""Input for updating notification preferences."""
+"""
+Input for updating notification preferences.
+"""
 input UpdateNotificationPreferencesInput {
   pushEnabled: Boolean
   vendorCheckInAlerts: Boolean
@@ -541,30 +672,43 @@ input RegisterDeviceTokenInput {
 }
 
 extend type Query {
-  """Get the authenticated user's notification preferences."""
+  """
+  Get the authenticated user's notification preferences.
+  """
   myNotificationPreferences: NotificationPreferences
 
-  """Get the authenticated user's activity feed."""
+  """
+  Get the authenticated user's activity feed.
+  """
   activityFeed(limit: Int, offset: Int): [ActivityFeedItem!]!
 
-  """Get a market's activity feed (manager only)."""
+  """
+  Get a market's activity feed (manager only).
+  """
   marketActivityFeed(marketID: ID!, limit: Int, offset: Int): [ActivityFeedItem!]!
 }
 
 extend type Mutation {
-  """Update notification preferences."""
-  updateNotificationPreferences(input: UpdateNotificationPreferencesInput!): NotificationPreferences!
+  """
+  Update notification preferences.
+  """
+  updateNotificationPreferences(
+    input: UpdateNotificationPreferencesInput!
+  ): NotificationPreferences!
 
-  """Register a device token for push notifications."""
+  """
+  Register a device token for push notifications.
+  """
   registerDeviceToken(input: RegisterDeviceTokenInput!): DeviceToken!
 
-  """Remove a device token."""
+  """
+  Remove a device token.
+  """
   removeDeviceToken(tokenID: ID!): Boolean!
 }
 """
 Vendor profile, product catalog, and check-in types.
 """
-
 type Vendor {
   id: ID!
   userID: ID!
@@ -608,7 +752,9 @@ enum CheckInStatus {
   EXCEPTION
 }
 
-"""A market association for a vendor, showing status and committed dates."""
+"""
+A market association for a vendor, showing status and committed dates.
+"""
 type VendorMarketAssociation {
   market: Market!
   status: VendorMarketJoinStatus!
@@ -616,7 +762,9 @@ type VendorMarketAssociation {
   nextUpcomingDate: String
 }
 
-"""A single date commitment for a vendor at a market."""
+"""
+A single date commitment for a vendor at a market.
+"""
 type VendorMarketDate {
   id: ID!
   date: String!
@@ -630,12 +778,16 @@ enum VendorMarketJoinStatus {
   MIXED
 }
 
-"""Search result for market browsing."""
+"""
+Search result for market browsing.
+"""
 type MarketSearchResult {
   market: Market!
   distanceKm: Float
   vendorCount: Int!
-  """The vendor's current status at this market, if any."""
+  """
+  The vendor's current status at this market, if any.
+  """
   vendorStatus: VendorMarketJoinStatus
 }
 
@@ -676,7 +828,9 @@ input UpdateProductInput {
 
 input CheckInInput {
   marketID: ID!
-  """Optional vendor ID for manager check-in on behalf (Story 5.3)."""
+  """
+  Optional vendor ID for manager check-in on behalf (Story 5.3).
+  """
   vendorID: ID
 }
 
@@ -686,7 +840,9 @@ input ExceptionStatusInput {
 }
 
 input SearchMarketsInput {
-  """Search term for market name, city, or category."""
+  """
+  Search term for market name, city, or category.
+  """
   searchTerm: String
   latitude: Float
   longitude: Float
@@ -696,44 +852,70 @@ input SearchMarketsInput {
 }
 
 extend type Query {
-  """Get a vendor by ID."""
+  """
+  Get a vendor by ID.
+  """
   vendor(id: ID!): Vendor
 
-  """Get vendor profile for the authenticated vendor user."""
+  """
+  Get vendor profile for the authenticated vendor user.
+  """
   myVendorProfile: Vendor
 
-  """List products for a vendor."""
+  """
+  List products for a vendor.
+  """
   vendorProducts(vendorID: ID!): [Product!]!
 
-  """Search available markets for a vendor to join."""
+  """
+  Search available markets for a vendor to join.
+  """
   searchMarketsToJoin(input: SearchMarketsInput!): [MarketSearchResult!]!
 
-  """List markets the current vendor is associated with."""
+  """
+  List markets the current vendor is associated with.
+  """
   vendorMarkets: [VendorMarketAssociation!]!
 }
 
 extend type Mutation {
-  """Create a vendor profile (Vendor only)."""
+  """
+  Create a vendor profile (Vendor only).
+  """
   createVendorProfile(input: CreateVendorProfileInput!): Vendor!
 
-  """Update vendor profile (Vendor only)."""
+  """
+  Update vendor profile (Vendor only).
+  """
   updateVendorProfile(input: UpdateVendorProfileInput!): Vendor!
 
-  """Create a product (Vendor only)."""
+  """
+  Create a product (Vendor only).
+  """
   createProduct(input: CreateProductInput!): Product!
 
-  """Update a product (Vendor only)."""
+  """
+  Update a product (Vendor only).
+  """
   updateProduct(id: ID!, input: UpdateProductInput!): Product!
 
-  """Delete a product (soft delete, Vendor only)."""
+  """
+  Delete a product (soft delete, Vendor only).
+  """
   deleteProduct(id: ID!): Boolean!
 
-  """Check in to a market (Vendor only)."""
+  """
+  Check in to a market (Vendor only).
+  """
   checkIn(input: CheckInInput!): CheckIn!
 
-  """Check out from a market (Vendor only)."""
+  """
+  Check out from a market (Vendor only).
+  """
   checkOut(checkInID: ID!): CheckIn!
 
-  """Report an exception status (Vendor only)."""
+  """
+  Report an exception status (Vendor only).
+  """
   reportException(input: ExceptionStatusInput!): CheckIn!
 }

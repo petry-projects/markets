@@ -376,12 +376,10 @@ output "wif_service_account" {
 
 output "google_web_client_id" {
   value       = var.google_oauth_client_id
-  sensitive   = true
   description = "Google Web Client ID — set as EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in app .env and GitHub secrets"
 }
 
 output "facebook_app_id" {
   value       = var.facebook_oauth_app_id
-  sensitive   = true
   description = "Facebook App ID — set as EXPO_PUBLIC_FACEBOOK_APP_ID in app .env and GitHub secrets"
 }

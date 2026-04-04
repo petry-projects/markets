@@ -1,23 +1,5 @@
 version: 2
 updates:
-  - package-ecosystem: "npm"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 0
-    labels:
-      - "security"
-      - "dependencies"
-
-  - package-ecosystem: "gomod"
-    directory: "/markets-api"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 0
-    labels:
-      - "security"
-      - "dependencies"
-
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

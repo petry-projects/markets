@@ -53,6 +53,44 @@ variable "api_image" {
   description = "Docker image URL for the API (e.g. us-central1-docker.pkg.dev/PROJECT/markets/api:latest)"
 }
 
+# ─── OAuth Provider Variables ───
+
+variable "google_oauth_client_id" {
+  type        = string
+  sensitive   = true
+  description = "Google OAuth 2.0 Web Client ID (from GCP Credentials or auto-created when enabling Google provider)"
+}
+
+variable "google_oauth_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Google OAuth 2.0 Web Client Secret"
+}
+
+variable "apple_oauth_client_id" {
+  type        = string
+  sensitive   = true
+  description = "Apple Services ID for Sign in with Apple"
+}
+
+variable "apple_oauth_client_secret" {
+  type        = string
+  sensitive   = true
+  description = "Apple client secret (signed JWT or key)"
+}
+
+variable "facebook_oauth_app_id" {
+  type        = string
+  sensitive   = true
+  description = "Facebook App ID for Facebook Login"
+}
+
+variable "facebook_oauth_app_secret" {
+  type        = string
+  sensitive   = true
+  description = "Facebook App Secret"
+}
+
 # ─── Enable Required APIs ───
 
 resource "google_project_service" "apis" {
@@ -62,9 +100,52 @@ resource "google_project_service" "apis" {
     "artifactregistry.googleapis.com",
     "secretmanager.googleapis.com",
     "iam.googleapis.com",
+    "identitytoolkit.googleapis.com",
   ])
   service            = each.value
   disable_on_destroy = false
+}
+
+# ─── Firebase / Identity Platform Auth ───
+
+resource "google_identity_platform_config" "auth" {
+  project = var.project_id
+
+  sign_in {
+    allow_duplicate_emails = false
+  }
+
+  depends_on = [google_project_service.apis]
+}
+
+resource "google_identity_platform_default_supported_idp_config" "google" {
+  project       = var.project_id
+  idp_id        = "google.com"
+  client_id     = var.google_oauth_client_id
+  client_secret = var.google_oauth_client_secret
+  enabled       = true
+
+  depends_on = [google_identity_platform_config.auth]
+}
+
+resource "google_identity_platform_default_supported_idp_config" "apple" {
+  project       = var.project_id
+  idp_id        = "apple.com"
+  client_id     = var.apple_oauth_client_id
+  client_secret = var.apple_oauth_client_secret
+  enabled       = true
+
+  depends_on = [google_identity_platform_config.auth]
+}
+
+resource "google_identity_platform_default_supported_idp_config" "facebook" {
+  project       = var.project_id
+  idp_id        = "facebook.com"
+  client_id     = var.facebook_oauth_app_id
+  client_secret = var.facebook_oauth_app_secret
+  enabled       = true
+
+  depends_on = [google_identity_platform_config.auth]
 }
 
 # ─── Artifact Registry ───
@@ -101,7 +182,7 @@ resource "google_sql_database_instance" "markets" {
     }
 
     ip_configuration {
-      ipv4_enabled    = true
+      ipv4_enabled = true
       # Cloud Run connects via Cloud SQL Auth Proxy (unix socket), not IP
     }
 
@@ -291,4 +372,14 @@ output "wif_provider" {
 output "wif_service_account" {
   value       = google_service_account.api.email
   description = "Service account email — set as GCP_SERVICE_ACCOUNT GitHub secret"
+}
+
+output "google_web_client_id" {
+  value       = var.google_oauth_client_id
+  description = "Google Web Client ID — set as EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID in app .env and GitHub secrets"
+}
+
+output "facebook_app_id" {
+  value       = var.facebook_oauth_app_id
+  description = "Facebook App ID — set as EXPO_PUBLIC_FACEBOOK_APP_ID in app .env and GitHub secrets"
 }

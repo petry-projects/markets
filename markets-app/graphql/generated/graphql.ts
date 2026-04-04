@@ -101,6 +101,8 @@ export type CheckIn = {
 
 export type CheckInInput = {
   marketID: Scalars['ID']['input'];
+  /** Optional vendor ID for manager check-in on behalf (Story 5.3). */
+  vendorID?: InputMaybe<Scalars['ID']['input']>;
 };
 
 export type CheckInStatus =
@@ -236,6 +238,18 @@ export type Market = {
   vendors: Array<VendorRosterEntry>;
 };
 
+/** Live attendance view for a market on a given day (Story 5.1). */
+export type MarketAttendance = {
+  __typename?: 'MarketAttendance';
+  checkedInCount: Scalars['Int']['output'];
+  date: Scalars['String']['output'];
+  exceptionCount: Scalars['Int']['output'];
+  marketID: Scalars['ID']['output'];
+  pendingCount: Scalars['Int']['output'];
+  totalRostered: Scalars['Int']['output'];
+  vendors: Array<VendorAttendanceEntry>;
+};
+
 /** Planning view for a future market date. */
 export type MarketDayPlan = {
   __typename?: 'MarketDayPlan';
@@ -281,6 +295,16 @@ export type MarketStatus =
   | 'CANCELLED'
   | 'ENDED_EARLY';
 
+/** A market-wide operational update (Story 5.4). */
+export type MarketUpdate = {
+  __typename?: 'MarketUpdate';
+  createdAt: Scalars['String']['output'];
+  id: Scalars['ID']['output'];
+  marketID: Scalars['ID']['output'];
+  message: Scalars['String']['output'];
+  senderID: Scalars['ID']['output'];
+};
+
 /**
  * Root Mutation type - extended by each domain schema.
  * No audit mutations exist; audit writes are DB trigger-only.
@@ -297,6 +321,8 @@ export type Mutation = {
   approveRosterRequest: VendorRosterEntry;
   /** Assign a manager to a market (Admin only). */
   assignManager: Scalars['Boolean']['output'];
+  /** Batch auto-checkout for all checked-in vendors at a market (internal/scheduler, Story 5.5). */
+  autoCheckoutMarket: Scalars['Int']['output'];
   /** Cancel a market day or end it early (Manager only). Set endEarly=true to mark as ended early instead of cancelled. */
   cancelMarket: Market;
   /** Check in to a market (Vendor only). */
@@ -323,6 +349,8 @@ export type Mutation = {
   inviteVendor: VendorInvitation;
   /** Login with a Firebase ID token. */
   login: AuthPayload;
+  /** Publish a market-wide operational update (Manager only, Story 5.4). */
+  publishMarketUpdate: MarketUpdate;
   /** Reactivate a cancelled market (Manager only). */
   reactivateMarket: Market;
   /** Register a device token for push notifications. */
@@ -339,6 +367,8 @@ export type Mutation = {
   reportException: CheckIn;
   /** Request to join a market roster for specific dates (Vendor only). */
   requestToJoinMarket: Array<VendorRosterEntry>;
+  /** Request attendance confirmation from unconfirmed vendors (Manager only, Story 5.2). */
+  requestVendorConfirmation: Scalars['Boolean']['output'];
   /** Respond to an invitation (Vendor only). */
   respondToInvitation: VendorInvitation;
   /** Send a notification to all rostered vendors (Manager only). */
@@ -399,6 +429,15 @@ export type MutationApproveRosterRequestArgs = {
  */
 export type MutationAssignManagerArgs = {
   managerID: Scalars['ID']['input'];
+  marketID: Scalars['ID']['input'];
+};
+
+
+/**
+ * Root Mutation type - extended by each domain schema.
+ * No audit mutations exist; audit writes are DB trigger-only.
+ */
+export type MutationAutoCheckoutMarketArgs = {
   marketID: Scalars['ID']['input'];
 };
 
@@ -522,6 +561,16 @@ export type MutationLoginArgs = {
  * Root Mutation type - extended by each domain schema.
  * No audit mutations exist; audit writes are DB trigger-only.
  */
+export type MutationPublishMarketUpdateArgs = {
+  marketID: Scalars['ID']['input'];
+  message: Scalars['String']['input'];
+};
+
+
+/**
+ * Root Mutation type - extended by each domain schema.
+ * No audit mutations exist; audit writes are DB trigger-only.
+ */
 export type MutationReactivateMarketArgs = {
   marketID: Scalars['ID']['input'];
 };
@@ -591,6 +640,16 @@ export type MutationRequestToJoinMarketArgs = {
   acknowledgeRules: Scalars['Boolean']['input'];
   dates: Array<Scalars['String']['input']>;
   marketID: Scalars['ID']['input'];
+};
+
+
+/**
+ * Root Mutation type - extended by each domain schema.
+ * No audit mutations exist; audit writes are DB trigger-only.
+ */
+export type MutationRequestVendorConfirmationArgs = {
+  marketID: Scalars['ID']['input'];
+  vendorIDs: Array<Scalars['ID']['input']>;
 };
 
 
@@ -737,7 +796,7 @@ export type Query = {
   __typename?: 'Query';
   /** Get the authenticated user's activity feed. */
   activityFeed: Array<ActivityFeedItem>;
-  /** Query audit log entries (Manager only, read-only). */
+  /** Query audit log entries (Manager only, read-only). Scoped to managed markets. */
   auditLog: AuditLogConnection;
   /** Discover markets near a location. */
   discoverMarkets: Array<Market>;
@@ -749,10 +808,14 @@ export type Query = {
   market?: Maybe<Market>;
   /** Get a market's activity feed (manager only). */
   marketActivityFeed: Array<ActivityFeedItem>;
+  /** Get live attendance for a market on a given date (Manager only, Story 5.1). */
+  marketAttendance: MarketAttendance;
   /** Get planning view for a range of future market dates (Manager only). */
   marketDayPlans: Array<MarketDayPlan>;
   /** Get the vendor roster for a market on a specific date (Manager only). */
   marketRoster: Array<VendorRosterEntry>;
+  /** List market updates for a market (any authenticated role). */
+  marketUpdates: Array<MarketUpdate>;
   /** List all markets, optionally filtered by proximity. */
   markets: Array<Market>;
   /** Returns the currently authenticated user. */
@@ -837,6 +900,13 @@ export type QueryMarketActivityFeedArgs = {
 
 
 /** Root Query type - extended by each domain schema. */
+export type QueryMarketAttendanceArgs = {
+  date: Scalars['String']['input'];
+  marketID: Scalars['ID']['input'];
+};
+
+
+/** Root Query type - extended by each domain schema. */
 export type QueryMarketDayPlansArgs = {
   endDate: Scalars['String']['input'];
   marketID: Scalars['ID']['input'];
@@ -848,6 +918,14 @@ export type QueryMarketDayPlansArgs = {
 export type QueryMarketRosterArgs = {
   date: Scalars['String']['input'];
   marketID: Scalars['ID']['input'];
+};
+
+
+/** Root Query type - extended by each domain schema. */
+export type QueryMarketUpdatesArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+  marketID: Scalars['ID']['input'];
+  offset?: InputMaybe<Scalars['Int']['input']>;
 };
 
 
@@ -956,6 +1034,7 @@ export type UpdateMarketInput = {
   socialLinks?: InputMaybe<SocialLinksInput>;
 };
 
+/** Input for updating notification preferences. */
 export type UpdateNotificationPreferencesInput = {
   exceptionAlerts?: InputMaybe<Scalars['Boolean']['input']>;
   marketUpdateAlerts?: InputMaybe<Scalars['Boolean']['input']>;
@@ -1021,6 +1100,15 @@ export type Vendor = {
   updatedAt: Scalars['String']['output'];
   userID: Scalars['ID']['output'];
   websiteURL?: Maybe<Scalars['String']['output']>;
+};
+
+/** A vendor's attendance status for the attendance dashboard. */
+export type VendorAttendanceEntry = {
+  __typename?: 'VendorAttendanceEntry';
+  checkIn?: Maybe<CheckIn>;
+  rosterStatus: VendorRosterStatus;
+  vendor: Vendor;
+  vendorID: Scalars['ID']['output'];
 };
 
 export type VendorInvitation = {

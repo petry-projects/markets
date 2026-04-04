@@ -20,8 +20,11 @@
     "prepare": "cd .. && husky markets-app/.husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
+    "!(graphql/generated/*).{ts,tsx}": [
       "eslint --fix --max-warnings 0",
+      "prettier --write"
+    ],
+    "graphql/generated/*.{ts,tsx}": [
       "prettier --write"
     ],
     "*.{css,json,md}": [

@@ -27,7 +27,8 @@ gcloud services enable \
   iam.googleapis.com \
   iamcredentials.googleapis.com \
   cloudresourcemanager.googleapis.com \
-  sts.googleapis.com
+  sts.googleapis.com \
+  identitytoolkit.googleapis.com
 ```
 
 ## 3. Create Terraform State Bucket (first time only)
@@ -41,13 +42,52 @@ gcloud storage buckets create gs://markets-491920-tfstate \
 gcloud storage buckets update gs://markets-491920-tfstate --versioning
 ```
 
-## 4. Provision Infrastructure with Terraform
+## 4. Create OAuth Credentials (one-time per provider)
+
+Before provisioning infrastructure, create OAuth credentials for each auth provider.
+
+### 4a. Google OAuth
+
+1. Go to [GCP Credentials](https://console.cloud.google.com/apis/credentials?project=markets-491920)
+2. Click **Create Credentials → OAuth client ID**
+3. Application type: **Web application**
+4. Name: `Markets Web Client`
+5. Authorized JavaScript origins: `http://localhost:8081` (dev), plus your production domain
+6. Authorized redirect URIs: `https://markets-491920.firebaseapp.com/__/auth/handler`
+7. Save the **Client ID** and **Client Secret**
+
+### 4b. Apple Sign-In
+
+1. Go to [Apple Developer → Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources)
+2. Register an **App ID** with "Sign in with Apple" capability
+3. Create a **Services ID** (this is your `client_id`)
+4. Configure the service with your domain and redirect URL: `https://markets-491920.firebaseapp.com/__/auth/handler`
+5. Create a **Key** with "Sign in with Apple" enabled — download the `.p8` key file
+6. Generate the client secret JWT (see [Apple docs](https://developer.apple.com/documentation/sign_in_with_apple/generate_and_validate_tokens))
+
+### 4c. Facebook Login
+
+1. Go to [Facebook Developer Console](https://developers.facebook.com/apps/)
+2. Create a new app (type: **Consumer**)
+3. Add the **Facebook Login** product
+4. Under Settings → Basic, copy the **App ID** and **App Secret**
+5. Under Facebook Login → Settings, add redirect URI: `https://markets-491920.firebaseapp.com/__/auth/handler`
+
+### 4d. Provision Infrastructure with Terraform
 
 ```bash
 cd infra
 
-# Generate a database password
+# Generate a database password (first time only)
 DB_PASS=$(openssl rand -base64 24 | tr -d '/+=')
+
+# Set OAuth credentials (from steps 4a-4c above)
+export TF_VAR_google_oauth_client_id="<your-google-client-id>"
+export TF_VAR_google_oauth_client_secret="<your-google-client-secret>"
+export TF_VAR_apple_oauth_client_id="<your-apple-services-id>"
+export TF_VAR_apple_oauth_client_secret="<your-apple-client-secret>"
+export TF_VAR_facebook_oauth_app_id="<your-facebook-app-id>"
+export TF_VAR_facebook_oauth_app_secret="<your-facebook-app-secret>"
 
 # Initialize (connects to GCS backend)
 terraform init -backend-config=environments/dev/backend.hcl
@@ -59,7 +99,7 @@ terraform plan \
   -var="api_image=us-docker.pkg.dev/cloudrun/container/hello:latest" \
   -out=tfplan
 
-# Apply (~10 min for Cloud SQL)
+# Apply (~10 min for Cloud SQL on first run)
 terraform apply tfplan
 ```
 
@@ -75,29 +115,63 @@ Expected outputs:
 - `artifact_registry` — Docker registry path
 - `wif_provider` — Workload Identity Provider (for GitHub Actions)
 - `wif_service_account` — Service account email (for GitHub Actions)
+- `google_web_client_id` — set as `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in app `.env`
+- `facebook_app_id` — set as `EXPO_PUBLIC_FACEBOOK_APP_ID` in app `.env`
 
 ## 5. Configure GitHub Repository Secrets
 
-From `terraform output`, set these secrets in the GitHub repository settings
-(**Settings > Secrets and variables > Actions**):
+From `terraform output` and your OAuth credentials (step 4), set these secrets in
+**Settings > Secrets and variables > Actions**:
 
 | Secret | Source |
 |--------|--------|
 | `GCP_WORKLOAD_IDENTITY_PROVIDER` | `terraform output -raw wif_provider` |
 | `GCP_SERVICE_ACCOUNT` | `terraform output -raw wif_service_account` |
-| `DB_PASSWORD` | The `$DB_PASS` you generated in step 4 |
+| `DB_PASSWORD` | The `$DB_PASS` you generated in step 4d |
 | `CLOUD_SQL_CONNECTION_NAME` | `terraform output -raw db_connection_name` |
+| `GOOGLE_OAUTH_CLIENT_ID` | Google Web Client ID (step 4a) |
+| `GOOGLE_OAUTH_CLIENT_SECRET` | Google Web Client Secret (step 4a) |
+| `APPLE_OAUTH_CLIENT_ID` | Apple Services ID (step 4b) |
+| `APPLE_OAUTH_CLIENT_SECRET` | Apple client secret JWT (step 4b) |
+| `FACEBOOK_OAUTH_APP_ID` | Facebook App ID (step 4c) |
+| `FACEBOOK_OAUTH_APP_SECRET` | Facebook App Secret (step 4c) |
 
 Using the GitHub CLI:
 
 ```bash
+# Infrastructure secrets
 gh secret set GCP_WORKLOAD_IDENTITY_PROVIDER --body "$(terraform output -raw wif_provider)"
 gh secret set GCP_SERVICE_ACCOUNT --body "$(terraform output -raw wif_service_account)"
 gh secret set DB_PASSWORD --body "${DB_PASS}"
 gh secret set CLOUD_SQL_CONNECTION_NAME --body "$(terraform output -raw db_connection_name)"
+
+# OAuth provider secrets (used by Terraform in CI/CD to configure Firebase auth)
+gh secret set GOOGLE_OAUTH_CLIENT_ID --body "${TF_VAR_google_oauth_client_id}"
+gh secret set GOOGLE_OAUTH_CLIENT_SECRET --body "${TF_VAR_google_oauth_client_secret}"
+gh secret set APPLE_OAUTH_CLIENT_ID --body "${TF_VAR_apple_oauth_client_id}"
+gh secret set APPLE_OAUTH_CLIENT_SECRET --body "${TF_VAR_apple_oauth_client_secret}"
+gh secret set FACEBOOK_OAUTH_APP_ID --body "${TF_VAR_facebook_oauth_app_id}"
+gh secret set FACEBOOK_OAUTH_APP_SECRET --body "${TF_VAR_facebook_oauth_app_secret}"
 ```
 
-## 6. Run First Deployment
+## 6. Configure Frontend Environment
+
+After Terraform provisions the auth providers, update `markets-app/.env` with the OAuth client IDs:
+
+```bash
+# From the project root
+cd markets-app
+
+# Add Google Web Client ID (required for Google Sign-In on web)
+echo "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID=${TF_VAR_google_oauth_client_id}" >> .env
+
+# Add Facebook App ID (required for Facebook Login on web)
+echo "EXPO_PUBLIC_FACEBOOK_APP_ID=${TF_VAR_facebook_oauth_app_id}" >> .env
+```
+
+These are public client IDs (not secrets) — they are embedded in the frontend bundle.
+
+## 7. Run First Deployment
 
 Trigger the deploy workflow manually:
 
@@ -107,11 +181,11 @@ gh workflow run deploy.yml -f environment=dev
 
 Or push to `main` — the deploy workflow runs automatically on push to main when `markets-api/**` changes.
 
-## 7. Verify
+## 8. Verify
 
 ```bash
 API_URL=$(terraform output -raw api_url)
-curl -sf "${API_URL}/healthz"
+curl -sf "${API_URL}/health"
 # → {"status":"ok"}
 ```
 
@@ -124,15 +198,19 @@ curl -sf "${API_URL}/healthz"
 │  GitHub Actions  │────>│ Artifact Registry │
 │  (build + push)  │     │  (Docker images)  │
 └────────┬────────┘     └──────────────────┘
-         │ deploy
+         │ terraform apply + deploy
          v
 ┌─────────────────┐     ┌──────────────────┐
 │   Cloud Run     │────>│   Cloud SQL      │
 │  (markets-api)  │     │  (PostgreSQL 15) │
 └─────────────────┘     └──────────────────┘
          │
-    Firebase Auth
-    (token verification)
+┌─────────────────┐
+│  Identity Platform (Firebase Auth)
+│  ├── Google Sign-In
+│  ├── Apple Sign-In
+│  └── Facebook Login
+└─────────────────┘
 ```
 
 ## Environments

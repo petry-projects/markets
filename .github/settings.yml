@@ -1,0 +1,5 @@
+# Repository settings managed via probot/settings
+# See: https://github.com/probot/settings
+repository:
+  # Automatically delete head branches after pull requests are merged
+  delete_branch_on_merge: true

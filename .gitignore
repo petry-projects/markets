@@ -1,2 +1,25 @@
 # Claude Code machine-specific project memory
 .claude/projects/-home-*
+
+# Environment variables — never commit secrets
+.env
+.env.*
+!.env.example
+!.env.template
+
+# Firebase / Google service config files — contain API keys
+# Use EAS Secrets or CI environment variables instead
+google-services.json
+GoogleService-Info.plist
+
+# Expo / EAS
+.expo/
+dist/
+web-build/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db

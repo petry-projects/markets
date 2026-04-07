@@ -1,0 +1,75 @@
+# Feature Ideation — markets caller stub.
+#
+# Calls the org-wide reusable workflow at
+# petry-projects/.github/.github/workflows/feature-ideation-reusable.yml
+# All ideation logic, the multi-skill pipeline, the Opus 4.6 model
+# selection, and the github_token override live in the reusable workflow.
+#
+# To tune the prompt or pipeline for ALL BMAD repos, edit the reusable
+# workflow in petry-projects/.github — changes propagate here on next run.
+#
+# Standard: https://github.com/petry-projects/.github/blob/main/standards/ci-standards.md#8-feature-ideation-feature-ideationyml--bmad-method-repos
+name: Feature Research & Ideation (BMAD Analyst)
+
+on:
+  schedule:
+    - cron: '0 7 * * 5'   # Friday 07:00 UTC (3 AM EDT / 2 AM EST)
+  workflow_dispatch:
+    inputs:
+      focus_area:
+        description: 'Optional focus area (e.g., "vendor onboarding", "real-time updates", "manager UX")'
+        required: false
+        type: string
+      research_depth:
+        description: 'Research depth'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+          - quick
+          - standard
+          - deep
+
+permissions: {}
+
+concurrency:
+  group: feature-ideation
+  cancel-in-progress: false
+
+jobs:
+  ideate:
+    permissions:
+      contents: read
+      issues: read
+      pull-requests: read
+      discussions: write
+      id-token: write
+    uses: petry-projects/.github/.github/workflows/feature-ideation-reusable.yml@main
+    with:
+      project_context: |
+        markets is a real-time market operations platform for local farmer
+        and art markets, serving three sides: market managers (who validate
+        and publish day-of information), vendors (who report status and
+        product availability with minimal friction), and customers (who
+        need accurate market hours, location, and what's on offer before
+        and during their visit). The product replaces the fragmented
+        text/email/phone/social-media coordination workflow that managers
+        and vendors use today. Stack: React + GraphQL + Supabase, mobile-
+        first PWA-friendly UX.
+
+        Adjacent / competitor space: Instagram and Facebook for ad-hoc
+        market updates; generic event platforms (Eventbrite); farmers-
+        market-specific apps (Farmstand, LocalHarvest, Square Market);
+        vendor management SaaS (Manage My Market, MarketWurks). None
+        provide a real-time, three-sided coordination layer optimized for
+        market-day execution.
+
+        Trends to research: real-time object detection / vision models for
+        vendor inventory capture, low-friction structured reporting for
+        non-technical vendors, hyperlocal commerce trust signals,
+        regenerative ag and farm-to-table consumer expectations, vendor
+        payment/POS integrations, civic/municipal market partnerships.
+      focus_area: ${{ inputs.focus_area || '' }}
+      research_depth: ${{ inputs.research_depth || 'standard' }}
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

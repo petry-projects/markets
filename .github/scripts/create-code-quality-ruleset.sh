@@ -32,9 +32,9 @@ echo "==> Targeting repository: ${REPO}"
 # ---------------------------------------------------------------------------
 REQUIRED_CHECKS=$(cat <<'EOF'
 [
-  { "context": "Analyze",            "integration_id": null },
-  { "context": "SonarCloud",         "integration_id": null },
-  { "context": "Detect ecosystems",  "integration_id": null }
+  { "context": "Analyze" },
+  { "context": "SonarCloud" },
+  { "context": "Detect ecosystems" }
 ]
 EOF
 )
@@ -58,7 +58,6 @@ PAYLOAD=$(jq -n \
         type: "required_status_checks",
         parameters: {
           strict_required_status_checks_policy: false,
-          do_not_enforce_on_create: false,
           required_status_checks: $checks
         }
       }

@@ -1,2 +1,31 @@
 # Claude Code machine-specific project memory
 .claude/projects/-home-*
+
+# Secrets and environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+
+# Firebase / Google service config (contain API keys)
+google-services.json
+GoogleService-Info.plist
+firebase-adminsdk*.json
+serviceAccountKey.json
+
+# Common secret files
+*.pem
+*.key
+secrets.yaml
+secrets.yml
+
+# Dependencies and build artifacts
+node_modules/
+dist/
+build/
+.expo/
+.next/
+
+# OS files
+.DS_Store
+Thumbs.db

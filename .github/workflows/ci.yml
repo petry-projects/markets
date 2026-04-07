@@ -23,6 +23,8 @@ jobs:
   detect:
     name: Detect ecosystems
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       go: ${{ steps.check.outputs.go }}
       node: ${{ steps.check.outputs.node }}

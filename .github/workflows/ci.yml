@@ -1,0 +1,128 @@
+# CI — lint, test, build for Go backend and React Native/Expo frontend.
+#
+# Gates per coding-standards.md §7:
+#   Backend:  golangci-lint, go build ./cmd/api/, gqlgen validate,
+#             go test (short + integration), coverage ≥80% line
+#   Frontend: tsc --noEmit, eslint, prettier --check,
+#             graphql-codegen --check, jest --ci --coverage ≥80%
+#
+# Ecosystem detection mirrors dependency-audit.yml so jobs are skipped when
+# the corresponding source tree does not yet exist.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ── Detect which source trees are present ──────────────────────────────────
+  detect:
+    name: Detect ecosystems
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      go: ${{ steps.check.outputs.go }}
+      node: ${{ steps.check.outputs.node }}
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Detect ecosystems
+        id: check
+        run: |
+          if find . -name 'go.mod' -not -path '*/vendor/*' | grep -q .; then
+            echo "go=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "go=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if find . -name 'package.json' -not -path '*/node_modules/*' | grep -q .; then
+            echo "node=true"  >> "$GITHUB_OUTPUT"
+          else
+            echo "node=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # ── Go backend ─────────────────────────────────────────────────────────────
+  backend:
+    name: Backend CI
+    needs: detect
+    if: needs.detect.outputs.go == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6
+
+      - name: Build
+        run: go build ./cmd/api/
+
+      - name: Validate GraphQL schema
+        run: go run github.com/99designs/gqlgen validate
+
+      - name: Unit tests
+        run: go test ./... -short -count=1
+
+      - name: Integration tests
+        run: go test -tags=integration ./... -count=1
+
+      - name: Coverage check (≥80% line)
+        run: |
+          go test ./... -short -count=1 -coverprofile=coverage.out
+          pct=$(go tool cover -func=coverage.out \
+                  | awk '/^total:/ { gsub(/%/, "", $NF); print $NF }')
+          echo "Coverage: ${pct}%"
+          awk -v p="$pct" 'BEGIN {
+            if (p+0 < 80) { print "Coverage " p "% is below required 80%"; exit 1 }
+          }'
+
+  # ── React Native / Expo frontend ───────────────────────────────────────────
+  frontend:
+    name: Frontend CI
+    needs: detect
+    if: needs.detect.outputs.node == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: lts/*
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npx tsc --noEmit
+
+      - name: Lint
+        run: npx eslint . --max-warnings 0
+
+      - name: Format check
+        run: npx prettier --check .
+
+      - name: GraphQL codegen check
+        run: npx graphql-codegen --check
+
+      - name: Test + coverage (≥80% branch and line)
+        run: npx jest --ci --coverage --coverageThreshold='{"global":{"lines":80,"branches":80}}'

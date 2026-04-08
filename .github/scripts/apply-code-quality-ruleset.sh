@@ -7,7 +7,7 @@
 # Required status checks configured (derived from actual CI check run names):
 #   - SonarCloud          sonarcloud.yml, job: sonarcloud (name: SonarCloud)
 #   - Analyze (actions)   codeql.yml, job: analyze (name: Analyze), language: actions
-#   - dev-lead / dispatch  dev-lead.yml, caller job: dev-lead, reusable job: dispatch
+#   - claude-code / claude  claude.yml, calling job: claude-code → reusable job: claude
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#code-quality--required-checks-ruleset-all-repositories
@@ -53,7 +53,7 @@ PAYLOAD=$(jq -n '{
         required_status_checks: [
           {context: "SonarCloud"},
           {context: "Analyze (actions)"},
-          {context: "dev-lead / dispatch"}
+          {context: "claude-code / claude"}
         ]
       }
     }

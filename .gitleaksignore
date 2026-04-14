@@ -1,0 +1,16 @@
+# False-positive suppressions for gitleaks.
+#
+# Each line is a fingerprint (<commit>:<file>:<rule>:<line>) for a finding
+# that has been reviewed and confirmed as a false positive.
+#
+# All entries below are file-path strings in _bmad/_config/files-manifest.csv
+# and _bmad/tea/testarch/knowledge/api-testing-patterns.md that contain the
+# substring "api-key" or similar as part of a documentation path, not as an
+# actual credential.
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:286
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:287
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:289
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:305
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:413
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/_config/files-manifest.csv:generic-api-key:437
+865de69b05c97da7898ea0bdba30bec68b27be27:_bmad/tea/testarch/knowledge/api-testing-patterns.md:generic-api-key:681

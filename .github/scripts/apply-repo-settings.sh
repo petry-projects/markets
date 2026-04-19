@@ -36,6 +36,7 @@ current=$(gh api "repos/$REPO" --jq '{
   allow_squash_merge: .allow_squash_merge,
   allow_merge_commit: .allow_merge_commit,
   allow_rebase_merge: .allow_rebase_merge,
+  has_discussions: .has_discussions,
   has_issues: .has_issues,
   has_wiki: .has_wiki,
   squash_merge_commit_title: .squash_merge_commit_title,
@@ -53,6 +54,7 @@ gh api -X PATCH "repos/$REPO" \
   -F allow_squash_merge=true \
   -F allow_merge_commit=true \
   -F allow_rebase_merge=true \
+  -F has_discussions=true \
   -F has_issues=true \
   -F has_wiki=false \
   -f squash_merge_commit_title=PR_TITLE \
@@ -63,6 +65,7 @@ gh api -X PATCH "repos/$REPO" \
     allow_squash_merge,
     allow_merge_commit,
     allow_rebase_merge,
+    has_discussions,
     has_issues,
     has_wiki,
     squash_merge_commit_title,

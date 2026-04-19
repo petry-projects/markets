@@ -5,9 +5,9 @@
 # enforces required status checks on the default branch of petry-projects/markets.
 #
 # Required status checks configured (derived from actual CI check run names):
-#   - SonarCloud          sonarcloud.yml, job: sonarcloud (name: SonarCloud)
-#   - Analyze (actions)   codeql.yml, job: analyze (name: Analyze), language: actions
-#   - claude-code / claude  claude.yml, calling job: claude-code → reusable job: claude
+#   - SonarCloud   sonarcloud.yml, job: sonarcloud (name: SonarCloud)
+#   - CodeQL       GitHub-managed default setup (Settings → Code security → Code scanning)
+#                  Replaces the old per-repo codeql.yml workflow per org standard ci-standards.md §2
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#code-quality--required-checks-ruleset-all-repositories
@@ -52,8 +52,7 @@ PAYLOAD=$(jq -n '{
         strict_required_status_checks_policy: true,
         required_status_checks: [
           {context: "SonarCloud"},
-          {context: "Analyze (actions)"},
-          {context: "claude-code / claude"}
+          {context: "CodeQL"}
         ]
       }
     }

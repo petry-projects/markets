@@ -30,4 +30,8 @@ permissions:
 
 jobs:
   agent-shield:
+    # NOTE: The double `.github/` is intentional. GitHub reusable-workflow path syntax is
+    # `{owner}/{repo}/{path}@{ref}`. The reusable lives at `.github/workflows/` within the
+    # `petry-projects/.github` repo, so the path is necessarily `.github/.github/workflows/`.
+    # This is NOT a duplicate — it is valid GitHub syntax. See ci-standards.md § Tier 1 stubs.
     uses: petry-projects/.github/.github/workflows/agent-shield-reusable.yml@v1

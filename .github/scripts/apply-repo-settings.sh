@@ -6,9 +6,11 @@
 #
 # Usage:
 #   GH_TOKEN=<admin-token> bash .github/scripts/apply-repo-settings.sh
+#   GH_TOKEN=<admin-token> REPO=other-org/other-repo bash .github/scripts/apply-repo-settings.sh
 #
 # The script is safe to run multiple times (idempotent). It applies settings
 # using the GitHub REST API and prints the resulting values for verification.
+# REPO defaults to the repository detected by `gh repo view` (current git context).
 #
 # Requirements:
 #   - GH_TOKEN must have administration:write scope (repo admin role)
@@ -16,7 +18,7 @@
 
 set -euo pipefail
 
-REPO="petry-projects/markets"
+REPO="${REPO:-$(gh repo view --json nameWithOwner -q .nameWithOwner)}"
 
 if [ -z "${GH_TOKEN:-}" ]; then
   echo "ERROR: GH_TOKEN is required with administration:write scope" >&2
@@ -47,6 +49,6 @@ gh api -X PATCH "repos/$REPO" \
     has_wiki,
     squash_merge_commit_title,
     squash_merge_commit_message
-  }' | jq .
+  }'
 
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

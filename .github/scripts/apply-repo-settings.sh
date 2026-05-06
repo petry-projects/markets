@@ -7,12 +7,14 @@
 # Usage:
 #   GH_TOKEN=<admin-token> bash .github/scripts/apply-repo-settings.sh
 #
-# The script is safe to run multiple times (idempotent). It applies settings
-# using the GitHub REST API and prints each current vs. expected value.
+# The script is safe to run multiple times (idempotent). It fetches and prints
+# the current relevant settings, applies the required settings using the
+# GitHub REST API, and prints the resulting settings response.
 #
 # Requirements:
 #   - GH_TOKEN must have administration:write scope (repo admin role)
 #   - gh CLI must be installed
+#   - jq must be installed
 #
 # The org-level script (petry-projects/.github/scripts/apply-repo-settings.sh)
 # is the canonical tool for managing settings across all repos. This script
@@ -24,6 +26,11 @@ REPO="petry-projects/markets"
 
 if [ -z "${GH_TOKEN:-}" ]; then
   echo "ERROR: GH_TOKEN is required with administration:write scope" >&2
+  exit 1
+fi
+
+if ! command -v jq &>/dev/null; then
+  echo "ERROR: jq is required but not found in PATH" >&2
   exit 1
 fi
 

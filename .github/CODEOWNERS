@@ -1,5 +1,0 @@
-# CODEOWNERS — see petry-projects/.github standards/codeowners-standard.md
-# Rule: @petry-projects/org-leads MUST be the first owner on every line.
-
-# Default — all paths
-* @petry-projects/org-leads

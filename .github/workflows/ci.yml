@@ -126,3 +126,24 @@ jobs:
 
       - name: Test + coverage (≥80% branch and line)
         run: npx jest --ci --coverage --coverageThreshold='{"global":{"lines":80,"branches":80}}'
+
+  # ── Secret scanning ────────────────────────────────────────────────────────
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout (full history)
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 0
+
+      - name: Install gitleaks
+        run: |
+          curl -sSfL "https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          sudo mv gitleaks /usr/local/bin/gitleaks
+
+      - name: Run gitleaks
+        run: gitleaks detect --source . --redact --verbose --exit-code 1

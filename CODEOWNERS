@@ -1,5 +1,6 @@
 # CODEOWNERS — see petry-projects/.github standards/codeowners-standard.md
 # Rule: @petry-projects/org-leads MUST be the first owner on every line.
 
-# Default — all paths
+# Default catch-all — ensures every file has an owner so
+# require_code_owner_review applies to all paths.
 * @petry-projects/org-leads

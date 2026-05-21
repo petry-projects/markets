@@ -45,4 +45,11 @@ gh api -X PATCH "repos/$REPO" \
     squash_merge_commit_message
   }' | jq .
 
+echo "Disabling check-suite auto-trigger for Claude app (1236702) ..."
+
+gh api -X PATCH "repos/$REPO/check-suites/preferences" \
+  --input - <<'JSON' | jq .
+{"auto_trigger_checks":[{"app_id":1236702,"setting":false}]}
+JSON
+
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

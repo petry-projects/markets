@@ -76,4 +76,11 @@ assets/                # Images, fonts
 
 ## Org Standards
 
-See [petry-projects/.github — AGENTS.md](https://github.com/petry-projects/.github/blob/main/AGENTS.md).
+See [petry-projects/.github — AGENTS.md](https://github.com/petry-projects/.github/blob/main/AGENTS.md) for org-wide development standards.
+
+**Language-specific instructions** (applied automatically by Copilot when you open matching file types):
+
+- [TypeScript / TSX](.github/instructions/typescript.instructions.md) — strict config, branded types, DDD/CQRS patterns, React Native, pino logging
+- [JavaScript](.github/instructions/javascript.instructions.md) — style, JSDoc type annotations, error handling
+- [Go](.github/instructions/go.instructions.md) — naming, gofmt, slog logging, error wrapping, concurrency, testing
+- [Shell](.github/instructions/shell.instructions.md) — safety flags, ShellCheck, quoting, error handling

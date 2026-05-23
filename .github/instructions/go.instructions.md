@@ -67,6 +67,7 @@ Use **`log/slog`** (Go 1.21+) as the default structured logger:
 
 ```go
 import (
+    "context"
     "log/slog"
     "os"
 )
@@ -77,13 +78,33 @@ logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
 // Development — swap the handler for human-readable text:
 // logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 
-// Propagate the logger via context so OpenTelemetry can bridge trace/span IDs:
-logger.InfoContext(ctx, "order placed", "order_id", orderID, "user_id", userID)
+// Propagate the logger by attaching it to context; retrieve it where you log.
+// This keeps per-request fields (request_id, user_id) on the logger instance.
+type loggerKey struct{}
+
+func WithLogger(ctx context.Context, l *slog.Logger) context.Context {
+    return context.WithValue(ctx, loggerKey{}, l)
+}
+
+func FromContext(ctx context.Context) *slog.Logger {
+    if l, ok := ctx.Value(loggerKey{}).(*slog.Logger); ok {
+        return l
+    }
+    return slog.Default()
+}
+
+// Call the *propagated* logger (not slog.InfoContext, which dispatches via the
+// package-level default and bypasses per-request configuration). Using
+// InfoContext on the retrieved logger still bridges trace/span IDs:
+FromContext(ctx).InfoContext(ctx, "order placed", "order_id", orderID, "user_id", userID)
 ```
 
 - **Never use the global `log` package** from the standard library.
-- Propagate loggers via `context.Context`. Use `slog.InfoContext(ctx, ...)` so trace/span IDs
-  are automatically bridged.
+- Propagate loggers via `context.Context`. Call `InfoContext`/`ErrorContext` on the *retrieved*
+  logger (`FromContext(ctx).InfoContext(ctx, ...)`) so trace/span IDs are bridged **and**
+  per-request fields are preserved. Avoid the package-level helpers
+  (`slog.InfoContext`, `slog.ErrorContext`) — they dispatch via `slog.Default()` and bypass
+  any logger you attached to the context.
 - In tests, suppress output: `slog.New(slog.NewTextHandler(io.Discard, nil))`.
 - Log at the point of handling, not at every layer. Wrap errors with `fmt.Errorf` and log once.
 - Never log variables named `password`, `secret`, `token`, `api_key`, `private_key`,

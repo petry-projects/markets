@@ -89,15 +89,15 @@ Use **pino** as the default structured logger. Never use `console.log`, `console
 scripts):
 
 ```typescript
-import pino from "pino";
+import pino from 'pino';
 const logger = pino();
 
 // In Express/Fastify middleware, attach a child logger per request:
 const reqLogger = logger.child({ request_id: req.id, user_id: req.user?.id });
 
 // Log with structured fields, not interpolated strings:
-reqLogger.info({ order_id: orderId, amount }, "order placed");
-reqLogger.error({ err, order_id: orderId }, "payment failed");
+reqLogger.info({ order_id: orderId, amount }, 'order placed');
+reqLogger.error({ err, order_id: orderId }, 'payment failed');
 ```
 
 Never log variables whose names end in `password`, `secret`, `token`, `api_key`, `cookie`, or

@@ -55,8 +55,13 @@ Run ShellCheck before committing. Common issues to fix proactively:
   to stderr: `echo "Error: message" >&2`.
 
   ```bash
-  log_info()  { echo "[INFO]  $*"; }
-  log_error() { echo "[ERROR] $*" >&2; }
+  # Quote "$*" so the joined message is treated as a single argument
+  # (without quoting, word-splitting and globbing would apply).
+  log_info()  { printf '[INFO]  %s\n' "$*"; }
+  log_error() { printf '[ERROR] %s\n' "$*" >&2; }
+
+  # When forwarding to another command, use "$@" to preserve argument boundaries:
+  run_quietly() { "$@" >/dev/null 2>&1; }
 
   process_item() {
     local item="$1"

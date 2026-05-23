@@ -38,11 +38,18 @@ on:
 permissions: {}
 
 concurrency:
-  # One active run per repo; ci-relay (check_run) keeps an ephemeral per-SHA slot
-  # so it can fire immediately without blocking or being blocked by the dispatch queue.
+  # Scoped per PR or issue so parallel PRs/issues run concurrently instead of
+  # queuing behind a single global slot (which caused >50% cancellations).
+  # ci-relay (check_run) keeps an ephemeral per-SHA slot so it fires immediately
+  # without blocking or being blocked by the per-PR/issue queue.
   group: >-
     ${{
-      github.event_name == 'check_run' && format('dev-lead-ci-relay-{0}', github.event.check_run.head_sha) ||
+      github.event_name == 'check_run'                   && format('dev-lead-ci-relay-{0}', github.event.check_run.head_sha) ||
+      github.event_name == 'pull_request'                && format('dev-lead-pr-{0}', github.event.pull_request.number) ||
+      github.event_name == 'pull_request_review'         && format('dev-lead-pr-{0}', github.event.pull_request.number) ||
+      github.event_name == 'pull_request_review_comment' && format('dev-lead-pr-{0}', github.event.pull_request.number) ||
+      github.event_name == 'issue_comment'               && format('dev-lead-issue-{0}', github.event.issue.number) ||
+      github.event_name == 'issues'                      && format('dev-lead-issue-{0}', github.event.issue.number) ||
       'dev-lead'
     }}
   cancel-in-progress: false

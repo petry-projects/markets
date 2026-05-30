@@ -89,9 +89,17 @@ jobs:
       # its target users, and the competitive landscape. The more specific you
       # are, the more useful the proposals.
       project_context: |
-        TODO: Replace this with a description of the project and its market.
-        Example: "ProjectX is a [type of product] for [target user]. Competitors
-        include A, B, C. Key emerging trends in this space: X, Y, Z."
+        Markets is a real-time operations platform for farmer and art markets,
+        serving three actors: customers who need accurate vendor and product
+        availability before arriving, vendors who need low-friction tools to
+        publish same-day status updates, and market managers who need a
+        consolidated, validated source of truth to publish efficiently.
+        Competitors are fragmented generic channels—Instagram, Facebook Groups,
+        WhatsApp, and Google Business Profiles—none of which provide structured,
+        real-time, market-day operational data across all three actors.
+        Key emerging trends: hyperlocal discovery apps, QR-code-driven vendor
+        pages, AI-assisted inventory broadcasting, and push-notification market
+        alerts.
       focus_area: ${{ inputs.focus_area || '' }}
       research_depth: ${{ inputs.research_depth || 'standard' }}
       dry_run: ${{ inputs.dry_run || false }}

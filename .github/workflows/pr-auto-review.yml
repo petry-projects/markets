@@ -6,6 +6,8 @@ on:
     types: [completed]
   pull_request_review:
     types: [dismissed]
+  pull_request_review_thread:
+    types: [resolved]
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 

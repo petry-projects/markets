@@ -1,0 +1,33 @@
+# compliance-settings.yml — Self-healing repository compliance settings
+#
+# Enables secret_scanning_non_provider_patterns after every push to main
+# so the repository stays in compliance with the push-protection standard:
+#   https://github.com/petry-projects/.github/blob/main/standards/push-protection.md#required-repo-level-settings
+#
+# Requires: GH_PAT secret with administration:write scope (org or repo level).
+# The step is skipped gracefully when GH_PAT is not configured.
+
+name: Compliance Settings
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  apply-security-settings:
+    name: Apply compliance settings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      GH_TOKEN: ${{ secrets.GH_PAT }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+
+      - name: Enable secret_scanning_non_provider_patterns
+        if: ${{ env.GH_TOKEN != '' }}
+        run: bash .github/scripts/apply-secret-scanning-non-provider-patterns.sh

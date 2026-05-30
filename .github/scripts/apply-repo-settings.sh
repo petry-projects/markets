@@ -48,7 +48,7 @@ gh api -X PATCH "repos/$REPO" \
 echo "Enabling secret_scanning_ai_detection on $REPO ..."
 
 gh api -X PATCH "repos/$REPO" \
-  --input - <<'JSON'
+  --input - <<'JSON' | jq .security_and_analysis
 {
   "security_and_analysis": {
     "secret_scanning_ai_detection": {"status": "enabled"}

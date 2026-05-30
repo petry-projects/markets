@@ -45,11 +45,11 @@ gh api -X PATCH "repos/$REPO" \
     squash_merge_commit_message
   }' | jq .
 
-echo "Disabling CodeRabbit (347564) check-suite auto-trigger ..."
+echo "Disabling CodeRabbit (347564) and Claude (1236702) check-suite auto-triggers ..."
 
 gh api -X PATCH "repos/$REPO/check-suites/preferences" \
   --input - <<'JSON' | jq '.preferences.auto_trigger_checks'
-{"auto_trigger_checks": [{"app_id": 347564, "setting": false}]}
+{"auto_trigger_checks": [{"app_id": 347564, "setting": false}, {"app_id": 1236702, "setting": false}]}
 JSON
 
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

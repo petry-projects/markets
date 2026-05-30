@@ -22,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-    env:
-      GH_TOKEN: ${{ secrets.GH_PAT }}
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
       - name: Enable secret_scanning_non_provider_patterns
-        if: ${{ env.GH_TOKEN != '' }}
+        if: ${{ secrets.GH_PAT != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: bash .github/scripts/apply-secret-scanning-non-provider-patterns.sh

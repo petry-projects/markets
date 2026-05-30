@@ -2,12 +2,10 @@ name: PR Auto-Review — Ready Check
 
 on:
   workflow_run:
-    workflows: ["CI"]
-    types: [completed]
-  check_suite:
+    workflows: ["CI", "AgentShield", "Dependency audit", "SonarCloud Analysis"]
     types: [completed]
   pull_request_review:
-    types: [submitted, dismissed]
+    types: [dismissed]
   pull_request:
     types: [opened, reopened, synchronize, ready_for_review]
 
@@ -15,6 +13,9 @@ permissions: {}
 
 jobs:
   pr-auto-review:
+    if: >-
+      github.event_name == 'workflow_run' ||
+      github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       pull-requests: read
       checks: read

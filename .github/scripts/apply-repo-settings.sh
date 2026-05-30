@@ -45,6 +45,19 @@ gh api -X PATCH "repos/$REPO" \
     squash_merge_commit_message
   }' | jq .
 
+echo "Enabling secret_scanning_ai_detection on $REPO ..."
+
+gh api -X PATCH "repos/$REPO" \
+  --input - <<'JSON'
+{
+  "security_and_analysis": {
+    "secret_scanning_ai_detection": {"status": "enabled"}
+  }
+}
+JSON
+
+echo "Done — secret_scanning_ai_detection enabled."
+
 echo "Disabling CodeRabbit (347564) check-suite auto-trigger ..."
 
 gh api -X PATCH "repos/$REPO/check-suites/preferences" \

@@ -76,7 +76,7 @@ jobs:
     uses: petry-projects/.github/.github/workflows/feature-ideation-reusable.yml@v2
     with:
       focus_area: ${{ inputs.focus_area }}
-      research_depth: ${{ inputs.research_depth }}
+      research_depth: ${{ inputs.research_depth || 'standard' }}
       # === CUSTOMISE THIS PER REPO — the only required edit ===
       # Replace this paragraph with a 3-5 sentence description of your project,
       # its target users, and the competitive landscape. The more specific you

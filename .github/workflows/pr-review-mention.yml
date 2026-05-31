@@ -1,3 +1,19 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE OF TRUTH: petry-projects/.github/standards/workflows/pr-review-mention.yml
+# Standard:        petry-projects/.github/standards/ci-standards.md#pr-review-mention
+# Reusable:        petry-projects/.github/.github/workflows/pr-review-mention-reusable.yml
+#
+# AGENTS — READ BEFORE EDITING:
+#   • This file is a THIN CALLER STUB. The reviewer mention logic and
+#     comment handling all live in the reusable workflow above.
+#   • You MAY change: nothing in this repo — all behaviour lives in the reusable.
+#   • You MUST NOT change: trigger events, the `uses:` line, or the job name
+#     (used as a required status check).
+#   • If you need different behaviour, open a PR against the reusable in
+#     the central repo. The change will propagate everywhere on next run.
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# PR Review — Mention Trigger — thin caller stub.
 name: PR Review — Mention Trigger
 
 on:

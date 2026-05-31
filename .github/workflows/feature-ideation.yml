@@ -45,9 +45,13 @@ on:
         required: false
         type: string
       research_depth:
-        description: 'Research depth (quick/standard/deep)'
+        description: 'Research depth'
         required: false
-        type: string
+        type: choice
+        options:
+          - standard
+          - quick
+          - deep
         default: 'standard'
 
 permissions: {}

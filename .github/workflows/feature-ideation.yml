@@ -38,6 +38,17 @@ name: Feature Research & Ideation (BMAD Analyst)
 on:
   schedule:
     - cron: '0 7 * * 5'   # Friday 07:00 UTC (3 AM EDT / 2 AM EST)
+  workflow_dispatch:
+    inputs:
+      focus_area:
+        description: 'Optional focus area for the ideation research'
+        required: false
+        type: string
+      research_depth:
+        description: 'Research depth (quick/standard/deep)'
+        required: false
+        type: string
+        default: 'standard'
 
 permissions: {}
 
@@ -64,6 +75,8 @@ jobs:
       actions: read
     uses: petry-projects/.github/.github/workflows/feature-ideation-reusable.yml@v2
     with:
+      focus_area: ${{ inputs.focus_area }}
+      research_depth: ${{ inputs.research_depth }}
       # === CUSTOMISE THIS PER REPO — the only required edit ===
       # Replace this paragraph with a 3-5 sentence description of your project,
       # its target users, and the competitive landscape. The more specific you

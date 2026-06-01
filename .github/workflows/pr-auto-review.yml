@@ -27,7 +27,7 @@ on:
   # check_suite does NOT trigger for GitHub Actions runs, so this is required
   # to catch CI turning green on a PR.
   workflow_run:
-    workflows: ["CI", "SonarCloud Analysis", "Dev-Lead Agent"]
+    workflows: ["CI", "SonarCloud Analysis", "Dev-Lead Agent", "CodeQL"]
     types: [completed]
   # check_suite covers third-party CI checks (e.g. SonarCloud, external apps).
   check_suite:
@@ -49,7 +49,7 @@ jobs:
     if: >
       github.event_name != 'pull_request' && github.event_name != 'pull_request_review' ||
       (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.actor != 'dependabot[bot]')
+       github.event.pull_request.user.login != 'dependabot[bot]')
     permissions:
       pull-requests: read
       checks: read

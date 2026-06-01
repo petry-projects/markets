@@ -25,3 +25,12 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-repo-settings.s
 @test "script targets petry-projects/markets repo" {
   grep -q 'petry-projects/markets' "$SCRIPT"
 }
+
+@test "REPO is configurable via argument with petry-projects/markets as default" {
+  grep -qE 'REPO="\$\{1:-petry-projects/markets\}"' "$SCRIPT"
+}
+
+@test "script does not pipe to external jq" {
+  # All JSON processing must use gh api --jq, never an external jq binary
+  ! grep -qE '\|\s*jq\b' "$SCRIPT"
+}

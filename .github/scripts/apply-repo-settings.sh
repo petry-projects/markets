@@ -5,14 +5,17 @@
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#repository-settings--standard-defaults
 #
 # Usage:
-#   GH_TOKEN=<admin-token> bash .github/scripts/apply-repo-settings.sh
+#   GH_TOKEN=<admin-token> bash .github/scripts/apply-repo-settings.sh [<owner/repo>]
 #
+# Requirements: gh CLI (https://cli.github.com)
+#
+# The optional <owner/repo> argument overrides the default target repository.
 # The script is safe to run multiple times (idempotent). It applies settings
 # using the GitHub REST API and prints the resulting values for verification.
 
 set -euo pipefail
 
-REPO="petry-projects/markets"
+REPO="${1:-petry-projects/markets}"
 
 if [ -z "${GH_TOKEN:-}" ]; then
   echo "ERROR: GH_TOKEN is required with administration:write scope" >&2
@@ -43,12 +46,13 @@ gh api -X PATCH "repos/$REPO" \
     has_wiki,
     squash_merge_commit_title,
     squash_merge_commit_message
-  }' | jq .
+  }'
 
 echo "Disabling CodeRabbit (347564) and Claude (1236702) check-suite auto-triggers ..."
 
 gh api -X PATCH "repos/$REPO/check-suites/preferences" \
-  --input - <<'JSON' | jq '.preferences.auto_trigger_checks'
+  --input - \
+  --jq '.preferences.auto_trigger_checks' <<'JSON'
 {"auto_trigger_checks": [{"app_id": 347564, "setting": false}, {"app_id": 1236702, "setting": false}]}
 JSON
 

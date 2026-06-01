@@ -20,8 +20,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # PR Auto-Review — thin caller for the org-level reusable.
-# To adopt: copy this file to .github/workflows/pr-auto-review.yml in your repo.
-# Requires: GH_PAT_WORKFLOWS org secret (already present in petry-projects org).
 name: PR Auto-Review — Ready Check
 
 on:

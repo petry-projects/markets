@@ -155,4 +155,4 @@ jobs:
           tar -xzf gitleaks.tar.gz gitleaks
 
       - name: Run gitleaks
-        run: ./gitleaks detect --source . --redact --verbose --exit-code 1
+        run: ./gitleaks git . --redact --verbose --exit-code 1

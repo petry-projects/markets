@@ -16,6 +16,7 @@ on:
     branches: [main]
     paths:
       - .github/scripts/apply-repo-settings.sh
+      - .github/workflows/apply-repo-settings.yml
 
 permissions: {}
 

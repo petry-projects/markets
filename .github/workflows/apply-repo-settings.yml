@@ -1,0 +1,34 @@
+# Apply repository settings — disables check-suite auto-triggers (including
+# Claude app 1236702) that permanently block auto-merge, and enforces all other
+# required settings from standards/github-settings.md.
+#
+# Triggers:
+#   • workflow_dispatch — manual run to fix current state immediately
+#   • push to main on the settings script — re-applies on every future change
+#
+# Required secret: GH_TOKEN_ADMIN — a classic PAT or fine-grained token with
+#   administration:write (repo admin) scope for petry-projects/markets.
+name: Apply repo settings
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/apply-repo-settings.sh
+
+permissions: {}
+
+jobs:
+  apply-settings:
+    name: Apply repo settings
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+
+      - name: Apply repo settings
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN_ADMIN }}
+        run: bash .github/scripts/apply-repo-settings.sh

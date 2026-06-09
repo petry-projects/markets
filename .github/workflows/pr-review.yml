@@ -87,8 +87,9 @@ jobs:
       }}
     uses: petry-projects/.github-private/.github/workflows/pr-review.yml@1bd8975a9c83bca376082f0b507c89b3743d5e3f # pr-review/stable
     with:
-      # Pin the agent's own script checkout to the same channel (#506).
-      agent_ref: pr-review/stable
+      # Pin the agent's own script checkout to the main branch of this repo,
+      # which is the stable channel for markets (pr-review/stable does not exist).
+      agent_ref: main
       # Forward manual/dispatch inputs; empty for event triggers (the reusable
       # then derives everything from the inherited github.event context).
       pr_url: ${{ inputs.pr_url || '' }}

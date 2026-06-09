@@ -33,7 +33,7 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
   pull_request:
-    types: [ready_for_review, reopened, synchronize]
+    types: [opened, ready_for_review, reopened, synchronize]
   workflow_dispatch:
     inputs:
       pr_url:
@@ -65,21 +65,26 @@ permissions:
 concurrency:
   group: >-
     ${{
-      (inputs.pr_url
-       || github.event.client_payload.pr_url
-       || github.event.pull_request.html_url
-       || github.event.check_suite.pull_requests[0].url)
+      (github.event.pull_request.number
+       || github.event.check_suite.pull_requests[0].number
+       || inputs.pr_url
+       || github.event.client_payload.pr_url)
       && format('pr-review-pr-{0}',
-           inputs.pr_url
-           || github.event.client_payload.pr_url
-           || github.event.pull_request.html_url
-           || github.event.check_suite.pull_requests[0].url)
+           github.event.pull_request.number
+           || github.event.check_suite.pull_requests[0].number
+           || inputs.pr_url
+           || github.event.client_payload.pr_url)
       || 'pr-review-batch'
     }}
   cancel-in-progress: true
 
 jobs:
   pr-review:
+    if: >-
+      ${{
+        github.event_name != 'check_suite' ||
+        github.event.check_suite.pull_requests[0] != null
+      }}
     uses: petry-projects/.github-private/.github/workflows/pr-review.yml@1bd8975a9c83bca376082f0b507c89b3743d5e3f # pr-review/stable
     with:
       # Pin the agent's own script checkout to the same channel (#506).

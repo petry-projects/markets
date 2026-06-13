@@ -21,30 +21,45 @@ VIOLATIONS=0
 
 # Determine mode and file source
 MODE="pre-commit"
-FILES_CMD=""
 
 if [ "${1:-}" = "all" ]; then
   MODE="all"
-  # List all tracked JS files
-  FILES_CMD="git ls-files -z"
 elif [ -n "${1:-}" ]; then
   MODE="diff-range"
-  # List files changed in the specified range
-  FILES_CMD="git diff --name-only -z $1"
 elif [ "${CI:-false}" = "true" ] && [ -n "${GITHUB_BASE_REF:-}" ]; then
   MODE="ci-pr"
   # Fetch target branch base to diff against
   echo "Fetching origin/${GITHUB_BASE_REF} for diff base..."
   git fetch origin "${GITHUB_BASE_REF}" --depth=1 >/dev/null 2>&1 || true
-  FILES_CMD="git diff --name-only -z origin/${GITHUB_BASE_REF}...HEAD"
 elif [ "${CI:-false}" = "true" ]; then
   MODE="ci-commit"
-  FILES_CMD="git diff --name-only -z HEAD~1...HEAD"
 else
   MODE="pre-commit"
-  # Staged files only
-  FILES_CMD="git diff --name-only --cached -z"
 fi
+
+get_files() {
+  case "$MODE" in
+    all)
+      git ls-files -z
+      ;;
+    diff-range)
+      git diff --name-only -z "$1"
+      ;;
+    ci-pr)
+      git diff --name-only -z "origin/${GITHUB_BASE_REF}...HEAD"
+      ;;
+    ci-commit)
+      if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+        git diff --name-only -z HEAD~1...HEAD
+      else
+        git ls-files -z
+      fi
+      ;;
+    pre-commit)
+      git diff --name-only --cached -z
+      ;;
+  esac
+}
 
 echo "Mode: ${MODE}"
 
@@ -93,12 +108,12 @@ while IFS= read -r -d '' file; do
   fi
 
   # Check for violations after stripping comments
-  if echo "$file_content" | strip_comments | grep -qE '\b(eval|Function)\s*\('; then
+  if echo "$file_content" | strip_comments | grep -qiE '\b(eval|Function)\s*\('; then
     echo "  [VIOLATION] Arbitrary dynamic evaluation 'eval()' or 'new Function()' found in $file" >&2
     VIOLATIONS=$((VIOLATIONS + 1))
   fi
 
-done < <(eval "$FILES_CMD" || true)
+done < <(get_files "${1:-}" || true)
 
 if [ "$VIOLATIONS" -gt 0 ]; then
   echo "ERROR: AST safety scan failed with $VIOLATIONS violations. Execution aborted." >&2

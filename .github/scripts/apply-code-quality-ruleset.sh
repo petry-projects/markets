@@ -53,7 +53,8 @@ PAYLOAD=$(jq -n '{
         required_status_checks: [
           {context: "SonarCloud"},
           {context: "Analyze (actions)"},
-          {context: "dev-lead / dispatch"}
+          {context: "dev-lead / dispatch"},
+          {context: "AST Safety scan"}
         ]
       }
     }

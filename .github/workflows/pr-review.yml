@@ -43,8 +43,30 @@ permissions:
   pull-requests: write
   checks: read
 
+# Collapse redundant overlapping runs for the same PR. The high-frequency
+# triggers (synchronize + the resulting check_suite completions) fire several
+# times for one PR head; without this they spawn concurrent duplicate reviews
+# (the source of the cancelled runs). Group per PR when one is identifiable;
+# fall back to a unique run id for batch/dispatch/no-PR runs so those are never
+# cancelled against each other.
+concurrency:
+  group: >-
+    pr-review-${{
+      github.event.pull_request.number
+      || github.event.check_suite.pull_requests[0].number
+      || inputs.pr_url
+      || github.event.client_payload.pr_url
+      || github.run_id
+    }}
+  cancel-in-progress: true
+
 jobs:
   review:
+    # Skip check_suite completions with no associated PR (e.g. pushes to main):
+    # there is nothing to review, so the run would be pure waste.
+    if: >-
+      github.event_name != 'check_suite'
+      || github.event.check_suite.pull_requests[0] != null
     uses: petry-projects/.github-private/.github/workflows/pr-review.yml@pr-review/stable
     with:
       agent_ref: pr-review/stable

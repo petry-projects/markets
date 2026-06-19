@@ -55,6 +55,6 @@ JSON
 
 echo "Enabling secret scanning non-provider patterns ..."
 
-bash "$SCRIPT_DIR/apply-secret-scanning-non-provider-patterns.sh"
+"$SCRIPT_DIR/apply-secret-scanning-non-provider-patterns.sh"
 
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

@@ -12,6 +12,7 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="petry-projects/markets"
 
 if [ -z "${GH_TOKEN:-}" ]; then
@@ -51,5 +52,9 @@ gh api -X PATCH "repos/$REPO/check-suites/preferences" \
   --input - <<'JSON' | jq '.preferences.auto_trigger_checks'
 {"auto_trigger_checks": [{"app_id": 347564, "setting": false}, {"app_id": 1236702, "setting": false}]}
 JSON
+
+echo "Enabling secret scanning non-provider patterns ..."
+
+"$SCRIPT_DIR/apply-secret-scanning-non-provider-patterns.sh"
 
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

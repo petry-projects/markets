@@ -4,8 +4,8 @@
 # AGENTS — READ BEFORE EDITING:
 #   • This file is a THIN TRIGGER STUB. All review logic lives in the reusable
 #     `pr-review.yml` in petry-projects/.github-private.
-#   • You MAY change: the SHA in the `uses:` line when promoting a new stable
-#     release (update to the SHA of the new pr-review/stable tag).
+#   • You MAY change: the `uses:` line when pinning to a specific SHA
+#     for reproducibility (update to the SHA of the new pr-review/stable tag).
 #   • You MUST NOT change: the `permissions:` block — reusable workflows can be
 #     granted no more permissions than the calling job, so the stanza must mirror
 #     the reusable's own permissions declaration.
@@ -74,7 +74,7 @@ concurrency:
            || github.event.check_suite.pull_requests[0].number
            || inputs.pr_url
            || github.event.client_payload.pr_url)
-      || 'pr-review-batch'
+      || format('pr-review-batch-{0}', github.run_id)
     }}
   cancel-in-progress: true
 
@@ -85,7 +85,7 @@ jobs:
         github.event_name != 'check_suite' ||
         github.event.check_suite.pull_requests[0] != null
       }}
-    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@1bd8975a9c83bca376082f0b507c89b3743d5e3f # pr-review/stable
+    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@pr-review/stable
     with:
       # Pin the agent's own script checkout to the main branch of this repo,
       # which is the stable channel for markets (pr-review/stable does not exist).

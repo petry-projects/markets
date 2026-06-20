@@ -1,3 +1,18 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# SOURCE OF TRUTH: petry-projects/.github-private/.github/workflows/pr-review-trigger.yml
+#
+# AGENTS — READ BEFORE EDITING:
+#   • This file is a THIN TRIGGER STUB. All review logic lives in the reusable
+#     `pr-review.yml` in petry-projects/.github-private.
+#   • You MAY change: the SHA in the `uses:` line when promoting a new stable
+#     release (update to the SHA of the new pr-review/stable tag).
+#   • You MUST NOT change: the `permissions:` block — reusable workflows can be
+#     granted no more permissions than the calling job, so the stanza must mirror
+#     the reusable's own permissions declaration.
+#   • The `pr-review-mention.yml` workflow handles @mention triggers
+#     (issue_comment, pull_request_review_comment). Do not add those here.
+# ─────────────────────────────────────────────────────────────────────────────
+
 name: PR Review Agent
 
 # Thin caller for the org PR Review agent (petry-projects/.github-private),
@@ -18,7 +33,7 @@ on:
   pull_request_review:
     types: [submitted, dismissed]
   pull_request:
-    types: [ready_for_review, reopened, synchronize]
+    types: [opened, ready_for_review, reopened, synchronize]
   workflow_dispatch:
     inputs:
       pr_url:
@@ -36,18 +51,47 @@ on:
         default: "false"
         type: string
   repository_dispatch:
+    # Triggered by the petry-projects/.github mention-listener (via
+    # pr-review-mention.yml). Payload: { pr_url, force_review }.
     types: [pr-review-mention]
 
+# Granted to the called reusable's job (a reusable can be granted no more than
+# the calling job has). Mirrors pr-review.yml's own permissions block.
 permissions:
   contents: read
   pull-requests: write
   checks: read
 
+concurrency:
+  group: >-
+    ${{
+      (github.event.pull_request.number
+       || github.event.check_suite.pull_requests[0].number
+       || inputs.pr_url
+       || github.event.client_payload.pr_url)
+      && format('pr-review-pr-{0}',
+           github.event.pull_request.number
+           || github.event.check_suite.pull_requests[0].number
+           || inputs.pr_url
+           || github.event.client_payload.pr_url)
+      || 'pr-review-batch'
+    }}
+  cancel-in-progress: true
+
 jobs:
-  review:
-    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@pr-review/stable
+  pr-review:
+    if: >-
+      ${{
+        github.event_name != 'check_suite' ||
+        github.event.check_suite.pull_requests[0] != null
+      }}
+    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@1bd8975a9c83bca376082f0b507c89b3743d5e3f # pr-review/stable
     with:
-      agent_ref: pr-review/stable
+      # Pin the agent's own script checkout to the main branch of this repo,
+      # which is the stable channel for markets (pr-review/stable does not exist).
+      agent_ref: main
+      # Forward manual/dispatch inputs; empty for event triggers (the reusable
+      # then derives everything from the inherited github.event context).
       pr_url: ${{ inputs.pr_url || '' }}
       dry_run: ${{ inputs.dry_run || '' }}
       force_review: ${{ inputs.force_review || '' }}

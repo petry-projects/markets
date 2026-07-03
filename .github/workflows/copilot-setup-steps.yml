@@ -33,8 +33,8 @@
 #   • This file MUST be present on the default branch to take effect
 #
 # STACK: Go (backend) + React Native/Expo (mobile frontend) — see Agents.md
-# TODO: When Go and/or Node.js source is added at a stable path, uncomment
-#       the appropriate stack block(s) below and run the workflow to verify.
+# NOTE: The Go and Node.js stack blocks below stay commented until source lands
+#       at a stable path; enable and adapt them then per the adoption steps above.
 # ─────────────────────────────────────────────────────────────────────────────
 
 name: "Copilot Setup Steps"

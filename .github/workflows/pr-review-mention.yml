@@ -35,6 +35,13 @@ permissions: {}
 
 jobs:
   pr-review-mention:
+    # Skip events whose sender is a Bot (e.g. the Copilot coding agent). GitHub
+    # gates bot-originated workflow events behind maintainer approval; left
+    # unapproved they terminate as `action_required`, which counts against the
+    # workflow's failure rate (issue #307). The mention / review-request flow is
+    # human-driven, so a bot sender never carries a legitimate review request.
+    # `github.event.sender` is populated on all three trigger events.
+    if: github.event.sender.type != 'Bot'
     permissions:
       pull-requests: write
     uses: petry-projects/.github/.github/workflows/pr-review-mention-reusable.yml@pr-review-mention/stable  # NOSONAR(githubactions:S7637) first-party channel ref

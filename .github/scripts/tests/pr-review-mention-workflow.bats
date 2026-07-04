@@ -15,33 +15,33 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
 }
 
 @test "workflow is valid YAML" {
-  yq eval '.' "$WORKFLOW" >/dev/null
+  yq '.' "$WORKFLOW" >/dev/null
 }
 
 @test "pr-review-mention job skips Bot-typed senders (issue #307 fix)" {
-  run yq eval '.jobs.pr-review-mention.if' "$WORKFLOW"
+  run yq '.jobs.pr-review-mention.if' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" != "null" ]
   [ -n "$output" ]
   # The guard must reference the sender type so Copilot/bot events are skipped.
-  echo "$output" | grep -q "github.event.sender.type"
-  echo "$output" | grep -q "Bot"
+  [[ "$output" == *"github.event.sender.type"* ]]
+  [[ "$output" == *"Bot"* ]]
 }
 
 @test "uses: ref stays pinned to the pr-review-mention/stable channel" {
-  run yq eval '.jobs.pr-review-mention.uses' "$WORKFLOW"
+  run yq '.jobs.pr-review-mention.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  echo "$output" | grep -q '@pr-review-mention/stable$'
+  [[ "$output" == *"@pr-review-mention/stable" ]]
 }
 
 @test "trigger events are unchanged" {
-  run yq eval '[.on | has("issue_comment"), .on | has("pull_request_review_comment"), .on | has("pull_request")] | all' "$WORKFLOW"
+  run yq '[.on | has("issue_comment"), .on | has("pull_request_review_comment"), .on | has("pull_request")] | all' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
 
 @test "job-level pull-requests: write permission is preserved" {
-  run yq eval '.jobs.pr-review-mention.permissions.pull-requests' "$WORKFLOW"
+  run yq '.jobs.pr-review-mention.permissions.pull-requests' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" = "write" ]
 }

@@ -35,11 +35,16 @@ permissions: {}
 
 jobs:
   pr-review-mention:
-    # Skip events whose sender is a Bot (e.g. the Copilot coding agent). GitHub
-    # gates bot-originated workflow events behind maintainer approval; left
-    # unapproved they terminate as `action_required`, which counts against the
-    # workflow's failure rate (issue #307). The mention / review-request flow is
-    # human-driven, so a bot sender never carries a legitimate review request.
+    # Skip events whose sender is a Bot (e.g. the Copilot coding agent), marking
+    # the job skipped (= success) and preventing an unnecessary reusable workflow
+    # invocation. The mention / review-request flow is human-driven, so a bot
+    # sender never carries a legitimate review request.
+    # Limitation: this job-level guard cannot prevent a workflow-level
+    # `action_required` state — GitHub enforces that approval gate before any
+    # `if:` condition is evaluated (see issue #307 for context). For bots that
+    # trigger the repo's first-time-contributor approval requirement the proper
+    # mitigation is to allowlist the bot account in Settings → Actions →
+    # "Fork pull request workflows from outside collaborators".
     # `github.event.sender` is populated on all three trigger events.
     if: github.event.sender.type != 'Bot'
     permissions:

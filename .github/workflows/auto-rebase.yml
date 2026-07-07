@@ -51,4 +51,8 @@ jobs:
       contents: write      # update-branch via GITHUB_TOKEN (may touch .github/workflows/)
       pull-requests: write # post comments on PRs
     uses: petry-projects/.github/.github/workflows/auto-rebase-reusable.yml@auto-rebase/stable  # NOSONAR(githubactions:S7637) first-party channel ref
-    secrets: inherit
+    # Pass only the secret the reusable declares (S7635), instead of inheriting
+    # every org secret. GH_PAT_WORKFLOWS is optional — it lets the reusable push
+    # branch updates that touch .github/workflows/, which GITHUB_TOKEN cannot.
+    secrets:
+      GH_PAT_WORKFLOWS: ${{ secrets.GH_PAT_WORKFLOWS }}

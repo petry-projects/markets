@@ -113,19 +113,19 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Type check
-        run: npx --no-install --ignore-scripts tsc --noEmit
+        run: npx --no-install tsc --noEmit
 
       - name: Lint
-        run: npx --no-install --ignore-scripts eslint . --max-warnings 0
+        run: npx --no-install eslint . --max-warnings 0
 
       - name: Format check
-        run: npx --no-install --ignore-scripts prettier --check .
+        run: npx --no-install prettier --check .
 
       - name: GraphQL codegen check
-        run: npx --no-install --ignore-scripts graphql-codegen --check
+        run: npx --no-install graphql-codegen --check
 
       - name: Test + coverage (≥80% branch and line)
-        run: npx --no-install --ignore-scripts jest --ci --coverage --coverageThreshold='{"global":{"lines":80,"branches":80}}'
+        run: npx --no-install jest --ci --coverage --coverageThreshold='{"global":{"lines":80,"branches":80}}'
 
   # ── Secret scanning ────────────────────────────────────────────────────────
   secret-scan:

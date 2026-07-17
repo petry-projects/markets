@@ -13,7 +13,6 @@
 #     required_review_thread_resolution: true
 #     dismiss_stale_reviews_on_push:   true
 #     require_last_push_approval:      true
-#     allowed_merge_methods:           ["squash"]
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#pr-quality--standard-ruleset-all-repositories
@@ -39,7 +38,7 @@ export GH_TOKEN
 
 # Fetch existing rulesets
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
-  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
+  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
 
 PAYLOAD=$(jq -n '{
   name: "pr-quality",
@@ -70,8 +69,7 @@ PAYLOAD=$(jq -n '{
         require_code_owner_review: true,
         required_review_thread_resolution: true,
         dismiss_stale_reviews_on_push: true,
-        require_last_push_approval: true,
-        allowed_merge_methods: ["squash"]
+        require_last_push_approval: true
       }
     }
   ]

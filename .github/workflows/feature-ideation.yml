@@ -64,8 +64,19 @@ on:
         required: false
         default: false
         type: boolean
+      enhance_backlog:
+        description: 'Backlog enhancement sweep: enhance this repo''s open, human-authored, not-yet-enhanced Ideas (one comment each, idempotent). Combine with dry_run=true to preview.'
+        required: false
+        default: false
+        type: boolean
+      target_discussion:
+        description: 'Internal — set by `redispatch` when bridging a `discussion:created` event to workflow_dispatch (claude-code-action does not support discussion contexts). Not for manual use.'
+        required: false
+        default: ''
+        type: string
   # Auto-enhance a freshly-created idea: when a new Discussion is opened in the
-  # Ideas category, the analyst researches and refines it in single-idea mode.
+  # Ideas category, the `redispatch` job bridges it to workflow_dispatch (see below)
+  # so the analyst refines it in single-idea mode under a supported event.
   discussion:
     types: [created]
 

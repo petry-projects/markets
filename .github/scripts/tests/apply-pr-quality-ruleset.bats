@@ -48,27 +48,9 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
 }
 
 @test "script generates valid JSON payload that matches the canonical pr-quality ruleset" {
-  # Extract the jq -n payload program and evaluate it, then assert the
-  # compliance-critical parameter is present and true.
-  run jq -n '{
-    name: "pr-quality",
-    target: "branch",
-    enforcement: "active",
-    conditions: { ref_name: { include: ["~DEFAULT_BRANCH"], exclude: [] } },
-    rules: [
-      {
-        type: "pull_request",
-        parameters: {
-          required_approving_review_count: 1,
-          require_code_owner_review: true,
-          required_review_thread_resolution: true,
-          dismiss_stale_reviews_on_push: true,
-          require_last_push_approval: true,
-          allowed_merge_methods: ["squash"]
-        }
-      }
-    ]
-  } | .rules[0].parameters.require_last_push_approval'
+  # Extract and execute the actual PAYLOAD jq command from the script to validate
+  # the real output (not a hardcoded test duplicate), confirming require_last_push_approval is true.
+  run sh -c "sed -n '/^PAYLOAD=/,/^}.*)/p' '$SCRIPT' | sed 's/^PAYLOAD=\\\$(jq -n /jq -n /' | sed 's/)$//' | bash -c 'read -d \"\" cmd; eval \"\$cmd\" | jq \".rules[0].parameters.require_last_push_approval\"'"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }

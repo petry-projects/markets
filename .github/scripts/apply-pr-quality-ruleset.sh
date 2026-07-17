@@ -33,6 +33,11 @@ set -euo pipefail
 REPO="petry-projects/markets"
 RULESET_NAME="pr-quality"
 
+if ! command -v gh &> /dev/null; then
+  echo "ERROR: GitHub CLI (gh) is not installed or not in PATH" >&2
+  exit 1
+fi
+
 if [ -z "${GH_TOKEN:-}" ]; then
   echo "ERROR: GH_TOKEN is required with administration:write scope" >&2
   exit 1
@@ -42,7 +47,7 @@ export GH_TOKEN
 
 # Fetch existing rulesets
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
-  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
+  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
 
 PAYLOAD=$(jq -n '{
   name: "pr-quality",

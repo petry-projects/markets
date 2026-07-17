@@ -28,10 +28,10 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
   [[ "$output" == *"Bot"* ]]
 }
 
-@test "uses: ref stays pinned to the pr-review-mention/stable channel" {
+@test "uses: ref stays pinned to the pr-review-mention/v2-stable channel" {
   run yq '.jobs.pr-review-mention.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"@pr-review-mention/stable" ]]
+  [[ "$output" == *"@pr-review-mention/v2-stable" ]]
 }
 
 @test "trigger events are unchanged" {

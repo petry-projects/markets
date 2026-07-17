@@ -2,10 +2,15 @@
 # Tests for apply-code-quality-ruleset.sh — static content assertions, no live API calls.
 #
 # The required status check contexts asserted below are the codified standard
-# (petry-projects/.github standards/rulesets/code-quality.json), the source of
+# (petry-projects/.github/standards/rulesets/code-quality.json), the source of
 # truth referenced by issue #326.
 
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-code-quality-ruleset.sh"
+
+assert_required_check() {
+  local context="$1"
+  grep -qE "context:\s*\"$context\"" "$SCRIPT"
+}
 
 @test "script exists and is executable" {
   [ -f "$SCRIPT" ]
@@ -25,17 +30,17 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-code-quality-ru
 }
 
 @test "script requires the CodeQL status check" {
-  grep -qF '{context: "CodeQL"}' "$SCRIPT"
+  assert_required_check "CodeQL"
 }
 
 @test "script requires the SonarCloud status check" {
-  grep -qF '{context: "SonarCloud"}' "$SCRIPT"
+  assert_required_check "SonarCloud"
 }
 
 @test "script requires the agent-shield / AgentShield status check" {
-  grep -qF '{context: "agent-shield / AgentShield"}' "$SCRIPT"
+  assert_required_check "agent-shield / AgentShield"
 }
 
 @test "script requires the dependency-audit / Detect ecosystems status check" {
-  grep -qF '{context: "dependency-audit / Detect ecosystems"}' "$SCRIPT"
+  assert_required_check "dependency-audit / Detect ecosystems"
 }

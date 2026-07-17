@@ -5,7 +5,7 @@
 # enforces required status checks on the default branch of petry-projects/markets.
 #
 # Required status checks configured (codified standard, source of truth:
-# petry-projects/.github standards/rulesets/code-quality.json — see #326):
+# petry-projects/.github/standards/rulesets/code-quality.json — see #326):
 #   - CodeQL                              CodeQL default setup analysis
 #   - SonarCloud                          sonarcloud.yml, job: sonarcloud (name: SonarCloud)
 #   - agent-shield / AgentShield          agent-shield.yml, caller job: agent-shield, reusable job: AgentShield

@@ -4,10 +4,12 @@
 # This script creates (or updates) the `code-quality` repository ruleset that
 # enforces required status checks on the default branch of petry-projects/markets.
 #
-# Required status checks configured (derived from actual CI check run names):
-#   - SonarCloud          sonarcloud.yml, job: sonarcloud (name: SonarCloud)
-#   - Analyze (actions)   codeql.yml, job: analyze (name: Analyze), language: actions
-#   - dev-lead / dispatch  dev-lead.yml, caller job: dev-lead, reusable job: dispatch
+# Required status checks configured (codified standard, source of truth:
+# petry-projects/.github standards/rulesets/code-quality.json — see #326):
+#   - CodeQL                              CodeQL default setup analysis
+#   - SonarCloud                          sonarcloud.yml, job: sonarcloud (name: SonarCloud)
+#   - agent-shield / AgentShield          agent-shield.yml, caller job: agent-shield, reusable job: AgentShield
+#   - dependency-audit / Detect ecosystems  dependency-audit.yml, caller job: dependency-audit, reusable job: Detect ecosystems
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#code-quality--required-checks-ruleset-all-repositories
@@ -51,9 +53,10 @@ PAYLOAD=$(jq -n '{
       parameters: {
         strict_required_status_checks_policy: true,
         required_status_checks: [
+          {context: "CodeQL"},
           {context: "SonarCloud"},
-          {context: "Analyze (actions)"},
-          {context: "dev-lead / dispatch"}
+          {context: "agent-shield / AgentShield"},
+          {context: "dependency-audit / Detect ecosystems"}
         ]
       }
     }

@@ -212,7 +212,7 @@ op-session-*
 *.sql.xz
 *.sql.zst
 *.dump
-*.bak
+*.sql.bak
 dump.rdb
 mongodump/
 # Client config dotfiles that store passwords in plaintext
@@ -399,15 +399,11 @@ actionlint.tar.gz
 # Claude Code machine-specific project memory
 .claude/projects/-home-*
 
-# Secrets and environment files
-
 # Firebase / Google service config (contain API keys)
 google-services.json
 GoogleService-Info.plist
 firebase-adminsdk*.json
 serviceAccountKey.json
-
-# Common secret files
 
 # Dependencies and build artifacts
 node_modules/
@@ -419,5 +415,3 @@ build/
 # OS files
 .DS_Store
 Thumbs.db
-
-# Dev-lead agent working directory

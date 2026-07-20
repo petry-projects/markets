@@ -41,6 +41,6 @@ jobs:
     if: >-
       github.event.check_run.conclusion == 'failure' &&
       !startsWith(github.event.check_run.name, 'CI Failure Analyst')
-    uses: petry-projects/.github-private/.github/workflows/ci-failure-analyst-reusable.yml@67ec50f14be61dad1523207a2527f84993a1be45 # main
+    uses: petry-projects/.github-private/.github/workflows/ci-failure-analyst-reusable.yml@298a1d29b67a5bc34eb4b6113a3cc3b396f9a543 # main
     secrets:
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

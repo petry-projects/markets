@@ -40,8 +40,8 @@ export GH_TOKEN
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
 
-PAYLOAD=$(jq -n '{
-  name: "pr-quality",
+PAYLOAD=$(jq -n --arg name "$RULESET_NAME" '{
+  name: $name,
   target: "branch",
   enforcement: "active",
   conditions: {

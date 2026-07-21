@@ -38,7 +38,7 @@ export GH_TOKEN
 
 # Fetch existing rulesets
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
-  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
+  --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
 
 PAYLOAD=$(jq -n '{
   name: "pr-quality",

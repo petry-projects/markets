@@ -23,7 +23,7 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
 }
 
 @test "script declares the pr-quality ruleset" {
-  grep -qE '^[[:space:]]+name[[:space:]]*:[[:space:]]*"pr-quality"' "$SCRIPT"
+  grep -qE 'RULESET_NAME\s*=\s*"pr-quality"' "$SCRIPT"
 }
 
 @test "script requires GH_TOKEN" {
@@ -50,10 +50,10 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
   grep -qE '^[[:space:]]+require_last_push_approval[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
-@test "script allows only the squash merge method" {
-  grep -qE '^[[:space:]]+allowed_merge_methods[[:space:]]*:[[:space:]]*\[[[:space:]]*"squash"[[:space:]]*\][[:space:]]*$' "$SCRIPT"
+@test "script restricts allowed_merge_methods to squash" {
+  grep -qE 'allowed_merge_methods:\s*\[\s*"squash"\s*\]' "$SCRIPT"
 }
 
 @test "script declares a pull_request rule type" {
-  grep -q 'type: "pull_request"' "$SCRIPT"
+  grep -qE 'type:\s*"pull_request"' "$SCRIPT"
 }

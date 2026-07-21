@@ -111,9 +111,17 @@ jobs:
       # its target users, and the competitive landscape. The more specific you
       # are, the more useful the proposals.
       project_context: |
-        TODO: Replace this with a description of the project and its market.
-        Example: "ProjectX is a [type of product] for [target user]. Competitors
-        include A, B, C. Key emerging trends in this space: X, Y, Z."
+        Markets is a mobile app (React Native / Expo) that connects
+        farmers-market shoppers, vendors, and market managers — making it easy
+        to discover nearby markets, browse vendor catalogs, and support local
+        food. It serves three roles: customers who find markets and produce,
+        vendors who manage their stall and catalog, and managers who run the
+        market, all through a mobile-first, accessibility-conscious UX. Target
+        users are local-food shoppers and small independent vendors, many of
+        whom are app-averse. Competitors include LocalHarvest, Farmish,
+        GoingGrocery, and generic marketplace/event apps. Emerging trends in
+        this space: digital SNAP/EBT acceptance, on-device produce recognition,
+        low-friction SMS-based vendor onboarding, and hyper-local discovery.
       # === OPTIONAL: repo-local reputable source list ===
       # Copy standards/feature-ideation-sources.md from petry-projects/.github
       # to .github/feature-ideation-sources.md and customise it. The reusable

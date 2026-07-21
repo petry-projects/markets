@@ -157,7 +157,9 @@ jobs:
         run: |
           {
             echo "target_discussion=${TARGET_DISCUSSION:-}"
-            echo "focus_area=${FOCUS_AREA:-}"
+            echo "focus_area<<FOCUS_AREA_EOF"
+            echo "${FOCUS_AREA:-}"
+            echo "FOCUS_AREA_EOF"
             echo "research_depth=${RESEARCH_DEPTH:-standard}"
             echo "dry_run=${DRY_RUN:-false}"
             echo "enhance_backlog=${ENHANCE_BACKLOG:-false}"

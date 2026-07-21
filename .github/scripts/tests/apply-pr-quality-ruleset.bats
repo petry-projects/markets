@@ -17,33 +17,33 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
 }
 
 @test "script targets petry-projects/markets repo" {
-  grep -q 'petry-projects/markets' "$SCRIPT"
+  grep -qE '^REPO="petry-projects/markets"$' "$SCRIPT"
 }
 
 @test "script declares the pr-quality ruleset" {
-  grep -qE 'name[[:space:]]*:[[:space:]]*"pr-quality"' "$SCRIPT"
+  grep -qE '^[[:space:]]+name[[:space:]]*:[[:space:]]*"pr-quality"' "$SCRIPT"
 }
 
 @test "script sets dismiss_stale_reviews_on_push to true (issue #324)" {
-  grep -qE 'dismiss_stale_reviews_on_push[[:space:]]*:[[:space:]]*true' "$SCRIPT"
+  grep -qE '^[[:space:]]+dismiss_stale_reviews_on_push[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
 @test "script requires one approving review" {
-  grep -qE 'required_approving_review_count[[:space:]]*:[[:space:]]*1' "$SCRIPT"
+  grep -qE '^[[:space:]]+required_approving_review_count[[:space:]]*:[[:space:]]*1[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
 @test "script requires code owner review" {
-  grep -qE 'require_code_owner_review[[:space:]]*:[[:space:]]*true' "$SCRIPT"
+  grep -qE '^[[:space:]]+require_code_owner_review[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
 @test "script requires review thread resolution" {
-  grep -qE 'required_review_thread_resolution[[:space:]]*:[[:space:]]*true' "$SCRIPT"
+  grep -qE '^[[:space:]]+required_review_thread_resolution[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
 @test "script requires last push approval" {
-  grep -qE 'require_last_push_approval[[:space:]]*:[[:space:]]*true' "$SCRIPT"
+  grep -qE '^[[:space:]]+require_last_push_approval[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
 @test "script allows only the squash merge method" {
-  grep -qE 'allowed_merge_methods[[:space:]]*:[[:space:]]*\[[[:space:]]*"squash"[[:space:]]*\]' "$SCRIPT"
+  grep -qE '^[[:space:]]+allowed_merge_methods[[:space:]]*:[[:space:]]*\[[[:space:]]*"squash"[[:space:]]*\][[:space:]]*$' "$SCRIPT"
 }

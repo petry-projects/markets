@@ -46,6 +46,13 @@ permissions: {}
 
 jobs:
   pr-auto-review:
+    # Skip pull_request / pull_request_review events from forks and Dependabot:
+    # secrets are unavailable in those contexts, so the reusable's GH_PAT_WORKFLOWS
+    # call would fail. The later workflow_run path runs with secrets after CI finishes.
+    if: >
+      github.event_name != 'pull_request' && github.event_name != 'pull_request_review' ||
+      (github.event.pull_request.head.repo.full_name == github.repository &&
+       github.event.pull_request.user.login != 'dependabot[bot]')
     permissions:
       pull-requests: read
       checks: read

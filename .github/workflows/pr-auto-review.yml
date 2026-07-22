@@ -6,26 +6,29 @@
 # AGENTS — READ BEFORE EDITING:
 #   • This file is a THIN CALLER STUB. All readiness-gate logic lives in the
 #     reusable workflow above.
-#   • You MAY change: the tag in the `uses:` line when upgrading the reusable
-#     workflow version (e.g. bump `@v2` → `@v3` when petry-projects/.github cuts
-#     a new release), and the workflow name(s) in `workflow_run.workflows` to
-#     match your repository's CI workflow name(s).
-#   • You MUST NOT change: trigger event types or the job-level `permissions:`
-#     block — reusable workflows can be granted no more permissions than the
-#     calling job, so removing the stanza breaks the reusable's gh API calls.
+#   • You MAY change: the workflow name(s) in `workflow_run.workflows` to match
+#     your repository's CI workflow name(s).
+#   • You MUST NOT change: the `@pr-auto-review/v1-stable` channel in the `uses:`
+#     line — this reusable is on the org-wide moving-channel model (rollout and
+#     rollback are a single central tag move; a frozen `@vN`/`@<sha>` pin is
+#     rejected by the compliance audit). Nor the trigger event types or the
+#     job-level `permissions:` block — reusable workflows can be granted no more
+#     permissions than the calling job, so removing the stanza breaks the
+#     reusable's gh API calls.
 #   • If you need different behaviour, open a PR against the reusable in the
-#     central repo.
-#   • When publishing a new version of this reusable, also update this template
-#     and open a fanout PR across all caller repos.
+#     central repo. The change will propagate everywhere on next run.
 # ─────────────────────────────────────────────────────────────────────────────
 #
 # PR Auto-Review — thin caller for the org-level reusable.
+# To adopt: copy this file to .github/workflows/pr-auto-review.yml in your repo.
+# Requires: GH_PAT_WORKFLOWS org secret (already present in petry-projects org).
 name: PR Auto-Review — Ready Check
 
 on:
   # workflow_run fires when a named GitHub Actions workflow completes.
   # check_suite does NOT trigger for GitHub Actions runs, so this is required
   # to catch CI turning green on a PR.
+  # TODO: replace "CI" with your repository's CI workflow name(s).
   workflow_run:
     workflows: ["CI"]
     types: [completed]
@@ -43,17 +46,13 @@ permissions: {}
 
 jobs:
   pr-auto-review:
-    # Skip pull_request / pull_request_review events from forks and Dependabot:
-    # secrets are unavailable in those contexts, so the reusable's GH_PAT_WORKFLOWS
-    # call would fail. The later workflow_run path runs with secrets after CI finishes.
-    if: >
-      github.event_name != 'pull_request' && github.event_name != 'pull_request_review' ||
-      (github.event.pull_request.head.repo.full_name == github.repository &&
-       github.event.pull_request.user.login != 'dependabot[bot]')
     permissions:
       pull-requests: read
       checks: read
       actions: read
-    uses: petry-projects/.github/.github/workflows/pr-auto-review-reusable.yml@pr-auto-review/stable  # NOSONAR(githubactions:S7637) first-party channel ref
+    uses: petry-projects/.github/.github/workflows/pr-auto-review-reusable.yml@pr-auto-review/v1-stable  # NOSONAR(githubactions:S7637) first-party channel ref
     secrets:
-      GH_PAT_WORKFLOWS: ${{ secrets.GH_PAT_WORKFLOWS }}
+      # Canonical-first fallback (.github-private#1326). The reusable resolves this
+      # secret BY NAME, so only the VALUE changes — the passed key stays named
+      # GH_PAT_WORKFLOWS.
+      GH_PAT_WORKFLOWS: ${{ secrets.GH_PAT_DON_PETRY || secrets.GH_PAT_WORKFLOWS }}

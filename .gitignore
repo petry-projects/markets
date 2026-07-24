@@ -412,6 +412,9 @@ build/
 .expo/
 .next/
 
+# Backup files (any type — may contain sensitive data)
+*.bak
+
 # OS files
 .DS_Store
 Thumbs.db

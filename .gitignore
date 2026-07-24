@@ -212,7 +212,7 @@ op-session-*
 *.sql.xz
 *.sql.zst
 *.dump
-*.sql.bak
+*.bak
 dump.rdb
 mongodump/
 # Client config dotfiles that store passwords in plaintext

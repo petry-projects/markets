@@ -62,4 +62,11 @@ teardown() {
   [ "$(jq -r "$params.dismiss_stale_reviews_on_push" "$BATS_TMPDIR/payload.json")" = "true" ]
   [ "$(jq -r "$params.require_last_push_approval" "$BATS_TMPDIR/payload.json")" = "true" ]
   [ "$(jq -r "$params.allowed_merge_methods[0]" "$BATS_TMPDIR/payload.json")" = "squash" ]
+
+  [ "$(jq '.bypass_actors | length' "$BATS_TMPDIR/payload.json")" -eq 2 ]
+  [ "$(jq -r '.bypass_actors[0].actor_type' "$BATS_TMPDIR/payload.json")" = "OrganizationAdmin" ]
+  [ "$(jq -r '.bypass_actors[0].bypass_mode' "$BATS_TMPDIR/payload.json")" = "always" ]
+  [ "$(jq -r '.bypass_actors[1].actor_type' "$BATS_TMPDIR/payload.json")" = "Integration" ]
+  [ "$(jq -r '.bypass_actors[1].bypass_mode' "$BATS_TMPDIR/payload.json")" = "always" ]
+  [ "$(jq '.bypass_actors[1].actor_id' "$BATS_TMPDIR/payload.json")" -eq 3167543 ]
 }

@@ -17,6 +17,7 @@ on:
     paths:
       - .github/scripts/apply-repo-settings.sh
       - .github/scripts/apply-code-quality-ruleset.sh
+      - .github/scripts/apply-pr-quality-ruleset.sh
       - .github/workflows/apply-repo-settings.yml
 
 permissions: {}

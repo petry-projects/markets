@@ -82,7 +82,21 @@ if [ -n "$EXISTING_ID" ]; then
   echo "Done — ruleset updated: https://github.com/$REPO/rules/$EXISTING_ID"
 else
   echo "Creating $RULESET_NAME ruleset ..."
-  RESULT=$(echo "$PAYLOAD" | gh api -X POST "repos/$REPO/rulesets" --input -)
-  NEW_ID=$(echo "$RESULT" | jq -r '.id')
-  echo "Done — ruleset created: https://github.com/$REPO/rules/$NEW_ID"
+  # Capture stderr so a 422 conflict from concurrent creation doesn't terminate the script.
+  # On conflict, re-fetch the ID created by the concurrent run and update instead.
+  if RESULT=$(echo "$PAYLOAD" | gh api -X POST "repos/$REPO/rulesets" --input - 2>&1); then
+    NEW_ID=$(echo "$RESULT" | jq -r '.id')
+    echo "Done — ruleset created: https://github.com/$REPO/rules/$NEW_ID"
+  else
+    EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
+      --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
+    if [ -z "$EXISTING_ID" ]; then
+      echo "ERROR: POST failed and no existing $RULESET_NAME ruleset found" >&2
+      echo "$RESULT" >&2
+      exit 1
+    fi
+    echo "Concurrent creation detected — updating $RULESET_NAME ruleset (id=$EXISTING_ID) ..."
+    echo "$PAYLOAD" | gh api -X PUT "repos/$REPO/rulesets/$EXISTING_ID" --input - > /dev/null
+    echo "Done — ruleset updated: https://github.com/$REPO/rules/$EXISTING_ID"
+  fi
 fi

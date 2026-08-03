@@ -29,3 +29,11 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-repo-settings.s
 @test "script wires in secret_scanning_non_provider_patterns enablement (issue #227)" {
   grep -q 'apply-secret-scanning-non-provider-patterns.sh' "$SCRIPT"
 }
+
+@test "script wires in code-quality ruleset application (issue #375)" {
+  grep -q 'apply-code-quality-ruleset.sh' "$SCRIPT"
+}
+
+@test "script wires in pr-quality ruleset application (issue #324)" {
+  grep -q 'apply-pr-quality-ruleset.sh' "$SCRIPT"
+}

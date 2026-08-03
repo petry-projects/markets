@@ -57,4 +57,12 @@ echo "Enabling secret scanning non-provider patterns ..."
 
 "$SCRIPT_DIR/apply-secret-scanning-non-provider-patterns.sh"
 
+echo "Applying code-quality required-status-checks ruleset ..."
+
+"$SCRIPT_DIR/apply-code-quality-ruleset.sh"
+
+echo "Applying pr-quality required-review ruleset ..."
+
+"$SCRIPT_DIR/apply-pr-quality-ruleset.sh"
+
 echo "Done — repository settings applied: https://github.com/$REPO/settings"

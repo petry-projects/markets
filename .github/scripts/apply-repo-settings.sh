@@ -61,7 +61,7 @@ echo "Applying code-quality required-status-checks ruleset ..."
 
 "$SCRIPT_DIR/apply-code-quality-ruleset.sh"
 
-echo "Applying pr-quality required-review ruleset ..."
+echo "Applying pr-quality pull-request review ruleset ..."
 
 "$SCRIPT_DIR/apply-pr-quality-ruleset.sh"
 

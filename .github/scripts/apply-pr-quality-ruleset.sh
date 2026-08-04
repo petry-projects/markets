@@ -6,9 +6,9 @@
 # petry-projects/markets.
 #
 # Pull-request rule parameters configured (codified standard, source of truth:
-# petry-projects/.github/standards/rulesets/pr-quality.json — see #324):
+# petry-projects/.github/standards/rulesets/pr-quality.json — see #323, #324):
 #   - required_approving_review_count: 1
-#   - require_code_owner_review: true
+#   - require_code_owner_review: true       (drifted to false — issue #323)
 #   - required_review_thread_resolution: true
 #   - dismiss_stale_reviews_on_push: true   (the drifted parameter — issue #324)
 #   - require_last_push_approval: true
@@ -40,8 +40,8 @@ export GH_TOKEN
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
 
-PAYLOAD=$(jq -n '{
-  name: "pr-quality",
+PAYLOAD=$(jq -n --arg name "$RULESET_NAME" '{
+  name: $name,
   target: "branch",
   enforcement: "active",
   conditions: {

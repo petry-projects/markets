@@ -3,7 +3,9 @@
 #
 # The pull_request rule parameters asserted below are the codified standard
 # (petry-projects/.github/standards/rulesets/pr-quality.json), the source of
-# truth referenced by issue #324.
+# truth referenced by issues #323 and #324. require_code_owner_review (#323)
+# and dismiss_stale_reviews_on_push (#324) are the parameters that drifted to
+# false and must be codified as true.
 
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-ruleset.sh"
 
@@ -21,7 +23,11 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
 }
 
 @test "script declares the pr-quality ruleset" {
-  grep -qE '^[[:space:]]+name[[:space:]]*:[[:space:]]*"pr-quality"' "$SCRIPT"
+  grep -qE 'RULESET_NAME\s*=\s*"pr-quality"' "$SCRIPT"
+}
+
+@test "script requires GH_TOKEN" {
+  grep -q 'GH_TOKEN' "$SCRIPT"
 }
 
 @test "script sets dismiss_stale_reviews_on_push to true (issue #324)" {
@@ -32,7 +38,7 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
   grep -qE '^[[:space:]]+required_approving_review_count[[:space:]]*:[[:space:]]*1[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
-@test "script requires code owner review" {
+@test "script requires code owner review (issue #323)" {
   grep -qE '^[[:space:]]+require_code_owner_review[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
@@ -44,6 +50,10 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-pr-quality-rule
   grep -qE '^[[:space:]]+require_last_push_approval[[:space:]]*:[[:space:]]*true[[:space:]]*,?[[:space:]]*$' "$SCRIPT"
 }
 
-@test "script allows only the squash merge method" {
-  grep -qE '^[[:space:]]+allowed_merge_methods[[:space:]]*:[[:space:]]*\[[[:space:]]*"squash"[[:space:]]*\][[:space:]]*$' "$SCRIPT"
+@test "script restricts allowed_merge_methods to squash" {
+  grep -qE 'allowed_merge_methods:\s*\[\s*"squash"\s*\]' "$SCRIPT"
+}
+
+@test "script declares a pull_request rule type" {
+  grep -qE 'type:\s*"pull_request"' "$SCRIPT"
 }

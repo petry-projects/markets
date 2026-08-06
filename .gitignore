@@ -416,5 +416,3 @@ build/
 .DS_Store
 Thumbs.db
 
-# Dev-lead agent working directory
-.dev-lead/

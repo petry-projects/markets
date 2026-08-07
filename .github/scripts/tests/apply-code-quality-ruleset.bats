@@ -7,6 +7,15 @@
 
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-code-quality-ruleset.sh"
 
+setup() {
+  export BATS_TMPDIR="$(mktemp -d)"
+  export GH_TOKEN="mock-token"
+}
+
+teardown() {
+  rm -rf "$BATS_TMPDIR"
+}
+
 assert_required_check() {
   local context="$1"
   grep -qE "context:\s*\"$context\"" "$SCRIPT"
@@ -43,4 +52,27 @@ assert_required_check() {
 
 @test "script requires the dependency-audit / Detect ecosystems status check" {
   assert_required_check "dependency-audit / Detect ecosystems"
+}
+
+@test "payload includes the OrganizationAdmin bypass actor with bypass_mode always" {
+  gh() {
+    if [ "$1" = "api" ]; then
+      if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then
+        echo ""
+        return 0
+      elif [ "$2" = "-X" ] && [ "$3" = "POST" ]; then
+        cat > "$BATS_TMPDIR/payload.json"
+        echo '{"id": 12345}'
+        return 0
+      fi
+    fi
+    command gh "$@"
+  }
+  export -f gh
+
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+
+  [ "$(jq -r '.bypass_actors[0].actor_type' "$BATS_TMPDIR/payload.json")" = "OrganizationAdmin" ]
+  [ "$(jq -r '.bypass_actors[0].bypass_mode' "$BATS_TMPDIR/payload.json")" = "always" ]
 }

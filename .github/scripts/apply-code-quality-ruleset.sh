@@ -11,8 +11,12 @@
 #   - agent-shield / AgentShield          agent-shield.yml, caller job: agent-shield, reusable job: AgentShield
 #   - dependency-audit / Detect ecosystems  dependency-audit.yml, caller job: dependency-audit, reusable job: Detect ecosystems
 #
+# Bypass actors configured (required on every ruleset targeting main — see #399):
+#   - OrganizationAdmin (bypass_mode: always)  emergency admin override
+#
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#code-quality--required-checks-ruleset-all-repositories
+#   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#bypass-actors--required-on-every-ruleset-targeting-main
 #
 # Usage:
 #   GH_TOKEN=<admin-token> bash .github/scripts/apply-code-quality-ruleset.sh
@@ -61,7 +65,12 @@ PAYLOAD=$(jq -n '{
       }
     }
   ],
-  bypass_actors: []
+  bypass_actors: [
+    {
+      actor_type: "OrganizationAdmin",
+      bypass_mode: "always"
+    }
+  ]
 }')
 
 if [ -n "$EXISTING_ID" ]; then

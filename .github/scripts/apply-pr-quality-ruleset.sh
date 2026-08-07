@@ -2,17 +2,18 @@
 # apply-pr-quality-ruleset.sh — Idempotently create/update the pr-quality ruleset
 #
 # This script creates (or updates) the `pr-quality` repository ruleset that
-# enforces pull-request quality gates on the default branch of
+# enforces pull-request review quality gates on the default branch of
 # petry-projects/markets.
 #
 # Pull-request rule parameters configured (codified standard, source of truth:
-# petry-projects/.github/standards/rulesets/pr-quality.json — see #323, #324):
-#   - required_approving_review_count: 1
-#   - require_code_owner_review: true       (drifted to false — issue #323)
-#   - required_review_thread_resolution: true
-#   - dismiss_stale_reviews_on_push: true   (the drifted parameter — issue #324)
-#   - require_last_push_approval: true
-#   - allowed_merge_methods: ["squash"]
+# petry-projects/.github/standards/rulesets/pr-quality.json — see #575/#580):
+#   - required_approving_review_count: 1     at least one approving review
+#   - require_code_owner_review: true        CODEOWNERS must approve
+#   - required_review_thread_resolution: true  all review threads resolved
+#   - dismiss_stale_reviews_on_push: true    new pushes invalidate approvals
+#   - require_last_push_approval: true        someone other than the last pusher
+#                                             must approve (drift fix — see #325)
+#   - allowed_merge_methods: ["squash"]      squash-only merges
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#pr-quality--standard-ruleset-all-repositories
@@ -40,8 +41,8 @@ export GH_TOKEN
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
 
-PAYLOAD=$(jq -n --arg name "$RULESET_NAME" '{
-  name: $name,
+PAYLOAD=$(jq -n '{
+  name: "pr-quality",
   target: "branch",
   enforcement: "active",
   conditions: {
@@ -82,21 +83,7 @@ if [ -n "$EXISTING_ID" ]; then
   echo "Done — ruleset updated: https://github.com/$REPO/rules/$EXISTING_ID"
 else
   echo "Creating $RULESET_NAME ruleset ..."
-  # Capture stderr so a 422 conflict from concurrent creation doesn't terminate the script.
-  # On conflict, re-fetch the ID created by the concurrent run and update instead.
-  if RESULT=$(echo "$PAYLOAD" | gh api -X POST "repos/$REPO/rulesets" --input - 2>&1); then
-    NEW_ID=$(echo "$RESULT" | jq -r '.id')
-    echo "Done — ruleset created: https://github.com/$REPO/rules/$NEW_ID"
-  else
-    EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
-      --jq ".[] | select(.name == \"$RULESET_NAME\") | .id")
-    if [ -z "$EXISTING_ID" ]; then
-      echo "ERROR: POST failed and no existing $RULESET_NAME ruleset found" >&2
-      echo "$RESULT" >&2
-      exit 1
-    fi
-    echo "Concurrent creation detected — updating $RULESET_NAME ruleset (id=$EXISTING_ID) ..."
-    echo "$PAYLOAD" | gh api -X PUT "repos/$REPO/rulesets/$EXISTING_ID" --input - > /dev/null
-    echo "Done — ruleset updated: https://github.com/$REPO/rules/$EXISTING_ID"
-  fi
+  RESULT=$(echo "$PAYLOAD" | gh api -X POST "repos/$REPO/rulesets" --input -)
+  NEW_ID=$(echo "$RESULT" | jq -r '.id')
+  echo "Done — ruleset created: https://github.com/$REPO/rules/$NEW_ID"
 fi

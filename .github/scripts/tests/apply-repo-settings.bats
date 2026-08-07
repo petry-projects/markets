@@ -34,6 +34,6 @@ SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-repo-settings.s
   grep -q 'apply-code-quality-ruleset.sh' "$SCRIPT"
 }
 
-@test "script wires in pr-quality ruleset application (issues #323, #324)" {
+@test "script wires in pr-quality ruleset application (issue #325)" {
   grep -q 'apply-pr-quality-ruleset.sh' "$SCRIPT"
 }

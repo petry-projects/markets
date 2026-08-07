@@ -11,7 +11,9 @@
 #   - require_code_owner_review: true        CODEOWNERS must approve
 #   - required_review_thread_resolution: true  all review threads resolved
 #   - dismiss_stale_reviews_on_push: true    new pushes invalidate approvals
-#                                             (drift fix — see #402)
+#                                             (script is source-of-truth; re-running
+#                                              this script corrects any live ruleset
+#                                              drift — tracked in #402)
 #   - require_last_push_approval: true        someone other than the last pusher
 #                                             must approve (drift fix — see #325)
 #   - allowed_merge_methods: ["squash"]      squash-only merges

@@ -41,7 +41,21 @@ export GH_TOKEN
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
 
-PAYLOAD=$(jq -n '{
+# Required bypass actor per org standard (see #399)
+REQUIRED_BYPASS='{"actor_type":"OrganizationAdmin","bypass_mode":"always"}'
+
+# When updating an existing ruleset, fetch its current bypass actors and merge them
+# with the required actor so that other legitimate bypass actors are not silently removed.
+if [ -n "$EXISTING_ID" ]; then
+  EXISTING_BYPASS=$(gh api "repos/$REPO/rulesets/$EXISTING_ID" \
+    --jq '.bypass_actors // []' 2>/dev/null || echo "[]")
+  BYPASS_ACTORS=$(echo "$EXISTING_BYPASS" | \
+    jq --argjson req "$REQUIRED_BYPASS" 'map(select(.actor_type != $req.actor_type)) + [$req]')
+else
+  BYPASS_ACTORS=$(jq -n --argjson req "$REQUIRED_BYPASS" '[$req]')
+fi
+
+PAYLOAD=$(jq -n --argjson bypass_actors "$BYPASS_ACTORS" '{
   name: "code-quality",
   target: "branch",
   enforcement: "active",
@@ -65,12 +79,7 @@ PAYLOAD=$(jq -n '{
       }
     }
   ],
-  bypass_actors: [
-    {
-      actor_type: "OrganizationAdmin",
-      bypass_mode: "always"
-    }
-  ]
+  bypass_actors: $bypass_actors
 }')
 
 if [ -n "$EXISTING_ID" ]; then

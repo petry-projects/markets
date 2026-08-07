@@ -9,6 +9,7 @@
 # petry-projects/.github/standards/rulesets/pr-quality.json — see #575/#580):
 #   - required_approving_review_count: 1     at least one approving review
 #   - require_code_owner_review: true        CODEOWNERS must approve
+#                                             (drift fix — see #401)
 #   - required_review_thread_resolution: true  all review threads resolved
 #   - dismiss_stale_reviews_on_push: true    new pushes invalidate approvals
 #   - require_last_push_approval: true        someone other than the last pusher

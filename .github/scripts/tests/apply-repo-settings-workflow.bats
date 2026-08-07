@@ -41,7 +41,7 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
   [ "$status" -eq 0 ]
   [ "$output" = "main" ]
 
-  run yq '.on.push.paths | contains(["'.github/scripts/apply-pr-quality-ruleset.sh'"])' "$WORKFLOW"
+  run yq '.on.push.paths | contains([".github/scripts/apply-pr-quality-ruleset.sh"])' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }

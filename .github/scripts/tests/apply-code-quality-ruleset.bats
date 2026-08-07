@@ -44,3 +44,52 @@ assert_required_check() {
 @test "script requires the dependency-audit / Detect ecosystems status check" {
   assert_required_check "dependency-audit / Detect ecosystems"
 }
+
+@test "payload includes the OrganizationAdmin bypass actor with bypass_mode always" {
+  export GH_TOKEN="mock-token"
+  gh() {
+    if [ "$1" = "api" ]; then
+      if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then
+        echo ""
+        return 0
+      elif [ "$2" = "-X" ] && [ "$3" = "POST" ]; then
+        cat > "$BATS_TEST_TMPDIR/payload.json"
+        echo '{"id": 12345}'
+        return 0
+      fi
+    fi
+    command gh "$@"
+  }
+  export -f gh
+
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+}
+
+@test "update preserves existing bypass actors while ensuring OrganizationAdmin is present" {
+  export GH_TOKEN="mock-token"
+  gh() {
+    if [ "$1" = "api" ]; then
+      if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then
+        echo "999"
+        return 0
+      elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
+        echo '[{"actor_type":"RepositoryRole","bypass_mode":"pull_request"}]'
+        return 0
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+        cat > "$BATS_TEST_TMPDIR/payload.json"
+        echo '{}'
+        return 0
+      fi
+    fi
+    command gh "$@"
+  }
+  export -f gh
+
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+
+  jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+}

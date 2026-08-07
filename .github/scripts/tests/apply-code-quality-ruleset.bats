@@ -8,12 +8,12 @@
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-code-quality-ruleset.sh"
 
 setup() {
-  export BATS_TMPDIR="$(mktemp -d)"
+  export TEST_TMPDIR="$(mktemp -d)"
   export GH_TOKEN="mock-token"
 }
 
 teardown() {
-  rm -rf "$BATS_TMPDIR"
+  rm -rf "$TEST_TMPDIR"
 }
 
 assert_required_check() {

@@ -12,7 +12,8 @@
 #   - dependency-audit / Detect ecosystems  dependency-audit.yml, caller job: dependency-audit, reusable job: Detect ecosystems
 #
 # Bypass actors configured (required on every ruleset targeting main — see #399):
-#   - OrganizationAdmin (bypass_mode: always)  emergency admin override
+#   - OrganizationAdmin (bypass_mode: always)                             emergency admin override
+#   - dependabot-automerge-petry (actor_id: 3167543, bypass_mode: always) enables Dependabot auto-merge
 #
 # Standard reference:
 #   https://github.com/petry-projects/.github/blob/main/standards/github-settings.md#code-quality--required-checks-ruleset-all-repositories
@@ -41,18 +42,27 @@ export GH_TOKEN
 EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
 
-# Required bypass actor per org standard (see #399)
-REQUIRED_BYPASS='{"actor_type":"OrganizationAdmin","bypass_mode":"always"}'
+# Required bypass actors per org standard (see #399)
+REQUIRED_BYPASS_ORG_ADMIN='{"actor_type":"OrganizationAdmin","bypass_mode":"always"}'
+REQUIRED_BYPASS_DEPENDABOT='{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}'
+REQUIRED_BYPASS_ACTORS=$(jq -n \
+  --argjson org_admin "$REQUIRED_BYPASS_ORG_ADMIN" \
+  --argjson dependabot "$REQUIRED_BYPASS_DEPENDABOT" \
+  '[$org_admin, $dependabot]')
 
 # When updating an existing ruleset, fetch its current bypass actors and merge them
-# with the required actor so that other legitimate bypass actors are not silently removed.
+# with the required actors so that other legitimate bypass actors are not silently removed.
 if [ -n "$EXISTING_ID" ]; then
   EXISTING_BYPASS=$(gh api "repos/$REPO/rulesets/$EXISTING_ID" \
     --jq '.bypass_actors // []' 2>/dev/null || echo "[]")
   BYPASS_ACTORS=$(echo "$EXISTING_BYPASS" | \
-    jq --argjson req "$REQUIRED_BYPASS" 'map(select(.actor_type != $req.actor_type)) + [$req]')
+    jq --argjson req "$REQUIRED_BYPASS_ACTORS" \
+      'map(select(
+         .actor_type != "OrganizationAdmin" and
+         (.actor_type != "Integration" or .actor_id != 3167543)
+       )) + $req')
 else
-  BYPASS_ACTORS=$(jq -n --argjson req "$REQUIRED_BYPASS" '[$req]')
+  BYPASS_ACTORS=$REQUIRED_BYPASS_ACTORS
 fi
 
 PAYLOAD=$(jq -n --argjson bypass_actors "$BYPASS_ACTORS" '{

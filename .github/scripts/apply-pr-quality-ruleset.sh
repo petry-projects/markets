@@ -12,9 +12,11 @@
 #                                             (drift fix — see #401)
 #   - required_review_thread_resolution: true  all review threads resolved
 #   - dismiss_stale_reviews_on_push: true    new pushes invalidate approvals
-#                                             (script is source-of-truth; re-running
-#                                              this script corrects any live ruleset
-#                                              drift — tracked in #402)
+#                                             (source-of-truth: pr-quality.json in
+#                                              petry-projects/.github; this repo-local
+#                                              script is a reference/fallback — re-run
+#                                              corrects live drift only when GH_TOKEN
+#                                              has administration:write access — #402)
 #   - require_last_push_approval: true        someone other than the last pusher
 #                                             must approve (drift fix — see #325)
 #   - allowed_merge_methods: ["squash"]      squash-only merges

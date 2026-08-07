@@ -110,7 +110,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT_DON_PETRY || secrets.GH_PAT_WORKFLOWS }}
         run: |
           if [ -z "${GH_TOKEN}" ]; then
-            echo "::error::GH_PAT_DON_PETRY or GH_PAT_WORKFLOWS is required — a workflow_dispatch fired with GITHUB_TOKEN will not start a run."
+            echo "::error::GH_PAT_WORKFLOWS is required — a workflow_dispatch fired with GITHUB_TOKEN will not start a run."
             exit 1
           fi
       - name: Re-dispatch under workflow_dispatch
@@ -182,7 +182,7 @@ jobs:
       discussions: write
       id-token: write
       actions: read
-    uses: petry-projects/.github/.github/workflows/feature-ideation-reusable.yml@feature-ideation/stable  # NOSONAR(githubactions:S7637) first-party channel ref
+    uses: petry-projects/.github/.github/workflows/feature-ideation-reusable.yml@feature-ideation/v1-stable  # NOSONAR(githubactions:S7637) first-party channel ref
     with:
       # All values below come from `needs.prep.outputs.*` (resolved in the `prep`
       # job) — NOT the `inputs` context — so this reusable `with:` compiles on the

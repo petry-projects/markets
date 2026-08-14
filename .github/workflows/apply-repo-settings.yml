@@ -39,6 +39,32 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
+      # Preflight — without GH_TOKEN_ADMIN the apply step dies with a generic
+      # "GH_TOKEN is required" buried in the script log, so the weekly self-heal
+      # fails unnoticed and ruleset drift recurs (#325 → #403 → #420). Surface the
+      # missing secret loudly (error annotation + job summary) so it gets fixed.
+      - name: Verify admin token is configured
+        env:
+          GH_TOKEN_ADMIN: ${{ secrets.GH_TOKEN_ADMIN }}
+        run: |
+          if [ -z "${GH_TOKEN_ADMIN}" ]; then
+            {
+              echo "## Apply repo settings cannot run"
+              echo ""
+              echo "The \`GH_TOKEN_ADMIN\` secret is not configured for this repository."
+              echo "Without it the pr-quality / code-quality rulesets cannot self-heal, so"
+              echo "compliance drift (e.g. \`require_last_push_approval\` flipping to false)"
+              echo "recurs unnoticed."
+              echo ""
+              echo "**Fix:** provision a repo/org admin token secret named \`GH_TOKEN_ADMIN\`"
+              echo "with \`administration:write\` scope (see standards/github-settings.md),"
+              echo "then re-run this workflow."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "::error title=GH_TOKEN_ADMIN missing::Provision the GH_TOKEN_ADMIN secret so ruleset drift can self-heal (see job summary)."
+            exit 1
+          fi
+          echo "GH_TOKEN_ADMIN is configured."
+
       - name: Apply repo settings
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN_ADMIN }}

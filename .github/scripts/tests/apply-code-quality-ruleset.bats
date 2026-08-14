@@ -62,7 +62,7 @@ assert_required_check() {
         echo ""
         return 0
       elif [ "$2" = "-X" ] && [ "$3" = "POST" ]; then
-        cat > "$BATS_TEST_TMPDIR/payload.json"
+        cat > "$TEST_TMPDIR/payload.json"
         echo '{"id": 12345}'
         return 0
       fi
@@ -74,7 +74,7 @@ assert_required_check() {
   run bash "$SCRIPT"
   [ "$status" -eq 0 ]
 
-  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$TEST_TMPDIR/payload.json"
 }
 
 @test "update preserves existing bypass actors while ensuring OrganizationAdmin is present" {
@@ -88,7 +88,7 @@ assert_required_check() {
         echo '[{"actor_type":"RepositoryRole","bypass_mode":"pull_request"}]'
         return 0
       elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
-        cat > "$BATS_TEST_TMPDIR/payload.json"
+        cat > "$TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
       fi
@@ -100,5 +100,5 @@ assert_required_check() {
   run bash "$SCRIPT"
   [ "$status" -eq 0 ]
 
-  jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+  jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$TEST_TMPDIR/payload.json"
 }

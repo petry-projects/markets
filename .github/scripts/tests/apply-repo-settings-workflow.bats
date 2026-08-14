@@ -61,20 +61,26 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
 }
 
 @test "preflight step surfaces the missing secret loudly and actionably (issue #420)" {
-  local preflight
-  preflight="$(yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW")"
+  run yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  local preflight="$output"
   # emits a GitHub error annotation so the failure is visible on the run page
-  echo "$preflight" | grep -q '::error'
+  printf '%s\n' "$preflight" | grep -q '::error'
   # writes actionable remediation to the job summary
-  echo "$preflight" | grep -q 'GITHUB_STEP_SUMMARY'
+  printf '%s\n' "$preflight" | grep -q 'GITHUB_STEP_SUMMARY'
   # fails the job so the drift is not silently left unhealed
-  echo "$preflight" | grep -q 'exit 1'
+  printf '%s\n' "$preflight" | grep -q 'exit 1'
 }
 
 @test "preflight runs before the apply-repo-settings step (issue #420)" {
-  local preflight_idx apply_idx
-  preflight_idx="$(yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and (.value.run | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW")"
-  apply_idx="$(yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.run | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW")"
+  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and (.value.run | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  local preflight_idx="$output"
+
+  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.run | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  local apply_idx="$output"
+
   [ -n "$preflight_idx" ] && [ "$preflight_idx" != "null" ]
   [ -n "$apply_idx" ] && [ "$apply_idx" != "null" ]
   [ "$preflight_idx" -lt "$apply_idx" ]

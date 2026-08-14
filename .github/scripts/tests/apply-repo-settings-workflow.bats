@@ -55,13 +55,13 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
 # the operational blocker is discoverable instead of silently recurring.
 
 @test "workflow has a preflight step that verifies GH_TOKEN_ADMIN before applying (issue #420)" {
-  run yq '[.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN")))] | length' "$WORKFLOW"
+  run yq '[.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and ((.run // "") | test("GH_TOKEN_ADMIN")))] | length' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" -ge 1 ]
 }
 
 @test "preflight step surfaces the missing secret loudly and actionably (issue #420)" {
-  run yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW"
+  run yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and ((.run // "") | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW"
   [ "$status" -eq 0 ]
   local preflight="$output"
   # emits a GitHub error annotation so the failure is visible on the run page
@@ -73,11 +73,11 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
 }
 
 @test "preflight runs before the apply-repo-settings step (issue #420)" {
-  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and (.value.run | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW"
+  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and ((.value.run // "") | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW"
   [ "$status" -eq 0 ]
   local preflight_idx="$output"
 
-  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.run | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW"
+  run yq '.jobs["apply-settings"].steps | to_entries | map(select((.value.run // "") | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW"
   [ "$status" -eq 0 ]
   local apply_idx="$output"
 

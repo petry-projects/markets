@@ -45,3 +45,37 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
+
+# Regression guard for issue #420 (ruleset-drift-pr-quality-require_last_push_approval
+# recurred after #403). The #403 schedule cannot self-heal drift because every run —
+# including the scheduled one — fails immediately with "GH_TOKEN is required": the
+# GH_TOKEN_ADMIN secret is not configured, and the failure was buried in the script
+# log where nobody noticed. These tests pin a preflight step that surfaces the missing
+# secret loudly (GitHub error annotation + job summary) with actionable remediation, so
+# the operational blocker is discoverable instead of silently recurring.
+
+@test "workflow has a preflight step that verifies GH_TOKEN_ADMIN before applying (issue #420)" {
+  run yq '[.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN")))] | length' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" -ge 1 ]
+}
+
+@test "preflight step surfaces the missing secret loudly and actionably (issue #420)" {
+  local preflight
+  preflight="$(yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and (.run | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW")"
+  # emits a GitHub error annotation so the failure is visible on the run page
+  echo "$preflight" | grep -q '::error'
+  # writes actionable remediation to the job summary
+  echo "$preflight" | grep -q 'GITHUB_STEP_SUMMARY'
+  # fails the job so the drift is not silently left unhealed
+  echo "$preflight" | grep -q 'exit 1'
+}
+
+@test "preflight runs before the apply-repo-settings step (issue #420)" {
+  local preflight_idx apply_idx
+  preflight_idx="$(yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and (.value.run | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW")"
+  apply_idx="$(yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.run | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW")"
+  [ -n "$preflight_idx" ] && [ "$preflight_idx" != "null" ]
+  [ -n "$apply_idx" ] && [ "$apply_idx" != "null" ]
+  [ "$preflight_idx" -lt "$apply_idx" ]
+}

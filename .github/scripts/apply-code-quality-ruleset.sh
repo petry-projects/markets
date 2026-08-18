@@ -12,7 +12,7 @@
 #   - dependency-audit / Detect ecosystems  dependency-audit.yml, caller job: dependency-audit, reusable job: Detect ecosystems
 #
 # Bypass actors configured (required on every ruleset targeting main — see #399):
-#   - OrganizationAdmin (bypass_mode: always)                             emergency admin override
+#   - OrganizationAdmin (actor_id: 0, bypass_mode: always)                emergency admin override
 #   - dependabot-automerge-petry (actor_id: 3167543, bypass_mode: always) enables Dependabot auto-merge
 #
 # Standard reference:
@@ -43,7 +43,7 @@ EXISTING_ID=$(gh api "repos/$REPO/rulesets" \
   --jq ".[] | select(.name == \"$RULESET_NAME\") | .id" 2>/dev/null || true)
 
 # Required bypass actors per org standard (see #399)
-REQUIRED_BYPASS_ORG_ADMIN='{"actor_type":"OrganizationAdmin","bypass_mode":"always"}'
+REQUIRED_BYPASS_ORG_ADMIN='{"actor_id":0,"actor_type":"OrganizationAdmin","bypass_mode":"always"}'
 REQUIRED_BYPASS_DEPENDABOT='{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}'
 REQUIRED_BYPASS_ACTORS=$(jq -n \
   --argjson org_admin "$REQUIRED_BYPASS_ORG_ADMIN" \

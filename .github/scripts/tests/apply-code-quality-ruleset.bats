@@ -110,7 +110,7 @@ assert_required_check() {
         echo '[{"actor_type":"OrganizationAdmin","bypass_mode":"always"}]'
         return 0
       elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
-        cat > "$TEST_TMPDIR/payload.json"
+        cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
       fi
@@ -122,5 +122,5 @@ assert_required_check() {
   run bash "$SCRIPT"
   [ "$status" -eq 0 ]
 
-  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$TEST_TMPDIR/payload.json"
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
 }

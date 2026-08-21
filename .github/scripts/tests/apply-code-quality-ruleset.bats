@@ -7,14 +7,6 @@
 
 SCRIPT="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)/apply-code-quality-ruleset.sh"
 
-setup() {
-  export TEST_TMPDIR="$(mktemp -d)"
-  export GH_TOKEN="mock-token"
-}
-
-teardown() {
-  rm -rf "$TEST_TMPDIR"
-}
 
 assert_required_check() {
   local context="$1"
@@ -62,7 +54,7 @@ assert_required_check() {
         echo ""
         return 0
       elif [ "$2" = "-X" ] && [ "$3" = "POST" ]; then
-        cat > "$TEST_TMPDIR/payload.json"
+        cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{"id": 12345}'
         return 0
       fi
@@ -74,7 +66,7 @@ assert_required_check() {
   run bash "$SCRIPT"
   [ "$status" -eq 0 ]
 
-  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$TEST_TMPDIR/payload.json"
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
 }
 
 @test "update preserves existing bypass actors while ensuring OrganizationAdmin is present" {
@@ -88,7 +80,7 @@ assert_required_check() {
         echo '[{"actor_type":"RepositoryRole","bypass_mode":"pull_request"}]'
         return 0
       elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
-        cat > "$TEST_TMPDIR/payload.json"
+        cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
       fi
@@ -100,7 +92,7 @@ assert_required_check() {
   run bash "$SCRIPT"
   [ "$status" -eq 0 ]
 
-  jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$TEST_TMPDIR/payload.json"
+  jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
 }
 
 # Regression for #434: the compliance audit found a live code-quality ruleset

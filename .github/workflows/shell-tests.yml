@@ -1,0 +1,38 @@
+# Shell tests — runs the bats regression suites that guard the repo-local
+# settings/ruleset apply scripts under .github/scripts/.
+#
+# Why this exists: the codified pr-quality / code-quality ruleset scripts are the
+# repo-local source of truth for parameters like `require_code_owner_review: true`
+# (drift fix #401). Their bats tests assert those values, but nothing ran the
+# tests in CI, so a silent edit flipping a parameter back would go unnoticed and
+# re-introduce compliance drift (#419). This workflow enforces the guard.
+name: Shell tests
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/scripts/**
+      - .github/workflows/shell-tests.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - .github/scripts/**
+      - .github/workflows/shell-tests.yml
+
+permissions: {}
+
+jobs:
+  bats:
+    name: bats (.github/scripts)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install bats
+        run: sudo npm install -g bats@1.11.1 --ignore-scripts
+
+      - name: Run bats suites
+        run: bats .github/scripts/tests/*.bats

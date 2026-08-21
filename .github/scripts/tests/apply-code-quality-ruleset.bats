@@ -101,6 +101,7 @@ assert_required_check() {
 # bypass while de-duplicating the pre-existing OrganizationAdmin (the removal
 # branch of the merge), so the result is exactly the two required actors.
 @test "update adds the dependabot bypass when an existing ruleset has OrganizationAdmin but is missing it" {
+  export GH_TOKEN="mock-token"
   gh() {
     if [ "$1" = "api" ]; then
       if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then

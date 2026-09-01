@@ -79,7 +79,7 @@ assert_required_check() {
       elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
         echo '[{"actor_type":"RepositoryRole","bypass_mode":"pull_request"}]'
         return 0
-      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
         cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
@@ -110,7 +110,7 @@ assert_required_check() {
       elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
         echo '[{"actor_type":"OrganizationAdmin","bypass_mode":"always"}]'
         return 0
-      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
         cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
@@ -142,7 +142,7 @@ assert_required_check() {
       elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
         echo '[]'
         return 0
-      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
         cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0

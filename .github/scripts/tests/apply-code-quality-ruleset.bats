@@ -79,7 +79,7 @@ assert_required_check() {
       elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
         echo '[{"actor_type":"RepositoryRole","bypass_mode":"pull_request"}]'
         return 0
-      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
         cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0
@@ -110,7 +110,39 @@ assert_required_check() {
       elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
         echo '[{"actor_type":"OrganizationAdmin","bypass_mode":"always"}]'
         return 0
-      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ]; then
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
+        cat > "$BATS_TEST_TMPDIR/payload.json"
+        echo '{}'
+        return 0
+      fi
+    fi
+    command gh "$@"
+  }
+  export -f gh
+
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+}
+
+# Regression for #418: the compliance audit found the live code-quality ruleset
+# stripped to an EMPTY bypass_actors array (missing the required OrganizationAdmin
+# emergency override entirely). Applying the script against an existing ruleset
+# whose bypass_actors is [] must restore exactly the two required actors — this
+# exercises the merge-onto-empty branch of the update path (distinct from an
+# existing ruleset that already carries some actors).
+@test "update restores both required bypass actors when the existing ruleset has an empty bypass_actors array" {
+  export GH_TOKEN="mock-token"
+  gh() {
+    if [ "$1" = "api" ]; then
+      if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then
+        echo "999"
+        return 0
+      elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
+        echo '[]'
+        return 0
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
         cat > "$BATS_TEST_TMPDIR/payload.json"
         echo '{}'
         return 0

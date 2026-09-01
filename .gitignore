@@ -212,7 +212,7 @@ op-session-*
 *.sql.xz
 *.sql.zst
 *.dump
-*.bak
+*.sql.bak
 dump.rdb
 mongodump/
 # Client config dotfiles that store passwords in plaintext
@@ -411,6 +411,9 @@ dist/
 build/
 .expo/
 .next/
+
+# Generic editor/backup files (non-secret; kept out of the secrets-only baseline)
+*.bak
 
 # OS files
 .DS_Store

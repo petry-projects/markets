@@ -95,11 +95,11 @@ assert_required_check() {
   jq -e '.bypass_actors == [{"actor_type":"RepositoryRole","bypass_mode":"pull_request"},{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
 }
 
-# Regression for #434: the compliance audit found a live code-quality ruleset
-# that already carried OrganizationAdmin but was MISSING the dependabot bypass.
-# Applying the script against that state must add the dependabot Integration
-# bypass while de-duplicating the pre-existing OrganizationAdmin (the removal
-# branch of the merge), so the result is exactly the two required actors.
+# Regression for #434 (recurred as #448): the compliance audit found a live
+# code-quality ruleset that already carried OrganizationAdmin but was MISSING the
+# dependabot bypass. Applying the script against that state must add the dependabot
+# Integration bypass while de-duplicating the pre-existing OrganizationAdmin (the
+# removal branch of the merge), so the result is exactly the two required actors.
 @test "update adds the dependabot bypass when an existing ruleset has OrganizationAdmin but is missing it" {
   export GH_TOKEN="mock-token"
   gh() {

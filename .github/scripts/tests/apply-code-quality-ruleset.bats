@@ -147,7 +147,8 @@ assert_required_check() {
         return 0
       fi
     fi
-    command gh "$@"
+    echo "Unexpected gh call: gh $*" >&2
+    return 1
   }
   export -f gh
 

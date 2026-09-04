@@ -412,6 +412,9 @@ build/
 .expo/
 .next/
 
+# Generic editor/backup files (non-secret; kept out of the secrets-only baseline)
+*.bak
+
 # OS files
 .DS_Store
 Thumbs.db

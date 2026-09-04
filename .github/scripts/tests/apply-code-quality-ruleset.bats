@@ -126,6 +126,37 @@ assert_required_check() {
   jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
 }
 
+# Regression for #469: the compliance audit found the live code-quality ruleset
+# MISSING the required OrganizationAdmin emergency-override bypass while it still
+# carried the dependabot Integration bypass (the mirror of #434). Applying the
+# script against that state must restore OrganizationAdmin while de-duplicating the
+# pre-existing dependabot bypass, so the result is exactly the two required actors.
+@test "update restores the OrganizationAdmin bypass when an existing ruleset has the dependabot bypass but is missing it" {
+  export GH_TOKEN="mock-token"
+  gh() {
+    if [ "$1" = "api" ]; then
+      if [ "$2" = "repos/petry-projects/markets/rulesets" ]; then
+        echo "999"
+        return 0
+      elif [ "$2" = "repos/petry-projects/markets/rulesets/999" ] && [ "$3" = "--jq" ]; then
+        echo '[{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]'
+        return 0
+      elif [ "$2" = "-X" ] && [ "$3" = "PUT" ] && [ "$4" = "repos/petry-projects/markets/rulesets/999" ]; then
+        cat > "$BATS_TEST_TMPDIR/payload.json"
+        echo '{}'
+        return 0
+      fi
+    fi
+    command gh "$@"
+  }
+  export -f gh
+
+  run bash "$SCRIPT"
+  [ "$status" -eq 0 ]
+
+  jq -e '.bypass_actors == [{"actor_type":"OrganizationAdmin","bypass_mode":"always"},{"actor_id":3167543,"actor_type":"Integration","bypass_mode":"always"}]' "$BATS_TEST_TMPDIR/payload.json"
+}
+
 # Regression for #418: the compliance audit found the live code-quality ruleset
 # stripped to an EMPTY bypass_actors array (missing the required OrganizationAdmin
 # emergency override entirely). Applying the script against an existing ruleset

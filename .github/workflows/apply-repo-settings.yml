@@ -41,7 +41,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: apply-repo-settings-${{ github.ref }}
+  group: apply-repo-settings
   cancel-in-progress: false
 
 jobs:

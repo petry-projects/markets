@@ -44,6 +44,25 @@ on:
 
 permissions: {}
 
+# Deduplicate ONLY pull_request events which have a direct PR context (issue #1126).
+# On GitHub Free (20 concurrent jobs, org-wide), avoid race conditions when multiple
+# PRs share a commit:
+#   • pull_request / pull_request_review — have github.event.pull_request.number;
+#     safe to collapse per PR and cancel in progress.
+#   • check_suite / workflow_run — only have pull_requests[] array; if multiple PRs
+#     share the commit, pull_requests[0] is indeterminate and causes the first PR's
+#     events to cancel the second PR's events. Use unique per-run groups instead.
+# A trigger with no associated PR (fork / no PR) also falls back to unique-per-run
+# so unrelated workflow runs never interfere.
+concurrency:
+  group: >-
+    ${{
+    (github.event_name == 'pull_request' && format('pr-auto-review-ready-check-pr-{0}', github.event.pull_request.number))
+    || (github.event_name == 'pull_request_review' && format('pr-auto-review-ready-check-pr-{0}', github.event.pull_request.number))
+    || format('pr-auto-review-ready-check-unique-{0}', github.run_id)
+    }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_review' }}
+
 jobs:
   pr-auto-review:
     permissions:

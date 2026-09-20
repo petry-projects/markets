@@ -2,12 +2,16 @@
 # Tests for .github/workflows/apply-repo-settings.yml — static YAML assertions,
 # no live API calls.
 #
+# This workflow is now a THIN CALLER STUB synced from the org source of truth
+# (petry-projects/.github/standards/workflows/apply-repo-settings.yml). All
+# settings/ruleset logic — including the #420 GH_TOKEN preflight guard — moved
+# into the org reusable workflow (apply-repo-settings-reusable.yml); the consumer
+# repo carries no script copy and the caller job has no steps. These tests were
+# rewritten to pin the stub contract instead of the retired inline job.
+#
 # Regression guard for issue #403 (ruleset-drift-pr-quality-require_last_push_approval):
-# the codified pr-quality ruleset already sets require_last_push_approval: true, but the
-# live ruleset kept drifting back to false because apply-repo-settings.yml only re-applied
-# the codified standard on manual dispatch or on a push touching the ruleset scripts.
-# A scheduled trigger makes the codified rulesets self-heal drift automatically. These
-# tests pin that the schedule trigger exists and that the pre-existing triggers survive.
+# a scheduled trigger makes the codified rulesets self-heal live drift automatically.
+# The schedule/workflow_dispatch guards below survive the migration to the stub.
 
 WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workflows/apply-repo-settings.yml"
 
@@ -36,52 +40,50 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
   [ "$output" = "true" ]
 }
 
-@test "workflow preserves the push trigger on main touching the ruleset scripts" {
+@test "workflow preserves the push trigger on main touching the stub itself" {
   run yq '.on.push.branches[0]' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" = "main" ]
 
-  run yq '.on.push.paths | contains([".github/scripts/apply-pr-quality-ruleset.sh"])' "$WORKFLOW"
+  # The stub carries no script copy, so it re-applies on a push to its own file.
+  run yq '.on.push.paths | contains([".github/workflows/apply-repo-settings.yml"])' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [ "$output" = "true" ]
 }
 
-# Regression guard for issue #420 (ruleset-drift-pr-quality-require_last_push_approval
-# recurred after #403). The #403 schedule cannot self-heal drift because every run —
-# including the scheduled one — fails immediately with "GH_TOKEN is required": the
-# GH_TOKEN_ADMIN secret is not configured, and the failure was buried in the script
-# log where nobody noticed. These tests pin a preflight step that surfaces the missing
-# secret loudly (GitHub error annotation + job summary) with actionable remediation, so
-# the operational blocker is discoverable instead of silently recurring.
+# Thin-caller-stub contract: the job delegates to the org reusable workflow and
+# carries no inline steps of its own (settings/ruleset logic lives upstream).
 
-@test "workflow has a preflight step that verifies GH_TOKEN_ADMIN before applying (issue #420)" {
-  run yq '[.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and ((.run // "") | test("GH_TOKEN_ADMIN")))] | length' "$WORKFLOW"
+@test "apply job delegates to the org reusable workflow via uses:" {
+  run yq '.jobs.apply.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [ "$output" -ge 1 ]
+  [ "$output" != "null" ]
+  printf '%s\n' "$output" | grep -q 'petry-projects/.github/.github/workflows/apply-repo-settings-reusable.yml@'
 }
 
-@test "preflight step surfaces the missing secret loudly and actionably (issue #420)" {
-  run yq '.jobs["apply-settings"].steps[] | select(.env.GH_TOKEN_ADMIN != null and ((.run // "") | test("GH_TOKEN_ADMIN"))) | .run' "$WORKFLOW"
+@test "apply job carries no inline steps (logic lives in the reusable)" {
+  run yq '.jobs.apply | has("steps")' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  local preflight="$output"
-  # emits a GitHub error annotation so the failure is visible on the run page
-  printf '%s\n' "$preflight" | grep -q '::error'
-  # writes actionable remediation to the job summary
-  printf '%s\n' "$preflight" | grep -q 'GITHUB_STEP_SUMMARY'
-  # fails the job so the drift is not silently left unhealed
-  printf '%s\n' "$preflight" | grep -q 'exit 1'
+  [ "$output" = "false" ]
 }
 
-@test "preflight runs before the apply-repo-settings step (issue #420)" {
-  run yq '.jobs["apply-settings"].steps | to_entries | map(select(.value.env.GH_TOKEN_ADMIN != null and ((.value.run // "") | test("GH_TOKEN_ADMIN")))) | .[0].key' "$WORKFLOW"
+@test "apply job inherits secrets so the reusable gets the admin token" {
+  run yq '.jobs.apply.secrets' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  local preflight_idx="$output"
+  [ "$output" = "inherit" ]
+}
 
-  run yq '.jobs["apply-settings"].steps | to_entries | map(select((.value.run // "") | test("apply-repo-settings.sh"))) | .[0].key' "$WORKFLOW"
+@test "checkout_ref forward stays in lockstep with the uses: channel pin" {
+  run yq '.jobs.apply.with.checkout_ref' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  local apply_idx="$output"
+  local checkout_ref="$output"
+  [ "$checkout_ref" != "null" ]
+  [ -n "$checkout_ref" ]
 
-  [ -n "$preflight_idx" ] && [ "$preflight_idx" != "null" ]
-  [ -n "$apply_idx" ] && [ "$apply_idx" != "null" ]
-  [ "$preflight_idx" -lt "$apply_idx" ]
+  run yq '.jobs.apply.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  local uses="$output"
+
+  # `uses:` ends with @<channel-tag>; checkout_ref must equal that same tag.
+  [ "${uses##*@}" = "$checkout_ref" ]
 }

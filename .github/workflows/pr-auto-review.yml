@@ -56,12 +56,17 @@ permissions: {}
 #     exactly as before.
 # A default-branch trigger with no associated PR (fork / no PR) also falls back to
 # the unique-per-run group so unrelated PRs never collapse into one group.
+# A completion associated with MORE THAN ONE PR (pull_requests[1] present) also
+# falls back to the unique-per-run group: a run can only belong to one group, so
+# keying off pull_requests[0] alone would let a multi-PR completion cancel or
+# supersede the wrong PR's readiness evaluation (issue #502). Only the exactly-one-PR
+# case is safe to dedup by PR number.
 concurrency:
   group: >-
     ${{
-    (github.event_name == 'check_suite' && github.event.check_suite.pull_requests[0].number)
+    (github.event_name == 'check_suite' && github.event.check_suite.pull_requests[0].number && !github.event.check_suite.pull_requests[1])
     && format('pr-auto-review-ready-check-pr-{0}', github.event.check_suite.pull_requests[0].number)
-    || (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number)
+    || (github.event_name == 'workflow_run' && github.event.workflow_run.pull_requests[0].number && !github.event.workflow_run.pull_requests[1])
     && format('pr-auto-review-ready-check-pr-{0}', github.event.workflow_run.pull_requests[0].number)
     || format('pr-auto-review-ready-check-unique-{0}', github.run_id)
     }}

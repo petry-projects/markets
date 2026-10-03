@@ -164,6 +164,17 @@ jobs:
             exit "$rc"
           }
 
+      - name: Validate agent rate-limit gate decision
+        # Verify that the gate step actually published a decision (allow|defer).
+        # If the script exited 0 but emitted no decision (interface drift, script bug),
+        # emit a loud error but still proceed with dispatch (fail-open).
+        run: |
+          decision="${{ steps.arl_gate.outputs.decision }}"
+          if [ -z "$decision" ] || ([ "$decision" != "allow" ] && [ "$decision" != "defer" ]); then
+            echo "::error::Agent rate-limit gate did not emit a valid decision (expected 'allow' or 'defer', got '$decision'). Dispatching ungated (fail-open)."
+            echo "### :warning: Agent rate-limit gate decision validation failed (got '$decision'). Dispatching ungated (fail-open)." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Dispatch central initiative-driver
         # Skipped (clean no-op) ONLY on an explicit `defer` — never a cancel, never
         # a job failure (#640, AC #1/#2). Fail-OPEN: an empty/missing decision (the

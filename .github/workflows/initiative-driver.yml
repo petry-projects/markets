@@ -151,7 +151,8 @@ jobs:
             echo "### :warning: ${msg}" >> "$GITHUB_STEP_SUMMARY"
             exit 1
           fi
-          bash "$ARL_GATE_SCRIPT" initiative-driver \ # NOSONAR(bash:S6290) pinned first-party checkout, verified at checkout step
+          # NOSONAR(bash:S6290) pinned first-party checkout, verified at checkout step
+          bash "$ARL_GATE_SCRIPT" initiative-driver \
             --repo "$ARL_TRACKING_REPO" \
             --mode enforce \
             --workflow initiative-driver.yml \

@@ -51,6 +51,19 @@ WORKFLOW="$(cd "$(dirname "$BATS_TEST_FILENAME")/../../.." && pwd)/.github/workf
   [[ "$output" == *"github.event_name == 'pull_request' && github.event.action == 'review_requested'"* ]]
   [[ "$output" == *"github.event_name == 'issue_comment'"* ]]
   [[ "$output" == *"github.event_name == 'pull_request_review_comment'"* ]]
+  # Exactly three subscription branches, with the Bot guard AND-connected to the group.
+  [ "$(grep -o "github.event_name ==" <<<"$output" | wc -l)" -eq 3 ]
+  [[ "$output" == *") && github.event.sender.type != 'Bot'"* || "$output" == *"&& github.event.sender.type != 'Bot'" ]]
+  [[ "$output" != *"|| github.event.sender.type"* ]]
+}
+
+@test "comment triggers are restricted to created" {
+  run yq '.on.issue_comment.types | join(",")' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "created" ]
+  run yq '.on.pull_request_review_comment.types | join(",")' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "created" ]
 }
 
 @test "job-level pull-requests: write permission is preserved" {

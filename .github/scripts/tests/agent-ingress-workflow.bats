@@ -33,11 +33,17 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
 
 @test "every job is a thin caller with a reusable pin and an event-filter if:" {
   for role in "${ROLES[@]}"; do
-    uses="$(yq ".jobs.\"$role\".uses" "$WORKFLOW")"
-    cond="$(yq ".jobs.\"$role\".if" "$WORKFLOW")"
-    [[ "$uses" == petry-projects/*/.github/workflows/*.yml@* ]] || { echo "$role: bad uses: $uses"; return 1; }
-    [[ "$cond" == *"github.event_name"* ]] || { echo "$role: if: missing event filter"; return 1; }
-    [ "$(yq ".jobs.\"$role\" | has(\"steps\")" "$WORKFLOW")" = "false" ] || { echo "$role: has steps"; return 1; }
+    run yq ".jobs.\"$role\".uses" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    uses="$output"
+    run yq ".jobs.\"$role\".if" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    cond="$output"
+    [[ "$uses" == petry-projects/*/.github/workflows/*.yml@* ]] || { printf '%s\n' "$role: bad uses: $uses"; return 1; }
+    [[ "$cond" == *"github.event_name"* ]] || { printf '%s\n' "$role: if: missing event filter"; return 1; }
+    run yq ".jobs.\"$role\" | has(\"steps\")" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ] || { printf '%s\n' "$role: has steps"; return 1; }
   done
 }
 
@@ -68,39 +74,64 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
 
 @test "on: does not carry pull_request_target, push, or schedule" {
   for ev in pull_request_target push schedule; do
-    [ "$(yq ".on | has(\"$ev\")" "$WORKFLOW")" = "false" ] || { echo "unexpected trigger: $ev"; return 1; }
+    run yq ".on | has(\"$ev\")" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    [ "$output" = "false" ] || { printf '%s\n' "unexpected trigger: $ev"; return 1; }
   done
 }
 
 @test "each role keeps its pre-collapse pin (behavior parity)" {
-  [[ "$(yq '.jobs.dev-lead.uses' "$WORKFLOW")" == *"/dev-lead-reusable.yml@dev-lead/v139-stable" ]]
-  [ "$(yq '.jobs.dev-lead.with.agent_ref' "$WORKFLOW")" = "dev-lead/v139-stable" ]
-  [[ "$(yq '.jobs.pr-auto-review.uses' "$WORKFLOW")" == *"/pr-auto-review-reusable.yml@pr-auto-review/v1-stable" ]]
-  [[ "$(yq '.jobs.pr-review.uses' "$WORKFLOW")" == *"/pr-review.yml@pr-review/stable" ]]
-  [ "$(yq '.jobs.pr-review.with.agent_ref' "$WORKFLOW")" = "pr-review/stable" ]
-  [[ "$(yq '.jobs.pr-review-mention.uses' "$WORKFLOW")" == *"/pr-review-mention-reusable.yml@pr-review-mention/v2-stable" ]]
-  [[ "$(yq '.jobs.ci-failure-analyst.uses' "$WORKFLOW")" == *"/ci-failure-analyst-reusable.yml@79747178007d3238bb3afddf7f4d952a293987bd" ]]
+  run yq '.jobs.dev-lead.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/dev-lead-reusable.yml@dev-lead/v139-stable" ]]
+  run yq '.jobs.dev-lead.with.agent_ref' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "dev-lead/v139-stable" ]
+  run yq '.jobs.pr-auto-review.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/pr-auto-review-reusable.yml@pr-auto-review/v1-stable" ]]
+  run yq '.jobs.pr-review.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/pr-review.yml@pr-review/stable" ]]
+  run yq '.jobs.pr-review.with.agent_ref' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "pr-review/stable" ]
+  run yq '.jobs.pr-review-mention.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/pr-review-mention-reusable.yml@pr-review-mention/v2-stable" ]]
+  run yq '.jobs.ci-failure-analyst.uses' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" == *"/ci-failure-analyst-reusable.yml@79747178007d3238bb3afddf7f4d952a293987bd" ]]
 }
 
 @test "dev-lead job keeps the base=main PR filter and declares no caller concurrency" {
   run yq '.jobs.dev-lead.if' "$WORKFLOW"
+  [ "$status" -eq 0 ]
   [[ "$output" == *"github.event.pull_request.base.ref == 'main'"* ]]
   # dev-lead centralises concurrency inside its reusable (ADR-0010 collision case).
-  [ "$(yq '.jobs.dev-lead | has("concurrency")' "$WORKFLOW")" = "false" ]
+  run yq '.jobs.dev-lead | has("concurrency")' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
 }
 
 @test "job-level concurrency groups are role-prefixed with literal cancel-in-progress (ADR-0010)" {
   for role in pr-auto-review pr-review ci-failure-analyst; do
-    group="$(yq ".jobs.\"$role\".concurrency.group" "$WORKFLOW")"
-    cancel="$(yq ".jobs.\"$role\".concurrency.cancel-in-progress | tag" "$WORKFLOW")"
-    [[ "$group" == "$role-"* ]] || { echo "$role: group lacks role prefix: $group"; return 1; }
+    run yq ".jobs.\"$role\".concurrency.group" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    group="$output"
+    run yq ".jobs.\"$role\".concurrency.cancel-in-progress | tag" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    cancel="$output"
+    [[ "$group" == "$role-"* ]] || { printf '%s\n' "$role: group lacks role prefix: $group"; return 1; }
     # ADR-0010 forbids run_id and the inputs context (github.event.inputs.* is payload).
     payload_stripped="${group//github.event.inputs./}"
     [[ "$group" != *"run_id"* && "$payload_stripped" != *"inputs."* ]] \
-      || { echo "$role: group reads run_id/inputs context"; return 1; }
-    [ "$cancel" = "!!bool" ] || { echo "$role: cancel-in-progress not a literal bool"; return 1; }
+      || { printf '%s\n' "$role: group reads run_id/inputs context"; return 1; }
+    [ "$cancel" = "!!bool" ] || { printf '%s\n' "$role: cancel-in-progress not a literal bool"; return 1; }
   done
-  [ "$(yq '.jobs.ci-failure-analyst.concurrency.cancel-in-progress' "$WORKFLOW")" = "false" ]
+  run yq '.jobs.ci-failure-analyst.concurrency.cancel-in-progress' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [ "$output" = "false" ]
 }
 
 @test "pr-review concurrency fallback is 'enumerate', never the reusable's 'batch' group" {
@@ -123,8 +154,10 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
 
 @test "if: guards never read repo state (vars/secrets/needs/hashFiles)" {
   for role in "${ROLES[@]}"; do
-    cond="$(yq ".jobs.\"$role\".if" "$WORKFLOW")"
+    run yq ".jobs.\"$role\".if" "$WORKFLOW"
+    [ "$status" -eq 0 ]
+    cond="$output"
     [[ "$cond" != *"vars."* && "$cond" != *"secrets."* && "$cond" != *"needs."* && "$cond" != *"hashFiles"* ]] \
-      || { echo "$role: if: reaches repo state"; return 1; }
+      || { printf '%s\n' "$role: if: reaches repo state"; return 1; }
   done
 }

@@ -14,11 +14,13 @@ on:
     paths:
       - .github/scripts/**
       - .github/workflows/shell-tests.yml
+      - .github/workflows/agent-ingress.yml
   pull_request:
     branches: [main]
     paths:
       - .github/scripts/**
       - .github/workflows/shell-tests.yml
+      - .github/workflows/agent-ingress.yml
 
 permissions: {}
 

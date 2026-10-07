@@ -101,7 +101,7 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
   [[ "$output" == *"/pr-review-mention-reusable.yml@pr-review-mention/v2-stable" ]]
   run yq '.jobs.ci-failure-analyst.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/ci-failure-analyst-reusable.yml@79747178007d3238bb3afddf7f4d952a293987bd" ]]
+  [[ "$output" == *"/ci-failure-analyst-reusable.yml@b58510275dd1cbbd13c0733c15265d51fd63b992" ]]
 }
 
 @test "dev-lead job keeps the base=main PR filter and declares no caller concurrency" {

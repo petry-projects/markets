@@ -90,15 +90,16 @@ jobs:
       || github.event_name == 'check_suite'
       || github.event_name == 'workflow_run'
     # Workflow-level concurrency in the source stub → job-level here, bounded per
-    # ADR-0010. PR events keep their per-PR slot; check_suite / workflow_run
-    # share one slot per head SHA (no run_id — see §4b).
+    # ADR-0010. PR events keep their per-PR slot; check_suite / workflow_run use
+    # run_id to ensure uniqueness and prevent cross-PR interference (see §4b).
     concurrency:
       group: >-
-        pr-auto-review-ready-check-${{
-          (github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number))
-          || format('sha-{0}', github.event.check_suite.head_sha || github.event.workflow_run.head_sha)
+        ${{
+        (github.event_name == 'pull_request' && format('pr-auto-review-ready-check-pr-{0}', github.event.pull_request.number))
+        || (github.event_name == 'pull_request_review' && format('pr-auto-review-ready-check-pr-{0}', github.event.pull_request.number))
+        || format('pr-auto-review-ready-check-unique-{0}', github.run_id)
         }}
-      cancel-in-progress: true
+      cancel-in-progress: ${{ github.event_name == 'pull_request' || github.event_name == 'pull_request_review' }}
     permissions:
       pull-requests: read
       checks: read

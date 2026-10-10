@@ -92,10 +92,10 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
   [[ "$output" == *"/pr-auto-review-reusable.yml@pr-auto-review/v1-stable" ]]
   run yq '.jobs.pr-review.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"/pr-review.yml@pr-review/stable" ]]
+  [[ "$output" == *"/pr-review.yml@pr-review/v1-stable" ]]
   run yq '.jobs.pr-review.with.agent_ref' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [ "$output" = "pr-review/stable" ]
+  [ "$output" = "pr-review/v1-stable" ]
   run yq '.jobs.pr-review-mention.uses' "$WORKFLOW"
   [ "$status" -eq 0 ]
   [[ "$output" == *"/pr-review-mention-reusable.yml@pr-review-mention/v2-stable" ]]
@@ -160,4 +160,11 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
     [[ "$cond" != *"vars."* && "$cond" != *"secrets."* && "$cond" != *"needs."* && "$cond" != *"hashFiles"* ]] \
       || { printf '%s\n' "$role: if: reaches repo state"; return 1; }
   done
+}
+
+@test "pr-review pins the major-scoped v1-stable channel, not the legacy bare tag (#520)" {
+  run grep -E '/pr-review\.yml@' "$WORKFLOW"
+  [ "$status" -eq 0 ]
+  [[ "$output" =~ @pr-review/v1-stable[[:space:]]+#[[:space:]]*NOSONAR\(githubactions:S7637\)[[:space:]]+first-party[[:space:]]+channel[[:space:]]+ref ]]
+  [[ "$output" != *"DEFECTIVE PIN"* ]]
 }

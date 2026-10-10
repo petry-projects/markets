@@ -142,9 +142,9 @@ jobs:
       contents: read
       pull-requests: write
       checks: read
-    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@pr-review/stable  # NOSONAR(githubactions:S7637) first-party channel ref  # DEFECTIVE PIN — see §5
+    uses: petry-projects/.github-private/.github/workflows/pr-review.yml@pr-review/v1-stable  # NOSONAR(githubactions:S7637) first-party channel ref
     with:
-      agent_ref: pr-review/stable
+      agent_ref: pr-review/v1-stable
       pr_url: ${{ inputs.pr_url || '' }}
       dry_run: ${{ inputs.dry_run || '' }}
       force_review: ${{ inputs.force_review || '' }}

@@ -165,6 +165,6 @@ ROLES=(dev-lead pr-auto-review pr-review pr-review-mention ci-failure-analyst)
 @test "pr-review pins the major-scoped v1-stable channel, not the legacy bare tag (#520)" {
   run grep -E '/pr-review\.yml@' "$WORKFLOW"
   [ "$status" -eq 0 ]
-  [[ "$output" == *"@pr-review/v1-stable  # NOSONAR(githubactions:S7637) first-party channel ref" ]]
+  [[ "$output" =~ @pr-review/v1-stable[[:space:]]+#[[:space:]]*NOSONAR\(githubactions:S7637\)[[:space:]]+first-party[[:space:]]+channel[[:space:]]+ref ]]
   [[ "$output" != *"DEFECTIVE PIN"* ]]
 }
